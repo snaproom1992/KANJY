@@ -105,6 +105,13 @@ private struct PlanListCell: View {
     let plan: Plan
     let viewModel: PrePlanViewModel
     
+    // 集金ステータスを計算
+    private var collectionStatus: (isComplete: Bool, count: Int, total: Int) {
+        let collectedCount = plan.participants.filter { $0.hasCollected }.count
+        let totalCount = plan.participants.count
+        return (collectedCount == totalCount && totalCount > 0, collectedCount, totalCount)
+    }
+    
     var body: some View {
         HStack(spacing: 12) {
             // 絵文字表示
@@ -120,6 +127,8 @@ private struct PlanListCell: View {
                 HStack {
                     Text(plan.name)
                         .font(.headline)
+                    
+                    // ステータスバッジ
                     if plan.totalAmount.isEmpty || plan.participants.isEmpty {
                         Text("下書き")
                             .font(.caption)
@@ -127,16 +136,38 @@ private struct PlanListCell: View {
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
                             .background(RoundedRectangle(cornerRadius: 6).fill(Color.orange.opacity(0.15)))
+                    } else if collectionStatus.isComplete {
+                        Text("集金済み")
+                            .font(.caption)
+                            .foregroundColor(.green)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(RoundedRectangle(cornerRadius: 6).fill(Color.green.opacity(0.15)))
+                    } else {
+                        Text("未集金")
+                            .font(.caption)
+                            .foregroundColor(.blue)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(RoundedRectangle(cornerRadius: 6).fill(Color.blue.opacity(0.15)))
                     }
+                    
                     Spacer()
                     Text(viewModel.formatDate(plan.date))
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                 }
                 HStack {
-                    Text("参加者: \(plan.participants.count)人")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
+                    // 参加者数と集金ステータスを表示
+                    if !plan.participants.isEmpty && (collectionStatus.count > 0 || collectionStatus.total > 0) {
+                        Text("参加者: \(plan.participants.count)人 (\(collectionStatus.count)/\(collectionStatus.total))")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    } else {
+                        Text("参加者: \(plan.participants.count)人")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
                     Spacer()
                     Text("¥\(viewModel.formatAmount(plan.totalAmount))")
                         .font(.subheadline)
