@@ -104,32 +104,44 @@ struct TopView: View {
 private struct PlanListCell: View {
     let plan: Plan
     let viewModel: PrePlanViewModel
+    
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                Text(plan.name)
-                    .font(.headline)
-                if plan.totalAmount.isEmpty || plan.participants.isEmpty {
-                    Text("下書き")
-                        .font(.caption)
-                        .foregroundColor(.orange)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(RoundedRectangle(cornerRadius: 6).fill(Color.orange.opacity(0.15)))
+        HStack(spacing: 12) {
+            // 絵文字表示
+            Text(plan.emoji ?? "🍻")
+                .font(.system(size: 32))
+                .frame(width: 50, height: 50)
+                .background(
+                    Circle()
+                        .fill(Color.gray.opacity(0.1))
+                )
+            
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text(plan.name)
+                        .font(.headline)
+                    if plan.totalAmount.isEmpty || plan.participants.isEmpty {
+                        Text("下書き")
+                            .font(.caption)
+                            .foregroundColor(.orange)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(RoundedRectangle(cornerRadius: 6).fill(Color.orange.opacity(0.15)))
+                    }
+                    Spacer()
+                    Text(viewModel.formatDate(plan.date))
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
                 }
-                Spacer()
-                Text(viewModel.formatDate(plan.date))
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-            }
-            HStack {
-                Text("参加者: \(plan.participants.count)人")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-                Spacer()
-                Text("¥\(viewModel.formatAmount(plan.totalAmount))")
-                    .font(.subheadline)
-                    .foregroundColor(.blue)
+                HStack {
+                    Text("参加者: \(plan.participants.count)人")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                    Spacer()
+                    Text("¥\(viewModel.formatAmount(plan.totalAmount))")
+                        .font(.subheadline)
+                        .foregroundColor(.blue)
+                }
             }
         }
     }
