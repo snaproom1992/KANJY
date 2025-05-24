@@ -83,11 +83,13 @@ public struct Participant: Identifiable, Hashable, Codable {
     public let id: UUID
     public var name: String
     public var roleType: RoleType
+    public var hasCollected: Bool = false  // 集金確認用のプロパティを追加
     
-    public init(id: UUID = UUID(), name: String, roleType: RoleType) {
+    public init(id: UUID = UUID(), name: String, roleType: RoleType, hasCollected: Bool = false) {
         self.id = id
         self.name = name
         self.roleType = roleType
+        self.hasCollected = hasCollected
     }
     
     public static func == (lhs: Participant, rhs: Participant) -> Bool {
@@ -172,6 +174,9 @@ struct PrePlanView: View {
     // 絵文字選択ダイアログ用
     @State private var showEmojiPicker = false
     
+    // 編集シート関連の状態を追加
+    @State private var editingHasCollected: Bool = false
+    
     enum Field {
         case totalAmount, newParticipant, editParticipant, additionalAmount
     }
@@ -185,39 +190,53 @@ struct PrePlanView: View {
     
     // 参加者セルのビュー
     private func participantCell(_ participant: Participant) -> some View {
-        Button(action: { startEdit(participant) }) {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(participant.name)
-                        .font(.body)
-                        .foregroundColor(.primary)
-                    // 役職名と倍率を直接参照
-                    switch participant.roleType {
-                    case .standard(let role):
-                        Text("\(role.name) ×\(String(format: "%.1f", role.defaultMultiplier))")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                    case .custom(let customRole):
-                        Text("\(customRole.name) ×\(String(format: "%.1f", customRole.multiplier))")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
+        HStack {
+            // 参加者情報部分（ここをタップすると編集画面に遷移）
+            Button(action: { startEdit(participant) }) {
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(participant.name)
+                            .font(.body)
+                            .foregroundColor(.primary)
+                        // 役職名と倍率を直接参照
+                        switch participant.roleType {
+                        case .standard(let role):
+                            Text("\(role.name) ×\(String(format: "%.1f", role.defaultMultiplier))")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                        case .custom(let customRole):
+                            Text("\(customRole.name) ×\(String(format: "%.1f", customRole.multiplier))")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    
+                    Spacer()
+                    
+                    if viewModel.totalAmount.filter({ $0.isNumber }).isEmpty {
+                        Text("¥---")
+                            .font(.headline)
+                            .foregroundColor(.gray)
+                    } else {
+                        Text("¥\(viewModel.formatAmount(String(viewModel.paymentAmount(for: participant))))")
+                            .font(.headline)
+                            .foregroundColor(participant.hasCollected ? .green : .blue)
                     }
                 }
-                
-                Spacer()
-                
-                if viewModel.totalAmount.filter({ $0.isNumber }).isEmpty {
-                    Text("¥---")
-                        .font(.headline)
-                        .foregroundColor(.gray)
-                } else {
-                    Text("¥\(viewModel.formatAmount(String(viewModel.paymentAmount(for: participant))))")
-                        .font(.headline)
-                        .foregroundColor(.blue)
-                }
             }
+            .buttonStyle(.plain)
+            
+            // 集金確認用のトグル（ここをタップしても編集画面に遷移しない）
+            Toggle("", isOn: Binding(
+                get: { participant.hasCollected },
+                set: { newValue in
+                    viewModel.updateCollectionStatus(participant: participant, hasCollected: newValue)
+                }
+            ))
+            .labelsHidden()
+            .toggleStyle(CompactSwitchToggleStyle())
+            .padding(.leading, 8)
         }
-        .buttonStyle(.plain)
         .contentShape(Rectangle())
         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
             Button(role: .destructive) {
@@ -233,7 +252,7 @@ struct PrePlanView: View {
         // --- ここからロジックをViewビルダーの外に出す ---
         let tempParticipants = viewModel.participants.map { p in
             if p.id == participant.id {
-                return Participant(id: p.id, name: editingText, roleType: editingRoleType)
+                return Participant(id: p.id, name: editingText, roleType: editingRoleType, hasCollected: p.hasCollected)
             }
             return p
         }
@@ -266,6 +285,10 @@ struct PrePlanView: View {
                     TextField("参加者名", text: $editingText)
                     // 役職選択用のビュー
                     rolePickerView
+                    
+                    // 集金確認用のトグル
+                    Toggle("集金済み", isOn: $editingHasCollected)
+                        .toggleStyle(SwitchToggleStyle(tint: .green))
                 }
                 Section {
                     HStack {
@@ -293,7 +316,7 @@ struct PrePlanView: View {
                         .foregroundColor(.red)
                         Spacer()
                         Button("保存") {
-                            viewModel.updateParticipant(participant, name: editingText, roleType: editingRoleType)
+                            viewModel.updateParticipant(participant, name: editingText, roleType: editingRoleType, hasCollected: editingHasCollected)
                             editingParticipant = nil
                         }
                         .disabled(editingText.isEmpty)
@@ -330,6 +353,7 @@ struct PrePlanView: View {
     private func startEdit(_ participant: Participant) {
         editingText = participant.name
         editingRoleType = participant.roleType
+        editingHasCollected = participant.hasCollected
         editingParticipant = participant
     }
     
@@ -557,10 +581,69 @@ struct PrePlanView: View {
         Section {
             ParticipantSectionContent()
         } header: {
-            Text("参加者一覧").font(.headline)
+            HStack {
+                Text("参加者一覧").font(.headline)
+                Spacer()
+                
+                if !viewModel.participants.isEmpty {
+                    // 全員一括で集金状態を変更するメニュー
+                    Menu {
+                        Button(action: {
+                            // 全員を集金済みにする
+                            for participant in viewModel.participants {
+                                viewModel.updateCollectionStatus(participant: participant, hasCollected: true)
+                            }
+                        }) {
+                            Label("全員を集金済みにする", systemImage: "checkmark.circle.fill")
+                        }
+                        
+                        Button(action: {
+                            // 全員を未集金にする
+                            for participant in viewModel.participants {
+                                viewModel.updateCollectionStatus(participant: participant, hasCollected: false)
+                            }
+                        }) {
+                            Label("全員を未集金にする", systemImage: "circle")
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                            .imageScale(.medium)
+                            .foregroundColor(.blue)
+                    }
+                }
+            }
         } footer: {
             if !viewModel.participants.isEmpty {
-                Text("参加者数: \(viewModel.participants.count)人")
+                let collectedCount = viewModel.participants.filter { $0.hasCollected }.count
+                let totalCount = viewModel.participants.count
+                let progress = Double(collectedCount) / Double(totalCount)
+                
+                VStack(alignment: .leading, spacing: 8) {
+                    // 進捗状況テキスト
+                    HStack {
+                        Text("集金状況: \(collectedCount)/\(totalCount)")
+                            .foregroundColor(collectedCount == totalCount ? .green : .secondary)
+                        Spacer()
+                        Text("\(Int(progress * 100))%")
+                            .foregroundColor(collectedCount == totalCount ? .green : .secondary)
+                    }
+                    
+                    // 進捗バー
+                    ZStack(alignment: .leading) {
+                        // 背景
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(Color.gray.opacity(0.2))
+                            .frame(height: 6)
+                        
+                        // 進捗
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(progress == 1.0 ? Color.green : Color.blue)
+                            .frame(width: max(4, UIScreen.main.bounds.width * 0.8 * progress - 32), height: 6)
+                            .animation(.spring(response: 0.3), value: progress)
+                    }
+                }
+                .font(.caption)
+                .padding(.vertical, 8)
             }
         }
     }
@@ -1154,6 +1237,49 @@ struct PrePlanView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 12)
+    }
+}
+
+// カスタムトグルスタイル
+struct CheckmarkToggleStyle: ToggleStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        Button(action: {
+            configuration.isOn.toggle()
+        }) {
+            Image(systemName: configuration.isOn ? "checkmark.circle.fill" : "circle")
+                .foregroundColor(configuration.isOn ? .green : .gray)
+                .imageScale(.large)
+                .font(.system(size: 24))
+                .animation(.spring(), value: configuration.isOn)
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+// コンパクトなスイッチトグルスタイル
+struct CompactSwitchToggleStyle: ToggleStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        HStack {
+            ZStack {
+                Capsule()
+                    .fill(configuration.isOn ? Color.green : Color.gray.opacity(0.3))
+                    .frame(width: 40, height: 24)
+                
+                Circle()
+                    .fill(Color.white)
+                    .shadow(radius: 1)
+                    .frame(width: 20, height: 20)
+                    .offset(x: configuration.isOn ? 9 : -9)
+                    .animation(.spring(response: 0.2), value: configuration.isOn)
+            }
+            .onTapGesture {
+                withAnimation {
+                    configuration.isOn.toggle()
+                }
+            }
+        }
     }
 }
 

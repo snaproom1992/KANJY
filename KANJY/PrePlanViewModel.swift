@@ -230,15 +230,28 @@ public class PrePlanViewModel: ObservableObject {
     
     // 参加者の追加
     func addParticipant(name: String, roleType: RoleType) {
-        let participant = Participant(name: name, roleType: roleType)
+        let participant = Participant(name: name, roleType: roleType, hasCollected: false)
         participants.append(participant)
         saveData()
     }
     
     // 参加者の更新
-    func updateParticipant(_ participant: Participant, name: String, roleType: RoleType) {
+    func updateParticipant(_ participant: Participant, name: String, roleType: RoleType, hasCollected: Bool = false) {
         if let index = participants.firstIndex(where: { $0.id == participant.id }) {
-            participants[index] = Participant(id: participant.id, name: name, roleType: roleType)
+            participants[index] = Participant(id: participant.id, name: name, roleType: roleType, hasCollected: hasCollected)
+            saveData()
+        }
+    }
+    
+    // 参加者の集金状態を更新
+    func updateCollectionStatus(participant: Participant, hasCollected: Bool) {
+        if let index = participants.firstIndex(where: { $0.id == participant.id }) {
+            participants[index] = Participant(
+                id: participant.id, 
+                name: participant.name, 
+                roleType: participant.roleType, 
+                hasCollected: hasCollected
+            )
             saveData()
         }
     }
