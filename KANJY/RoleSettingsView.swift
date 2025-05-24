@@ -34,11 +34,11 @@ struct RoleSettingsView: View {
                     Button(action: {
                         editingRole = role
                         editingMultiplier = role.defaultMultiplier
-                        editingName = role.rawValue
+                        editingName = role.name
                     }) {
                         HStack {
                             VStack(alignment: .leading, spacing: 4) {
-                                Text(role.rawValue)
+                                Text(role.name)
                                     .font(.headline)
                                 Text("支払い倍率: ×\(String(format: "%.1f", role.defaultMultiplier))")
                                     .font(.caption)
@@ -147,7 +147,7 @@ struct RoleSettingsView: View {
                         }
                     }
                 }
-                .navigationTitle("\(role.rawValue)の設定")
+                .navigationTitle("\(role.name)の設定")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
@@ -168,7 +168,6 @@ struct RoleSettingsView: View {
                         }
                     }
                 }
-
             }
             .presentationDetents([.medium])
         }

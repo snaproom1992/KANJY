@@ -11,16 +11,15 @@ enum Role: String, CaseIterable, Identifiable, Codable {
     var id: String { rawValue }
     
     var defaultMultiplier: Double {
-        switch self {
-        case .director: return 2.0
-        case .manager: return 1.5
-        case .staff: return 1.0
-        case .newbie: return 0.5
-        }
+        return PrePlanViewModel.shared.getRoleMultiplier(self)
     }
     
     func setMultiplier(_ value: Double) {
         PrePlanViewModel.shared.setRoleMultiplier(self, value: value)
+    }
+    
+    var name: String {
+        return PrePlanViewModel.shared.getRoleName(self)
     }
     
     func setName(_ value: String) {
@@ -28,7 +27,7 @@ enum Role: String, CaseIterable, Identifiable, Codable {
     }
     
     var displayText: String {
-        "\(self.rawValue) ×\(String(format: "%.1f", self.defaultMultiplier))"
+        "\(self.name) ×\(String(format: "%.1f", self.defaultMultiplier))"
     }
 }
 
@@ -49,7 +48,7 @@ enum RoleType: Identifiable, Codable, Hashable {
     var name: String {
         switch self {
         case .standard(let role):
-            return role.rawValue
+            return role.name
         case .custom(let role):
             return role.name
         }
@@ -199,7 +198,7 @@ struct PrePlanView: View {
                     // 役職名と倍率を直接参照
                     switch participant.roleType {
                     case .standard(let role):
-                        Text("\(role.rawValue) ×\(String(format: "%.1f", role.defaultMultiplier))")
+                        Text("\(role.name) ×\(String(format: "%.1f", role.defaultMultiplier))")
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                     case .custom(let customRole):
@@ -316,7 +315,7 @@ struct PrePlanView: View {
         Picker("役職", selection: $editingRoleType) {
             // 標準役職
             ForEach(Role.allCases) { role in
-                Text("\(role.rawValue) ×\(String(format: "%.1f", role.defaultMultiplier))")
+                Text("\(role.name) ×\(String(format: "%.1f", role.defaultMultiplier))")
                     .tag(RoleType.standard(role))
             }
             
@@ -510,7 +509,7 @@ struct PrePlanView: View {
                                                 viewModel.selectedRoleType = .standard(role)
                                             }) {
                                                 HStack {
-                                                    Text("\(role.rawValue) ×\(String(format: "%.1f", role.defaultMultiplier))")
+                                                    Text("\(role.name) ×\(String(format: "%.1f", role.defaultMultiplier))")
                                                     if case .standard(let selectedRole) = viewModel.selectedRoleType,
                                                        selectedRole == role {
                                                         Image(systemName: "checkmark")
@@ -540,7 +539,7 @@ struct PrePlanView: View {
                                         HStack {
                                             switch viewModel.selectedRoleType {
                                             case .standard(let role):
-                                                Text("\(role.rawValue)")
+                                                Text("\(role.name)")
                                                     .foregroundColor(.blue)
                                                 Text("×\(String(format: "%.1f", role.defaultMultiplier))")
                                                     .foregroundColor(.secondary)

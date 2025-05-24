@@ -166,7 +166,13 @@ class PrePlanViewModel: ObservableObject {
         if let multiplier = roleMultipliers[role.rawValue] {
             return multiplier
         }
-        return role.defaultMultiplier
+        // デフォルト値を返す
+        switch role {
+        case .director: return 2.0
+        case .manager: return 1.5
+        case .staff: return 1.0
+        case .newbie: return 0.5
+        }
     }
     
     // 役職の倍率を設定
