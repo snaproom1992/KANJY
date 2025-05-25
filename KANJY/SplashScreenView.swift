@@ -324,7 +324,8 @@ class SplashPlayerViewController: UIViewController {
     private func updateWatermarkOverlay(videoFrame: CGRect) {
         // 既存のオーバーレイレイヤーを探す
         for layer in view.layer.sublayers ?? [] {
-            if layer != playerLayer && layer is CALayer {
+            // playerLayer以外のCALayerを検索（layer is CALayerは常にtrueなので削除）
+            if layer != playerLayer {
                 // 白いレイヤーのサイズと位置を更新
                 let overlayHeight = videoFrame.height * 0.15
                 let overlayY = videoFrame.maxY - overlayHeight

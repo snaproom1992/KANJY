@@ -97,7 +97,10 @@ public class PrePlanViewModel: ObservableObject {
     
     @objc private func userDefaultsDidChange() {
         // 倍率が変更された可能性があるため、画面を更新
-        objectWillChange.send()
+        // SwiftUIの警告を回避するためメインスレッドの次の更新サイクルで実行
+        DispatchQueue.main.async {
+            self.objectWillChange.send()
+        }
     }
     
     // データの読み込み
