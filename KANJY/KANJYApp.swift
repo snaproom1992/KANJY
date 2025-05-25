@@ -11,7 +11,7 @@ import SwiftUI
 struct KANJYApp: App {
     var body: some Scene {
         WindowGroup {
-            TopView()
+            SplashScreenView()
         }
     }
 }

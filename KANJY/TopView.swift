@@ -73,7 +73,7 @@ struct TopView: View {
                     Text("新規飲み会作成")
                 }
             }
-            .navigationTitle("幹事アプリ")
+            .navigationTitle("イベントリスト")
             .sheet(isPresented: $showingPrePlan) {
                 NavigationStack {
                     PrePlanView(
