@@ -85,6 +85,8 @@ struct TopView: View {
                         }
                     )
                 }
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
             }
             .alert("飲み会の削除", isPresented: $showingDeleteAlert) {
                 Button("キャンセル", role: .cancel) {}

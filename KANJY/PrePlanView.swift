@@ -326,7 +326,8 @@ struct PrePlanView: View {
             .navigationTitle("参加者を編集")
             .navigationBarTitleDisplayMode(.inline)
         }
-        .presentationDetents([.medium])
+        .presentationDetents([.large])
+        .presentationDragIndicator(.visible)
     }
     
     // 役職選択用のビュー
@@ -629,18 +630,21 @@ struct PrePlanView: View {
                     }
                     
                     // 進捗バー
-                    ZStack(alignment: .leading) {
-                        // 背景
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(Color.gray.opacity(0.2))
-                            .frame(height: 6)
-                        
-                        // 進捗
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(progress == 1.0 ? Color.green : Color.blue)
-                            .frame(width: max(4, UIScreen.main.bounds.width * 0.8 * progress - 32), height: 6)
-                            .animation(.spring(response: 0.3), value: progress)
+                    GeometryReader { geometry in
+                        ZStack(alignment: .leading) {
+                            // 背景
+                            RoundedRectangle(cornerRadius: 4)
+                                .fill(Color.gray.opacity(0.2))
+                                .frame(height: 6)
+                            
+                            // 進捗
+                            RoundedRectangle(cornerRadius: 4)
+                                .fill(progress == 1.0 ? Color.green : Color.blue)
+                                .frame(width: max(4, geometry.size.width * progress), height: 6)
+                                .animation(.spring(response: 0.3), value: progress)
+                        }
                     }
+                    .frame(height: 6)
                 }
                 .font(.caption)
                 .padding(.vertical, 8)
@@ -711,7 +715,8 @@ struct PrePlanView: View {
                 }
             }
         }
-        .presentationDetents([.medium])
+        .presentationDetents([.large])
+        .presentationDragIndicator(.visible)
     }
     
     // 金額編集ダイアログビュー
@@ -756,7 +761,8 @@ struct PrePlanView: View {
                 }
             }
         }
-        .presentationDetents([.medium])
+        .presentationDetents([.large])
+        .presentationDragIndicator(.visible)
     }
     
     // 絵文字選択ダイアログビュー
@@ -857,7 +863,8 @@ struct PrePlanView: View {
                 }
             }
         }
-        .presentationDetents([.medium])
+        .presentationDetents([.large])
+        .presentationDragIndicator(.visible)
     }
     
     // シンプルな絵文字グリッド行

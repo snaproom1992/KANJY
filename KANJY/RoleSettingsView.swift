@@ -129,7 +129,8 @@ struct RoleSettingsView: View {
                     }
                 }
             }
-            .presentationDetents([.medium])
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
         }
         .sheet(item: $editingRole) { role in
             NavigationStack {
@@ -169,7 +170,8 @@ struct RoleSettingsView: View {
                     }
                 }
             }
-            .presentationDetents([.medium])
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
         }
         .alert("エラー", isPresented: $showingAlert) {
             Button("OK", role: .cancel) {}
