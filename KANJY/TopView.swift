@@ -9,7 +9,7 @@ struct TopView: View {
     @State private var tempPlanDate: Date = Date()
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             List {
                 // 保存した飲み会セクション
                 if !viewModel.savedPlans.isEmpty {

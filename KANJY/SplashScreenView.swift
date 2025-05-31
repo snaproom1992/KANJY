@@ -167,7 +167,7 @@ class SplashPlayerViewController: UIViewController {
         setupTexts()
         
         // 指定時間後に完了コールバックを呼び出す
-        DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
             self.onComplete?()
         }
     }
