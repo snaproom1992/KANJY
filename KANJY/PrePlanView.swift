@@ -177,6 +177,9 @@ struct PrePlanView: View {
     // 編集シート関連の状態を追加
     @State private var editingHasCollected: Bool = false
     
+    // 新しい状態変数を追加
+    @State private var showPaymentGenerator = false
+    
     enum Field {
         case totalAmount, newParticipant, editParticipant, additionalAmount
     }
@@ -225,6 +228,31 @@ struct PrePlanView: View {
                 }
             }
             .buttonStyle(.plain)
+            .contextMenu {
+                Button(action: {
+                    startEdit(participant)
+                }) {
+                    Label("編集", systemImage: "pencil")
+                }
+                
+                Button(action: {
+                    viewModel.updateCollectionStatus(participant: participant, hasCollected: !participant.hasCollected)
+                }) {
+                    if participant.hasCollected {
+                        Label("未集金に変更", systemImage: "circle")
+                    } else {
+                        Label("集金済みに変更", systemImage: "checkmark.circle")
+                    }
+                }
+                
+                Divider()
+                
+                Button(role: .destructive, action: {
+                    confirmDelete(participant: participant)
+                }) {
+                    Label("削除", systemImage: "trash")
+                }
+            }
             
             // 集金確認用のトグル（ここをタップしても編集画面に遷移しない）
             Toggle("", isOn: Binding(
@@ -245,6 +273,11 @@ struct PrePlanView: View {
                 Label("削除", systemImage: "trash")
             }
         }
+    }
+    
+    // 参加者個別の支払い案内を生成
+    private func generatePaymentInfoForParticipant(_ participant: Participant) {
+        // この機能は削除
     }
     
     // 編集シート
@@ -424,6 +457,13 @@ struct PrePlanView: View {
             .sheet(isPresented: $showEmojiPicker) {
                 EmojiPickerView()
             }
+            .sheet(isPresented: $showPaymentGenerator) {
+                NavigationStack {
+                    PaymentInfoGenerator(viewModel: viewModel)
+                }
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
+            }
             .onAppear {
                 setupInitialState()
             }
@@ -548,6 +588,41 @@ struct PrePlanView: View {
             // 参加者一覧セクション
             ParticipantSection()
             
+            // 支払い案内ボタンセクション（参加者がいる場合のみ表示）
+            if !viewModel.participants.isEmpty {
+                Section {
+                    Button(action: {
+                        showPaymentGenerator = true
+                    }) {
+                        HStack {
+                            Image(systemName: "list.bullet.rectangle")
+                                .foregroundColor(.white)
+                                .font(.headline)
+                                .frame(width: 30, height: 30)
+                                .background(Circle().fill(Color.blue))
+                                .padding(.trailing, 4)
+                            
+                            Text("集金案内を作成")
+                                .font(.headline)
+                                .foregroundColor(.primary)
+                            
+                            Spacer()
+                            
+                            Image(systemName: "chevron.right")
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                        }
+                        .contentShape(Rectangle())
+                        .padding(.vertical, 10)
+                    }
+                    .buttonStyle(.plain)
+                } footer: {
+                    Text("参加者全員の支払い金額をまとめた集金案内を作成できます")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
+            
             // 基準金額セクション（合計金額が入力されている場合のみ表示）
             if viewModel.baseAmount > 0 {
                 Section {
@@ -605,6 +680,14 @@ struct PrePlanView: View {
                             }
                         }) {
                             Label("全員を未集金にする", systemImage: "circle")
+                        }
+                        
+                        Divider()
+                        
+                        Button(action: {
+                            showPaymentGenerator = true
+                        }) {
+                            Label("集金案内を作成", systemImage: "list.bullet.rectangle")
                         }
                     } label: {
                         Image(systemName: "ellipsis.circle")

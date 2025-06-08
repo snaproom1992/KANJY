@@ -72,8 +72,30 @@ struct TopView: View {
                 } header: {
                     Text("新規飲み会作成")
                 }
+                
+                // 設定セクション
+                Section {
+                    NavigationLink(destination: PaymentSettings()) {
+                        HStack {
+                            Image(systemName: "creditcard")
+                                .font(.title2)
+                            Text("支払い情報設定")
+                                .font(.headline)
+                        }
+                        .padding(.vertical, 8)
+                    }
+                } header: {
+                    Text("設定")
+                }
             }
             .navigationTitle("イベントリスト")
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    NavigationLink(destination: PaymentSettings()) {
+                        Image(systemName: "gearshape")
+                    }
+                }
+            }
             .sheet(isPresented: $showingPrePlan) {
                 NavigationStack {
                     PrePlanView(
