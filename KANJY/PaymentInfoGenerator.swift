@@ -174,9 +174,9 @@ struct PaymentInfoGenerator: View {
                                             .stroke(Color(.systemGray4), lineWidth: 1)
                                     )
                                     .cornerRadius(10)
-                                    .onChange(of: messageText) { _, _ in
-                                        updatePreviewImage()
-                                    }
+                            .onChange(of: messageText) { _, _ in
+                                updatePreviewImage()
+                            }
                                 
                                 // プレースホルダー
                                 if messageText.isEmpty {
@@ -192,20 +192,20 @@ struct PaymentInfoGenerator: View {
                         .padding(.vertical, 4)
                         
                         // 支払い期限部分
-                        Text("支払い期限")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
+                            Text("支払い期限")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
                             .padding(.top, 8)
                             .padding(.bottom, 4)
                         
                         // テキストフィールドを個別のビューで囲み、クリックイベントを独立させる
                         Group {
-                            TextField("お支払い期限: 7日以内", text: $dueText)
-                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                        TextField("お支払い期限: 7日以内", text: $dueText)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
                                 .padding(.vertical, 2)
-                                .onChange(of: dueText) { _, _ in
-                                    updatePreviewImage()
-                                }
+                            .onChange(of: dueText) { _, _ in
+                                updatePreviewImage()
+                            }
                         }
                     }
                     .padding(.vertical, 4)
@@ -532,194 +532,112 @@ struct PaymentInfoGenerator: View {
             // 説明文の後に余白を追加（2行分の高さ+余白）
             infoY += 75  // 65から75に変更して全体の余白も広げる
             
-            // PayPayIDを別に表示（タグ形式）
+            // PayPayIDを別に表示（アイコン・ラベル・登録情報をすべて左揃え、テキストボックスもカード左右マージンと揃える）
             if selectedPaymentMethods.contains(.payPay) {
-                let payPayTagY = infoY
-                
-                if payPayID.isEmpty {
-                    // PayPay IDが未登録の場合
-                    let tagWidth: CGFloat = 320
-                    let tagRect = CGRect(x: 70, y: payPayTagY, width: tagWidth, height: 44)
-                    
-                    // タグの背景（赤系の警告色に変更）
-                    UIColor(red: 1.0, green: 0.9, blue: 0.9, alpha: 1.0).setFill()
-                    UIBezierPath(roundedRect: tagRect, cornerRadius: 22).fill()
-                    
-                    // アイコン（赤色に変更）
-                    let smallIconRect = CGRect(x: 80, y: payPayTagY + 8, width: 28, height: 28)
+                let cardMargin: CGFloat = 40
+                let contentX: CGFloat = 70 // カードの左端
+                let iconSize: CGFloat = 28
+                let iconY: CGFloat = infoY + 7
+                let labelX: CGFloat = contentX
+                let labelY: CGFloat = iconY
+                let labelHeight: CGFloat = 30
+                let boxY: CGFloat = labelY + labelHeight + 8
+                let boxWidth: CGFloat = 940 // カード幅1000 - マージン*2(40*2=80)
+                let boxHeight: CGFloat = 60 // 1行分なので60ptに
+                let tagHeight: CGFloat = labelHeight + 8 + boxHeight
+                let idValueAttributes: [NSAttributedString.Key: Any] = [
+                    .font: UIFont.systemFont(ofSize: bodyFontSize, weight: .bold),
+                    .foregroundColor: UIColor(red: 0.9, green: 0.2, blue: 0.2, alpha: 1.0)
+                ]
+                if !payPayID.isEmpty {
+                    // Pアイコン
                     UIColor(red: 0.9, green: 0.2, blue: 0.2, alpha: 1.0).setFill()
-                    UIBezierPath(ovalIn: smallIconRect).fill()
-                    
-                    // P
+                    UIBezierPath(ovalIn: CGRect(x: labelX, y: iconY + 4, width: iconSize, height: iconSize)).fill()
                     let smallSymbolAttributes: [NSAttributedString.Key: Any] = [
                         .font: UIFont.systemFont(ofSize: 16, weight: .bold),
                         .foregroundColor: UIColor.white
                     ]
-                    NSString(string: "P").draw(in: CGRect(x: 87, y: payPayTagY + 12, width: 14, height: 20), withAttributes: smallSymbolAttributes)
-                    
-                    // 警告テキスト（赤系に変更）
-                    let warningAttributes: [NSAttributedString.Key: Any] = [
-                        .font: UIFont.systemFont(ofSize: smallFontSize),
-                        .foregroundColor: UIColor(red: 0.8, green: 0.2, blue: 0.2, alpha: 1.0)
-                    ]
-                    NSString(string: "PayPay IDが未設定です").draw(in: CGRect(x: 115, y: payPayTagY + 12, width: tagWidth - 50, height: 30), withAttributes: warningAttributes)
-                } else {
-                    // PayPay IDがある場合
-                    // プレフィックスとIDを分けて、IDのみ太字にする
-                    let prefix = "支払い先PayPay ID: "
-                    
-                    // プレフィックスとIDで別々の属性を設定
-                    let prefixAttributes: [NSAttributedString.Key: Any] = [
+                    NSString(string: "P").draw(in: CGRect(x: labelX + 7, y: iconY + 8, width: 14, height: 20), withAttributes: smallSymbolAttributes)
+                    // ラベル
+                    let labelAttributes: [NSAttributedString.Key: Any] = [
                         .font: UIFont.systemFont(ofSize: bodyFontSize),
                         .foregroundColor: UIColor(red: 0.9, green: 0.2, blue: 0.2, alpha: 1.0)
                     ]
-                    
-                    let idValueAttributes: [NSAttributedString.Key: Any] = [
-                        .font: UIFont.systemFont(ofSize: bodyFontSize, weight: .bold),
-                        .foregroundColor: UIColor(red: 0.9, green: 0.2, blue: 0.2, alpha: 1.0)
-                    ]
-                    
-                    // プレフィックスのサイズを計算
-                    let prefixSize = (prefix as NSString).size(withAttributes: prefixAttributes)
-                    
-                    // ID値のサイズを計算
-                    let idValueSize = (payPayID as NSString).size(withAttributes: idValueAttributes)
-                    
-                    // タグの幅を計算
-                    let iconSpace: CGFloat = 60  // アイコンとその余白のスペース
-                    let padding: CGFloat = 30    // 右側の余白
-                    let tagWidth = prefixSize.width + idValueSize.width + iconSpace + padding
-                    
-                    let tagRect = CGRect(x: 70, y: payPayTagY, width: tagWidth, height: 44)
-                    
-                    // タグの背景（赤系に変更）
-                    UIColor(red: 1.0, green: 0.9, blue: 0.9, alpha: 0.6).setFill()
-                    UIBezierPath(roundedRect: tagRect, cornerRadius: 22).fill()
-                    
-                    // アイコン（赤色に変更）
-                    let smallIconRect = CGRect(x: 80, y: payPayTagY + 8, width: 28, height: 28)
-                    UIColor(red: 0.9, green: 0.2, blue: 0.2, alpha: 1.0).setFill()
-                    UIBezierPath(ovalIn: smallIconRect).fill()
-                    
-                    // P
-                    let smallSymbolAttributes: [NSAttributedString.Key: Any] = [
-                        .font: UIFont.systemFont(ofSize: 16, weight: .bold),
-                        .foregroundColor: UIColor.white
-                    ]
-                    NSString(string: "P").draw(in: CGRect(x: 87, y: payPayTagY + 12, width: 14, height: 20), withAttributes: smallSymbolAttributes)
-                    
-                    // プレフィックスを描画
-                    let prefixRect = CGRect(x: 115, y: payPayTagY + 7, width: prefixSize.width, height: 30)
-                    NSString(string: prefix).draw(in: prefixRect, withAttributes: prefixAttributes)
-                    
-                    // ID値を太字で描画
-                    let idValueRect = CGRect(x: 115 + prefixSize.width, y: payPayTagY + 7, width: idValueSize.width + padding, height: 30)
-                    NSString(string: payPayID).draw(in: idValueRect, withAttributes: idValueAttributes)
+                    let labelTextX = labelX + iconSize + 12
+                    NSString(string: "支払い先PayPay ID:").draw(in: CGRect(x: labelTextX, y: labelY, width: boxWidth, height: labelHeight), withAttributes: labelAttributes)
+                    // 登録情報（テキストボックス風）
+                    let boxX = contentX
+                    let idRect = CGRect(x: boxX, y: boxY, width: boxWidth, height: boxHeight)
+                    UIColor(red: 0.9, green: 0.2, blue: 0.2, alpha: 0.10).setFill()
+                    UIBezierPath(roundedRect: idRect, cornerRadius: 10).fill()
+                    NSString(string: payPayID).draw(in: CGRect(x: boxX + 20, y: boxY + 18, width: boxWidth - 40, height: boxHeight - 28), withAttributes: idValueAttributes)
                 }
-                
-                infoY += 60
+                infoY += tagHeight + 20
             }
-            
-            // 銀行振込情報をタグ形式で表示
+            // 銀行振込情報（アイコン・ラベル・登録情報をすべて左揃え、テキストボックスもカード左右マージンと揃える）
             if selectedPaymentMethods.contains(.bankTransfer) {
-                let bankTagY = infoY
-                
-                if bankInfo.isEmpty {
-                    // 振込先が未登録の場合
-                    // 文字列の幅を先に計算
-                    let messageText = "振込先：後日ご連絡させていただきます"
-                    let messageAttributes: [NSAttributedString.Key: Any] = [
-                        .font: UIFont.systemFont(ofSize: bodyFontSize, weight: .bold), // 太字に変更
-                        .foregroundColor: UIColor(red: 0.0, green: 0.5, blue: 0.2, alpha: 1.0)
-                    ]
-                    
-                    // テキストサイズを計算
-                    let messageSize = (messageText as NSString).size(withAttributes: messageAttributes)
-                    
-                    // 実際のテキストサイズに基づいてタグ幅を動的に計算（アイコン分+余白を足す）
-                    let iconSpace: CGFloat = 60 // アイコンとその余白のスペース
-                    let padding: CGFloat = 30   // 右側の余白
-                    let tagWidth = messageSize.width + iconSpace + padding
-                    
-                    // タグの描画
-                    let tagRect = CGRect(x: 70, y: bankTagY, width: tagWidth, height: 44)
-                    
-                    // タグの背景
-                    UIColor(red: 0.0, green: 0.5, blue: 0.2, alpha: 0.1).setFill()
-                    UIBezierPath(roundedRect: tagRect, cornerRadius: 22).fill()
-                    
-                    // アイコン
-                    let smallIconRect = CGRect(x: 80, y: bankTagY + 8, width: 28, height: 28)
+                let cardMargin: CGFloat = 40
+                let contentX: CGFloat = 70
+                let iconSize: CGFloat = 28
+                let iconY: CGFloat = infoY + 7
+                let labelX: CGFloat = contentX
+                let labelY: CGFloat = iconY
+                let labelHeight: CGFloat = 30
+                let boxY: CGFloat = labelY + labelHeight + 12
+                let boxWidth: CGFloat = 940
+                let boxHeight: CGFloat = 120 // 80から120に拡大
+                let tagHeight: CGFloat = labelHeight + 12 + boxHeight
+                let bankInfoAttributes: [NSAttributedString.Key: Any] = [
+                    .font: UIFont.systemFont(ofSize: bodyFontSize, weight: .bold),
+                    .foregroundColor: UIColor(red: 0.0, green: 0.5, blue: 0.2, alpha: 1.0)
+                ]
+                if !bankInfo.isEmpty {
+                    // 銀アイコン
                     UIColor(red: 0.0, green: 0.5, blue: 0.2, alpha: 1.0).setFill()
-                    UIBezierPath(ovalIn: smallIconRect).fill()
-                    
-                    // 銀
+                    UIBezierPath(ovalIn: CGRect(x: labelX, y: iconY + 4, width: iconSize, height: iconSize)).fill()
                     let smallSymbolAttributes: [NSAttributedString.Key: Any] = [
                         .font: UIFont.systemFont(ofSize: 16, weight: .bold),
                         .foregroundColor: UIColor.white
                     ]
-                    NSString(string: "銀").draw(in: CGRect(x: 87, y: bankTagY + 12, width: 14, height: 20), withAttributes: smallSymbolAttributes)
-                    
-                    // メッセージを描画（太字）
-                    let messageRect = CGRect(x: 115, y: bankTagY + 7, width: messageSize.width + padding, height: 30)
-                    NSString(string: messageText).draw(in: messageRect, withAttributes: messageAttributes)
-                } else {
-                    // 振込先情報がある場合
-                    let condensedBankInfo = bankInfo.replacingOccurrences(of: "\n", with: " ")
-                    
-                    // プレフィックスとIDを分けて表示
-                    let prefix = "振込先: "
-                    
-                    // プレフィックスの属性（通常フォント）
-                    let prefixAttributes: [NSAttributedString.Key: Any] = [
+                    NSString(string: "銀").draw(in: CGRect(x: labelX + 7, y: iconY + 8, width: 14, height: 20), withAttributes: smallSymbolAttributes)
+                    // ラベル
+                    let labelAttributes: [NSAttributedString.Key: Any] = [
                         .font: UIFont.systemFont(ofSize: bodyFontSize),
                         .foregroundColor: UIColor(red: 0.0, green: 0.5, blue: 0.2, alpha: 1.0)
                     ]
-                    
-                    // 振込先情報の属性（太字）
-                    let bankInfoAttributes: [NSAttributedString.Key: Any] = [
+                    let labelTextX = labelX + iconSize + 12
+                    NSString(string: "振込先:").draw(in: CGRect(x: labelTextX, y: labelY, width: boxWidth, height: labelHeight), withAttributes: labelAttributes)
+                    // 登録情報（テキストボックス風）
+                    let boxX = contentX
+                    let infoRect = CGRect(x: boxX, y: boxY, width: boxWidth, height: boxHeight)
+                    UIColor(red: 0.0, green: 0.5, blue: 0.2, alpha: 0.10).setFill()
+                    UIBezierPath(roundedRect: infoRect, cornerRadius: 10).fill()
+                    // 要素ごとに分割して表示
+                    let bankElements = bankInfo.components(separatedBy: " ")
+                    var upperLine = ""
+                    var holderLine = ""
+                    if let nameIndex = bankElements.firstIndex(where: { $0.contains("名義") }) {
+                        upperLine = bankElements[0..<nameIndex].joined(separator: "   ")
+                        holderLine = bankElements[nameIndex...].joined(separator: " ")
+                    } else {
+                        upperLine = bankInfo
+                    }
+                    let upperAttributes: [NSAttributedString.Key: Any] = [
                         .font: UIFont.systemFont(ofSize: bodyFontSize, weight: .bold),
                         .foregroundColor: UIColor(red: 0.0, green: 0.5, blue: 0.2, alpha: 1.0)
                     ]
-                    
-                    // サイズ計算
-                    let prefixSize = (prefix as NSString).size(withAttributes: prefixAttributes)
-                    let bankInfoSize = (condensedBankInfo as NSString).size(withAttributes: bankInfoAttributes)
-                    
-                    // タグの幅を計算
-                    let iconSpace: CGFloat = 60
-                    let padding: CGFloat = 30
-                    let tagWidth = prefixSize.width + bankInfoSize.width + iconSpace + padding
-                    let limitedTagWidth = min(tagWidth, 800.0)
-                    
-                    let tagRect = CGRect(x: 70, y: bankTagY, width: limitedTagWidth, height: 44)
-                    
-                    // タグの背景
-                    UIColor(red: 0.0, green: 0.5, blue: 0.2, alpha: 0.15).setFill()
-                    UIBezierPath(roundedRect: tagRect, cornerRadius: 22).fill()
-                    
-                    // アイコン
-                    let smallIconRect = CGRect(x: 80, y: bankTagY + 8, width: 28, height: 28)
-                    UIColor(red: 0.0, green: 0.5, blue: 0.2, alpha: 1.0).setFill()
-                    UIBezierPath(ovalIn: smallIconRect).fill()
-                    
-                    // 銀
-                    let smallSymbolAttributes: [NSAttributedString.Key: Any] = [
-                        .font: UIFont.systemFont(ofSize: 16, weight: .bold),
-                        .foregroundColor: UIColor.white
+                    let holderAttributes: [NSAttributedString.Key: Any] = [
+                        .font: UIFont.systemFont(ofSize: bodyFontSize, weight: .regular),
+                        .foregroundColor: UIColor(red: 0.0, green: 0.5, blue: 0.2, alpha: 1.0)
                     ]
-                    NSString(string: "銀").draw(in: CGRect(x: 87, y: bankTagY + 12, width: 14, height: 20), withAttributes: smallSymbolAttributes)
-                    
-                    // プレフィックスを描画
-                    let prefixRect = CGRect(x: 115, y: bankTagY + 7, width: prefixSize.width, height: 30)
-                    NSString(string: prefix).draw(in: prefixRect, withAttributes: prefixAttributes)
-                    
-                    // 振込先情報を太字で描画
-                    let bankInfoRect = CGRect(x: 115 + prefixSize.width, y: bankTagY + 7, width: limitedTagWidth - prefixSize.width - iconSpace - padding, height: 30)
-                    NSString(string: condensedBankInfo).draw(in: bankInfoRect, withAttributes: bankInfoAttributes)
+                    // 上段（銀行名・支店名・種別・口座番号）
+                    NSString(string: upperLine).draw(in: CGRect(x: boxX + 20, y: boxY + 18, width: boxWidth - 40, height: 32), withAttributes: upperAttributes)
+                    // 下段（名義）
+                    if !holderLine.isEmpty {
+                        NSString(string: holderLine).draw(in: CGRect(x: boxX + 20, y: boxY + 60, width: boxWidth - 40, height: 28), withAttributes: holderAttributes)
+                    }
                 }
-                
-                infoY += 60
+                infoY += tagHeight + 20
             }
             
             // 区切り線の位置を調整
@@ -779,7 +697,7 @@ struct PaymentInfoGenerator: View {
             NSString(string: "金額").draw(in: amountHeaderRect, withAttributes: headerAttributes)
             
             // 参加者テーブルの枠線
-            let rowHeight: CGFloat = 50.0
+            let rowHeight: CGFloat = 70.0 // 60.0からさらに70.0に高さを増加
             let maxRows: CGFloat = CGFloat(min(viewModel.participants.count, 10))
             let tableHeight: CGFloat = 50.0 + maxRows * rowHeight
             let tableRect = CGRect(x: 70, y: tableY, width: 940, height: tableHeight)
@@ -793,7 +711,7 @@ struct PaymentInfoGenerator: View {
             
             // 参加者リスト
             let cellAttributes: [NSAttributedString.Key: Any] = [
-                .font: UIFont.systemFont(ofSize: bodyFontSize),
+                .font: UIFont.systemFont(ofSize: bodyFontSize + 2, weight: .medium),
                 .foregroundColor: textColor
             ]
             
@@ -804,7 +722,7 @@ struct PaymentInfoGenerator: View {
             
             // 金額を目立たせる
             let amountAttributes: [NSAttributedString.Key: Any] = [
-                .font: UIFont.systemFont(ofSize: bodyFontSize + 4, weight: .bold),
+                .font: UIFont.systemFont(ofSize: bodyFontSize + 4, weight: .bold), // フォントサイズを少し小さく調整
                 .foregroundColor: primaryColor
             ]
             
@@ -826,7 +744,7 @@ struct PaymentInfoGenerator: View {
                 // 集金状態マーク
                 if participant.hasCollected {
                     // 集金済みマーク - サイズを小さく控えめに
-                    let checkmarkRect = CGRect(x: 85, y: yOffset + 15, width: 20, height: 20)
+                    let checkmarkRect = CGRect(x: 85, y: yOffset + 25, width: 20, height: 20) // Y位置をさらに調整
                     primaryColor.withAlphaComponent(0.6).setFill()
                     UIBezierPath(ovalIn: checkmarkRect).fill()
                     
@@ -835,16 +753,16 @@ struct PaymentInfoGenerator: View {
                         .font: UIFont.systemFont(ofSize: 14, weight: .bold),
                         .foregroundColor: UIColor.white
                     ]
-                    let checkRect = CGRect(x: 89, y: yOffset + 15, width: 14, height: 20)
+                    let checkRect = CGRect(x: 89, y: yOffset + 25, width: 14, height: 20) // Y位置をさらに調整
                     NSString(string: "✓").draw(in: checkRect, withAttributes: checkAttributes)
                 }
                 
                 // 名前
-                let nameRect = CGRect(x: 120, y: yOffset + 10, width: 300, height: 30)
+                let nameRect = CGRect(x: 120, y: yOffset + 20, width: 300, height: 30) // Y位置をさらに調整
                 NSString(string: participant.name).draw(in: nameRect, withAttributes: cellAttributes)
                 
                 // 役割
-                let roleRect = CGRect(x: 500, y: yOffset + 10, width: 200, height: 30)
+                let roleRect = CGRect(x: 500, y: yOffset + 20, width: 200, height: 30) // Y位置をさらに調整
                 var roleName = ""
                 switch participant.roleType {
                 case .standard(let role):
@@ -860,14 +778,14 @@ struct PaymentInfoGenerator: View {
                 
                 // 金額用の属性を直接ここで定義（未使用変数の警告を解消）
                 let amountTextAttributes: [NSAttributedString.Key: Any] = [
-                    .font: UIFont.systemFont(ofSize: bodyFontSize + 2, weight: .bold),
+                    .font: UIFont.systemFont(ofSize: bodyFontSize + 4, weight: .bold), // フォントサイズを少し小さく調整
                     .foregroundColor: primaryColor
                 ]
                 
                 // 金額の幅を計算して右寄せ
                 let amountSize = (amountString as NSString).size(withAttributes: amountTextAttributes)
                 let amountX = 970 - amountSize.width
-                let amountRect = CGRect(x: amountX, y: yOffset + 10, width: amountSize.width, height: 30)
+                let amountRect = CGRect(x: amountX, y: yOffset + 20, width: amountSize.width, height: 40) // Y位置とheightをさらに調整
                 NSString(string: amountString).draw(in: amountRect, withAttributes: amountTextAttributes)
                 
                 yOffset += rowHeight
@@ -885,10 +803,10 @@ struct PaymentInfoGenerator: View {
                 yOffset += 50
             }
             
-            // 合計金額セクション
-            yOffset += 30
-            
-            let totalSectionRect = CGRect(x: 70, y: yOffset, width: 940, height: 100)
+            // 合計金額セクションの高さを内訳の行数に応じて調整
+            let breakdownCount = max(1, viewModel.amountItems.count)
+            let totalSectionHeight = 140 + breakdownCount * 30 // さらに高さを増加
+            let totalSectionRect = CGRect(x: 70, y: yOffset + 10, width: 940, height: CGFloat(totalSectionHeight)) // Y位置も調整
             primaryColor.withAlphaComponent(0.05).setFill()
             UIBezierPath(roundedRect: totalSectionRect, cornerRadius: 12).fill()
             
@@ -901,28 +819,41 @@ struct PaymentInfoGenerator: View {
                 .font: UIFont.systemFont(ofSize: subheadingFontSize, weight: .bold),
                 .foregroundColor: textColor
             ]
-            
-            // 合計金額は控えめに
             let totalValueAttributes: [NSAttributedString.Key: Any] = [
                 .font: UIFont.systemFont(ofSize: bodyFontSize + 2, weight: .semibold),
                 .foregroundColor: primaryColor
             ]
-            
             // 合計ラベル
-            let totalLabelRect = CGRect(x: 90, y: yOffset + 35, width: 200, height: 40)
+            let totalLabelRect = CGRect(x: 90, y: yOffset + 55, width: 200, height: 40) // Y位置をさらに調整
             NSString(string: "合計金額").draw(in: totalLabelRect, withAttributes: totalLabelAttributes)
-            
-            // 合計金額を右寄せ
+            // 合計金額を右揃え
             let totalString = "¥\(viewModel.totalAmount)"
             let totalSize = (totalString as NSString).size(withAttributes: totalValueAttributes)
             let totalX = 970 - totalSize.width
-            let totalValueRect = CGRect(x: totalX, y: yOffset + 35, width: totalSize.width, height: 40)
+            let totalValueRect = CGRect(x: totalX, y: yOffset + 55, width: totalSize.width, height: 40) // Y位置をさらに調整
             NSString(string: totalString).draw(in: totalValueRect, withAttributes: totalValueAttributes)
-            
-            // 期限セクションを合計金額の下に移動
-            yOffset += 120
-            
-            // 期限セクション
+            // 内訳（1行ずつ追加、金額は右揃え）
+            if !viewModel.amountItems.isEmpty {
+                let breakdownFont = UIFont.systemFont(ofSize: smallFontSize - 2)
+                let breakdownAttributes: [NSAttributedString.Key: Any] = [
+                    .font: breakdownFont,
+                    .foregroundColor: UIColor.darkGray
+                ]
+                var breakdownY = yOffset + 105 // Y位置をさらに調整
+                for item in viewModel.amountItems {
+                    let breakdownName = item.name
+                    let breakdownAmount = "¥\(viewModel.formatAmount(String(item.amount)))"
+                    // 左揃え（合計金額ラベルと同じX）
+                    NSString(string: breakdownName).draw(in: CGRect(x: 90, y: breakdownY, width: 200, height: 26), withAttributes: breakdownAttributes)
+                    // 右揃え（合計金額数値と同じX）
+                    let amountSize = (breakdownAmount as NSString).size(withAttributes: breakdownAttributes)
+                    let amountX = 970 - amountSize.width
+                    NSString(string: breakdownAmount).draw(in: CGRect(x: amountX, y: breakdownY, width: amountSize.width, height: 26), withAttributes: breakdownAttributes)
+                    breakdownY += 30 // 行間をさらに広げる
+                }
+            }
+            // 期限セクションを合計金額の下に動的に移動
+            yOffset += CGFloat(totalSectionHeight + 30) // 間隔を広げる
             let deadlineAttributes: [NSAttributedString.Key: Any] = [
                 .font: UIFont.systemFont(ofSize: subheadingFontSize, weight: .semibold),
                 .foregroundColor: primaryColor
