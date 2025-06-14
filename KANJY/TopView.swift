@@ -79,7 +79,7 @@ struct TopView: View {
                         HStack {
                             Image(systemName: "creditcard")
                                 .font(.title2)
-                            Text("支払い情報設定")
+                            Text("集金情報設定")
                                 .font(.headline)
                         }
                         .padding(.vertical, 8)

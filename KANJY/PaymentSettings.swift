@@ -66,13 +66,13 @@ struct PaymentSettings: View {
                 TextField("支払い期限", text: $paymentDueMessage)
             }
             
-            Section(header: Text("情報"), footer: Text("ここで設定した情報は支払い案内画像に使用されます。プライバシーに配慮し、個人情報の入力には十分ご注意ください。")) {
-                Text("支払い情報は端末内に保存され、支払い案内の作成時のみ使用されます。")
+            Section(header: Text("情報"), footer: Text("ここで設定した情報は集金案内画像に使用されます。プライバシーに配慮し、個人情報の入力には十分ご注意ください。")) {
+                Text("集金情報は端末内に保存され、集金案内の作成時のみ使用されます。")
                     .font(.footnote)
                     .foregroundColor(.secondary)
             }
         }
-        .navigationTitle("支払い情報設定")
+        .navigationTitle("集金情報設定")
         .onChange(of: [bankName, bankBranch, accountType, accountNumber, accountHolder]) {
             // 各項目の変更を監視して、bankInfoを更新
             let newBankInfo = "\(bankName) \(bankBranch) \(accountType) \(accountNumber) 名義：\(accountHolder)"
