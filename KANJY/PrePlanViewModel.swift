@@ -129,7 +129,7 @@ public class PrePlanViewModel: ObservableObject {
     }
     
     // データの保存
-    private func saveData() {
+    public func saveData() {
         // 途中保存も許可するため、空でも保存
         if let encoded = try? JSONEncoder().encode(participants) {
             participantsData = encoded
@@ -233,15 +233,15 @@ public class PrePlanViewModel: ObservableObject {
     
     // 参加者の追加
     func addParticipant(name: String, roleType: RoleType) {
-        let participant = Participant(name: name, roleType: roleType, hasCollected: false)
+        let participant = Participant(name: name, roleType: roleType, hasCollected: false, hasFixedAmount: false, fixedAmount: 0)
         participants.append(participant)
         saveData()
     }
     
     // 参加者の更新
-    func updateParticipant(_ participant: Participant, name: String, roleType: RoleType, hasCollected: Bool = false) {
+    func updateParticipant(_ participant: Participant, name: String, roleType: RoleType, hasCollected: Bool = false, hasFixedAmount: Bool = false, fixedAmount: Int = 0) {
         if let index = participants.firstIndex(where: { $0.id == participant.id }) {
-            participants[index] = Participant(id: participant.id, name: name, roleType: roleType, hasCollected: hasCollected)
+            participants[index] = Participant(id: participant.id, name: name, roleType: roleType, hasCollected: hasCollected, hasFixedAmount: hasFixedAmount, fixedAmount: fixedAmount)
             saveData()
         }
     }
@@ -253,7 +253,9 @@ public class PrePlanViewModel: ObservableObject {
                 id: participant.id, 
                 name: participant.name, 
                 roleType: participant.roleType, 
-                hasCollected: hasCollected
+                hasCollected: hasCollected,
+                hasFixedAmount: participant.hasFixedAmount,
+                fixedAmount: participant.fixedAmount
             )
             saveData()
         }
@@ -282,25 +284,61 @@ public class PrePlanViewModel: ObservableObject {
     var baseAmount: Double {
         let amountString = totalAmount.filter { $0.isNumber }
         guard let total = Double(amountString),
+              total > 0,
               !participants.isEmpty else {
             return 0
         }
-        let totalMultiplier = participants.reduce(into: 0.0) { sum, participant in
-            sum += participant.effectiveMultiplier
+        
+        // 固定金額を持つ参加者の合計金額を計算
+        let fixedTotal = participants.filter { $0.hasFixedAmount }
+            .reduce(0) { sum, participant in
+                sum + Double(participant.fixedAmount)
+            }
+        
+        // 残りの金額を計算
+        let remainingTotal = max(0, total - fixedTotal)
+        
+        // 固定金額を持たない参加者の倍率合計を計算
+        let nonFixedParticipants = participants.filter { !$0.hasFixedAmount }
+        
+        // 固定金額を持たない参加者がいない場合は0を返す
+        if nonFixedParticipants.isEmpty {
+            return 0
         }
-        return total / totalMultiplier
+        
+        let totalMultiplier = nonFixedParticipants
+            .reduce(into: 0.0) { sum, participant in
+                sum += participant.effectiveMultiplier
+            }
+        
+        // 倍率合計が0の場合は0を返す
+        guard totalMultiplier > 0 else { return 0 }
+        
+        return remainingTotal / totalMultiplier
     }
     
     // 参加者ごとの支払金額を計算
     func paymentAmount(for participant: Participant) -> Int {
-        Int(round(baseAmount * participant.effectiveMultiplier))
+        // 金額が固定されている場合はその金額を返す
+        if participant.hasFixedAmount {
+            return participant.fixedAmount
+        }
+        
+        // 基準金額が0以下の場合は0を返す
+        guard baseAmount > 0 else { return 0 }
+        
+        // 通常の計算
+        return Int(round(baseAmount * participant.effectiveMultiplier))
     }
     
     // 金額をカンマ区切りにフォーマットする
     func formatAmount(_ input: String) -> String {
         let numbers = input.filter { $0.isNumber }
-        if numbers.isEmpty { return "" }
+        if numbers.isEmpty { return "0" }  // 空の場合は"0"を返す
         guard let amount = Int(numbers) else { return input }
+        
+        // 0の場合はそのまま"0"を返す
+        if amount == 0 { return "0" }
         
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal

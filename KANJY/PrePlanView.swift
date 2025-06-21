@@ -84,12 +84,16 @@ public struct Participant: Identifiable, Hashable, Codable {
     public var name: String
     public var roleType: RoleType
     public var hasCollected: Bool = false  // 集金確認用のプロパティを追加
+    public var hasFixedAmount: Bool = false  // 金額固定フラグ
+    public var fixedAmount: Int = 0  // 固定金額
     
-    public init(id: UUID = UUID(), name: String, roleType: RoleType, hasCollected: Bool = false) {
+    public init(id: UUID = UUID(), name: String, roleType: RoleType, hasCollected: Bool = false, hasFixedAmount: Bool = false, fixedAmount: Int = 0) {
         self.id = id
         self.name = name
         self.roleType = roleType
         self.hasCollected = hasCollected
+        self.hasFixedAmount = hasFixedAmount
+        self.fixedAmount = fixedAmount
     }
     
     public static func == (lhs: Participant, rhs: Participant) -> Bool {
@@ -140,6 +144,9 @@ struct PrePlanView: View {
     @State private var editingRoleType: RoleType = .standard(.staff)
     @State private var showingDeleteAlert = false
     @State private var participantToDelete: Participant? = nil
+    @State private var editingHasCollected: Bool = false
+    @State private var editingHasFixedAmount: Bool = false
+    @State private var editingFixedAmount: Int = 0
     
     // 新規参加者追加用の状態
     @State private var newParticipant: String = ""
@@ -173,9 +180,6 @@ struct PrePlanView: View {
     
     // 絵文字選択ダイアログ用
     @State private var showEmojiPicker = false
-    
-    // 編集シート関連の状態を追加
-    @State private var editingHasCollected: Bool = false
     
     // 新しい状態変数を追加
     @State private var showPaymentGenerator = false
@@ -215,44 +219,12 @@ struct PrePlanView: View {
                     }
                     
                     Spacer()
-                    
-                    if viewModel.totalAmount.filter({ $0.isNumber }).isEmpty {
-                        Text("¥---")
-                            .font(.headline)
-                            .foregroundColor(.gray)
-                    } else {
-                        Text("¥\(viewModel.formatAmount(String(viewModel.paymentAmount(for: participant))))")
-                            .font(.headline)
-                            .foregroundColor(participant.hasCollected ? .green : .blue)
-                    }
                 }
             }
             .buttonStyle(.plain)
-            .contextMenu {
-                Button(action: {
-                    startEdit(participant)
-                }) {
-                    Label("編集", systemImage: "pencil")
-                }
-                
-                Button(action: {
-                    viewModel.updateCollectionStatus(participant: participant, hasCollected: !participant.hasCollected)
-                }) {
-                    if participant.hasCollected {
-                        Label("未集金に変更", systemImage: "circle")
-                    } else {
-                        Label("集金済みに変更", systemImage: "checkmark.circle")
-                    }
-                }
-                
-                Divider()
-                
-                Button(role: .destructive, action: {
-                    confirmDelete(participant: participant)
-                }) {
-                    Label("削除", systemImage: "trash")
-                }
-            }
+            
+            // 金額表示部分（ここをタップすると金額編集ダイアログが表示される）
+            AmountDisplayView(participant: participant)
             
             // 集金確認用のトグル（ここをタップしても編集画面に遷移しない）
             Toggle("", isOn: Binding(
@@ -273,6 +245,171 @@ struct PrePlanView: View {
                 Label("削除", systemImage: "trash")
             }
         }
+        .contextMenu {
+            Button(action: {
+                startEdit(participant)
+            }) {
+                Label("編集", systemImage: "pencil")
+            }
+            
+            Button(action: {
+                viewModel.updateCollectionStatus(participant: participant, hasCollected: !participant.hasCollected)
+            }) {
+                if participant.hasCollected {
+                    Label("未集金に変更", systemImage: "circle")
+                } else {
+                    Label("集金済みに変更", systemImage: "checkmark.circle")
+                }
+            }
+            
+            Button(action: {
+                toggleFixedAmount(participant)
+            }) {
+                if participant.hasFixedAmount {
+                    Label("金額固定を解除", systemImage: "lock.open")
+                } else {
+                    Label("金額を固定", systemImage: "lock")
+                }
+            }
+            
+            Divider()
+            
+            Button(role: .destructive, action: {
+                confirmDelete(participant: participant)
+            }) {
+                Label("削除", systemImage: "trash")
+            }
+        }
+    }
+    
+    // 金額固定のトグル
+    private func toggleFixedAmount(_ participant: Participant) {
+        if let index = viewModel.participants.firstIndex(where: { $0.id == participant.id }) {
+            var updatedParticipant = viewModel.participants[index]
+            updatedParticipant.hasFixedAmount = !updatedParticipant.hasFixedAmount
+            
+            if updatedParticipant.hasFixedAmount && updatedParticipant.fixedAmount == 0 {
+                // 金額固定をオンにする場合、現在の計算金額を設定
+                updatedParticipant.fixedAmount = viewModel.paymentAmount(for: participant)
+            }
+            
+            viewModel.participants[index] = updatedParticipant
+            viewModel.saveData()
+        }
+    }
+    
+    // 金額表示ビュー
+    private func AmountDisplayView(participant: Participant) -> some View {
+        HStack(spacing: 2) {
+            // 金額固定トグル（鍵アイコン）- 金額の左側に配置
+            // 金額固定時のみ表示
+            if participant.hasFixedAmount {
+                Button(action: {
+                    toggleFixedAmount(participant)
+                }) {
+                    Image(systemName: "lock.fill")
+                        .foregroundColor(.orange)
+                        .font(.system(size: 12))
+                        .padding(4)
+                        .background(
+                            Circle()
+                                .fill(Color.orange.opacity(0.2))
+                        )
+                }
+                .buttonStyle(.plain)
+            }
+            
+            // 金額表示部分（タップで金額編集モーダルを表示）
+            Button(action: {
+                showAmountEditDialog(for: participant)
+            }) {
+                if viewModel.totalAmount.filter({ $0.isNumber }).isEmpty {
+                    Text("¥---")
+                        .font(.headline)
+                        .foregroundColor(.gray)
+                } else {
+                    // 固定金額の場合は0円でも表示
+                    let amount = viewModel.paymentAmount(for: participant)
+                    Text("¥\(viewModel.formatAmount(String(amount)))")
+                        .font(.headline)
+                        .foregroundColor(participant.hasCollected ? .green : .blue)
+                }
+            }
+            .buttonStyle(.plain)
+        }
+    }
+    
+    // 金額編集ダイアログを表示
+    @State private var editingAmountParticipant: Participant? = nil
+    @State private var editingAmountValue: String = ""
+    @State private var showAmountEditDialog = false
+    
+    private func showAmountEditDialog(for participant: Participant) {
+        editingAmountParticipant = participant
+        
+        // 金額が固定されている場合はその金額、そうでなければ計算金額を表示
+        if participant.hasFixedAmount {
+            editingAmountValue = String(participant.fixedAmount)
+        } else {
+            editingAmountValue = String(viewModel.paymentAmount(for: participant))
+        }
+        
+        print("金額編集ダイアログを表示: 参加者=\(participant.name), 金額=\(editingAmountValue)")
+        showAmountEditDialog = true
+    }
+    
+    // 編集した金額を保存
+    private func saveEditedAmount(fixed: Bool) {
+        guard let participant = editingAmountParticipant else { 
+            print("参加者が選択されていません")
+            return 
+        }
+        
+        if let index = viewModel.participants.firstIndex(where: { $0.id == participant.id }) {
+            var updatedParticipant = viewModel.participants[index]
+            
+            // 金額を取得（数字以外の文字を除去）
+            let amountString = editingAmountValue.filter { $0.isNumber }
+            print("変換前の金額文字列: '\(amountString)'")
+            
+            // 空文字列の場合は0として扱う
+            if amountString.isEmpty {
+                print("空の金額文字列を0として処理")
+                updatedParticipant.fixedAmount = 0
+                updatedParticipant.hasFixedAmount = fixed
+                
+                viewModel.participants[index] = updatedParticipant
+                viewModel.saveData()
+                print("参加者の金額を更新しました: \(updatedParticipant.name), 金額: 0円, 固定: \(updatedParticipant.hasFixedAmount)")
+            }
+            // 数値に変換できる場合
+            else if let amount = Int(amountString) {
+                print("金額を更新: \(amount)円, 固定: \(fixed)")
+                
+                // 金額が0でも保存する（意図的に0円に設定したい場合もある）
+                updatedParticipant.fixedAmount = amount
+                updatedParticipant.hasFixedAmount = fixed
+                
+                viewModel.participants[index] = updatedParticipant
+                viewModel.saveData()
+                print("参加者の金額を更新しました: \(updatedParticipant.name), 金額: \(updatedParticipant.fixedAmount)円, 固定: \(updatedParticipant.hasFixedAmount)")
+            } else {
+                print("金額の変換に失敗: '\(editingAmountValue)'")
+                // 変換に失敗した場合は、現在の計算金額を使用
+                let calculatedAmount = viewModel.paymentAmount(for: participant)
+                print("計算金額を使用: \(calculatedAmount)円")
+                
+                updatedParticipant.fixedAmount = calculatedAmount
+                updatedParticipant.hasFixedAmount = fixed
+                
+                viewModel.participants[index] = updatedParticipant
+                viewModel.saveData()
+                print("参加者の金額を更新しました（計算金額を使用）: \(updatedParticipant.name), 金額: \(updatedParticipant.fixedAmount)円, 固定: \(updatedParticipant.hasFixedAmount)")
+            }
+        }
+        
+        editingAmountParticipant = nil
+        editingAmountValue = ""
     }
     
     // 参加者個別の支払い案内を生成
@@ -285,7 +422,7 @@ struct PrePlanView: View {
         // --- ここからロジックをViewビルダーの外に出す ---
         let tempParticipants = viewModel.participants.map { p in
             if p.id == participant.id {
-                return Participant(id: p.id, name: editingText, roleType: editingRoleType, hasCollected: p.hasCollected)
+                return Participant(id: p.id, name: editingText, roleType: editingRoleType, hasCollected: p.hasCollected, hasFixedAmount: p.hasFixedAmount, fixedAmount: p.fixedAmount)
             }
             return p
         }
@@ -312,6 +449,7 @@ struct PrePlanView: View {
             paymentAmountText = "¥" + viewModel.formatAmount(String(paymentAmount))
         }
         // --- ここまでロジックをViewビルダーの外に出す ---
+        
         return NavigationStack {
             Form {
                 Section {
@@ -323,14 +461,56 @@ struct PrePlanView: View {
                     Toggle("集金済み", isOn: $editingHasCollected)
                         .toggleStyle(SwitchToggleStyle(tint: .green))
                 }
-                Section {
-                    HStack {
-                        Text("支払金額")
-                        Spacer()
-                        Text(paymentAmountText)
+                
+                Section(header: Text("支払金額")) {
+                    // 金額固定トグル
+                    Toggle("金額を固定する", isOn: $editingHasFixedAmount)
+                        .toggleStyle(SwitchToggleStyle(tint: .blue))
+                        .onChange(of: editingHasFixedAmount) { _, newValue in
+                            if newValue && editingFixedAmount == 0 {
+                                // 固定する場合で金額が0なら現在の計算金額をセット
+                                if let amount = Int(amountString), totalMultiplier > 0 {
+                                    let baseAmount = Double(amount) / totalMultiplier
+                                    let multiplier: Double
+                                    switch editingRoleType {
+                                    case .standard(let role):
+                                        multiplier = role.defaultMultiplier
+                                    case .custom(let customRole):
+                                        multiplier = customRole.multiplier
+                                    }
+                                    editingFixedAmount = Int(round(baseAmount * multiplier))
+                                }
+                            }
+                        }
+                    
+                    // 金額固定時の入力フィールド
+                    if editingHasFixedAmount {
+                        HStack {
+                            Text("固定金額")
+                            Spacer()
+                            TextField("金額", text: Binding(
+                                get: { viewModel.formatAmount(String(editingFixedAmount)) },
+                                set: { newValue in
+                                    if let amount = Int(newValue.filter { $0.isNumber }), amount >= 0 {
+                                        editingFixedAmount = amount
+                                    }
+                                }
+                            ))
+                            .keyboardType(.numberPad)
+                            .multilineTextAlignment(.trailing)
                             .foregroundColor(.blue)
+                            Text("円")
+                        }
+                    } else {
+                        HStack {
+                            Text("計算金額")
+                            Spacer()
+                            Text(paymentAmountText)
+                                .foregroundColor(.blue)
+                        }
                     }
                 }
+                
                 Section {
                     Button(action: { confirmDelete(participant: participant) }) {
                         HStack {
@@ -341,6 +521,7 @@ struct PrePlanView: View {
                         }
                     }
                 }
+                
                 Section {
                     HStack {
                         Button("キャンセル") {
@@ -349,7 +530,14 @@ struct PrePlanView: View {
                         .foregroundColor(.red)
                         Spacer()
                         Button("保存") {
-                            viewModel.updateParticipant(participant, name: editingText, roleType: editingRoleType, hasCollected: editingHasCollected)
+                            viewModel.updateParticipant(
+                                participant, 
+                                name: editingText, 
+                                roleType: editingRoleType, 
+                                hasCollected: editingHasCollected,
+                                hasFixedAmount: editingHasFixedAmount,
+                                fixedAmount: editingFixedAmount
+                            )
                             editingParticipant = nil
                         }
                         .disabled(editingText.isEmpty)
@@ -388,6 +576,8 @@ struct PrePlanView: View {
         editingText = participant.name
         editingRoleType = participant.roleType
         editingHasCollected = participant.hasCollected
+        editingHasFixedAmount = participant.hasFixedAmount
+        editingFixedAmount = participant.fixedAmount
         editingParticipant = participant
     }
     
@@ -464,6 +654,9 @@ struct PrePlanView: View {
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
             }
+            .sheet(isPresented: $showAmountEditDialog) {
+                AmountEditDialogView()
+            }
             .onAppear {
                 setupInitialState()
             }
@@ -487,6 +680,89 @@ struct PrePlanView: View {
                 }
             }
         }
+    }
+    
+    // 初期状態の設定
+    private func setupInitialState() {
+        // 編集時はeditingPlanName、新規時はplanNameで初期化
+        if viewModel.editingPlanId == nil {
+            localPlanName = planName
+            localPlanDate = nil
+        } else {
+            localPlanName = viewModel.editingPlanName
+            localPlanDate = viewModel.editingPlanDate
+        }
+        
+        if !hasShownEditHint && !viewModel.participants.isEmpty {
+            showSwipeHintAnimation()
+        }
+        
+        // 絵文字の初期化 - より確実に
+        print("初期化前の絵文字: \(viewModel.selectedEmoji)")
+        if viewModel.selectedEmoji.isEmpty {
+            viewModel.selectedEmoji = "🍻"
+            print("絵文字を初期化: 🍻")
+        } else {
+            print("既存の絵文字を使用: \(viewModel.selectedEmoji)")
+        }
+        
+        // 内訳が少ない場合は最初から展開しておく
+        isBreakdownExpanded = viewModel.amountItems.count <= 3
+    }
+    
+    // 参加者数変更時の処理
+    private func handleParticipantsCountChange(newCount: Int) {
+        if newCount > 0 && !hasShownEditHint {
+            DispatchQueue.main.async {
+                showSwipeHintAnimation()
+            }
+        }
+    }
+    
+    // 金額追加処理
+    private func addAmount() {
+        guard !additionalAmount.isEmpty else { return }
+        
+        // 数字のみを抽出
+        let numbers = additionalAmount.filter { $0.isNumber }
+        if let amount = Int(numbers) {
+            // 項目名（空の場合はデフォルト名を設定）
+            let itemName = additionalItemName.isEmpty ? "追加金額" : additionalItemName
+            
+            // 内訳アイテムを追加
+            viewModel.addAmountItem(name: itemName, amount: amount)
+            
+            // 入力欄をクリア
+            additionalAmount = ""
+            additionalItemName = ""
+        }
+    }
+    
+    // 金額編集開始
+    private func startEditingAmount(_ item: AmountItem) {
+        editingAmountItem = item
+        editingItemName = item.name
+        editingAmount = viewModel.formatAmount(String(item.amount))
+    }
+    
+    // 金額更新処理
+    private func updateAmount() {
+        guard let item = editingAmountItem, !editingAmount.isEmpty else { return }
+        
+        // 数字のみを抽出
+        let numbers = editingAmount.filter { $0.isNumber }
+        if let amount = Int(numbers) {
+            // 項目名（空の場合はデフォルト名を設定）
+            let itemName = editingItemName.isEmpty ? "追加金額" : editingItemName
+            
+            // 内訳アイテムを更新
+            viewModel.updateAmountItem(id: item.id, name: itemName, amount: amount)
+        }
+    }
+    
+    // 内訳アイテム削除
+    private func deleteAmountItem(at offsets: IndexSet) {
+        viewModel.removeAmountItems(at: offsets)
     }
     
     // メインコンテンツビュー
@@ -985,89 +1261,6 @@ struct PrePlanView: View {
         }
     }
     
-    // 初期状態の設定
-    private func setupInitialState() {
-        // 編集時はeditingPlanName、新規時はplanNameで初期化
-        if viewModel.editingPlanId == nil {
-            localPlanName = planName
-            localPlanDate = nil
-        } else {
-            localPlanName = viewModel.editingPlanName
-            localPlanDate = viewModel.editingPlanDate
-        }
-        
-        if !hasShownEditHint && !viewModel.participants.isEmpty {
-            showSwipeHintAnimation()
-        }
-        
-        // 絵文字の初期化 - より確実に
-        print("初期化前の絵文字: \(viewModel.selectedEmoji)")
-        if viewModel.selectedEmoji.isEmpty {
-            viewModel.selectedEmoji = "🍻"
-            print("絵文字を初期化: 🍻")
-        } else {
-            print("既存の絵文字を使用: \(viewModel.selectedEmoji)")
-        }
-        
-        // 内訳が少ない場合は最初から展開しておく
-        isBreakdownExpanded = viewModel.amountItems.count <= 3
-    }
-    
-    // 参加者数変更時の処理
-    private func handleParticipantsCountChange(newCount: Int) {
-        if newCount > 0 && !hasShownEditHint {
-            DispatchQueue.main.async {
-                showSwipeHintAnimation()
-            }
-        }
-    }
-    
-    // 金額追加処理
-    private func addAmount() {
-        guard !additionalAmount.isEmpty else { return }
-        
-        // 数字のみを抽出
-        let numbers = additionalAmount.filter { $0.isNumber }
-        if let amount = Int(numbers) {
-            // 項目名（空の場合はデフォルト名を設定）
-            let itemName = additionalItemName.isEmpty ? "追加金額" : additionalItemName
-            
-            // 内訳アイテムを追加
-            viewModel.addAmountItem(name: itemName, amount: amount)
-            
-            // 入力欄をクリア
-            additionalAmount = ""
-            additionalItemName = ""
-        }
-    }
-    
-    // 金額編集開始
-    private func startEditingAmount(_ item: AmountItem) {
-        editingAmountItem = item
-        editingItemName = item.name
-        editingAmount = viewModel.formatAmount(String(item.amount))
-    }
-    
-    // 金額更新処理
-    private func updateAmount() {
-        guard let item = editingAmountItem, !editingAmount.isEmpty else { return }
-        
-        // 数字のみを抽出
-        let numbers = editingAmount.filter { $0.isNumber }
-        if let amount = Int(numbers) {
-            // 項目名（空の場合はデフォルト名を設定）
-            let itemName = editingItemName.isEmpty ? "追加金額" : editingItemName
-            
-            // 内訳アイテムを更新
-            viewModel.updateAmountItem(id: item.id, name: itemName, amount: amount)
-        }
-    }
-    
-    // 内訳アイテム削除
-    private func deleteAmountItem(at offsets: IndexSet) {
-        viewModel.removeAmountItems(at: offsets)
-    }
-    
     // サブビュー：日付セクションの内容
     @ViewBuilder
     private func DateSectionContent() -> some View {
@@ -1343,6 +1536,86 @@ struct PrePlanView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 12)
+    }
+    
+    // 金額編集ダイアログビュー
+    @ViewBuilder
+    private func AmountEditDialogView() -> some View {
+        NavigationStack {
+            VStack(spacing: 20) {
+                if let participant = editingAmountParticipant {
+                    Text("\(participant.name)の支払金額")
+                        .font(.headline)
+                }
+                
+                HStack {
+                    Text("¥")
+                        .font(.title2)
+                    TextField("金額", text: $editingAmountValue)
+                        .font(.title2)
+                        .keyboardType(.numberPad)
+                        .multilineTextAlignment(.trailing)
+                        .padding()
+                        .background(Color(.systemGray6))
+                        .cornerRadius(8)
+                        .onChange(of: editingAmountValue) { _, newValue in
+                            // 数字以外の文字を除去
+                            let filtered = newValue.filter { $0.isNumber }
+                            if filtered != newValue {
+                                editingAmountValue = filtered
+                            }
+                        }
+                }
+                .padding(.horizontal)
+                
+                VStack(spacing: 12) {
+                    Button(action: {
+                        saveEditedAmount(fixed: true)
+                        showAmountEditDialog = false
+                    }) {
+                        HStack {
+                            Image(systemName: "lock.fill")
+                            Text("金額を固定する")
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.blue)
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
+                    }
+                    
+                    Button(action: {
+                        saveEditedAmount(fixed: false)
+                        showAmountEditDialog = false
+                    }) {
+                        HStack {
+                            Image(systemName: "lock.open")
+                            Text("キャンセル（固定しない）")
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.gray.opacity(0.2))
+                        .foregroundColor(.primary)
+                        .cornerRadius(10)
+                    }
+                }
+                .padding(.horizontal)
+                
+                Spacer()
+            }
+            .padding(.top, 30)
+            .navigationTitle("金額を編集")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("キャンセル") {
+                        showAmountEditDialog = false
+                    }
+                }
+            }
+        }
+        .presentationDetents([.height(300)])
+        .presentationDragIndicator(.visible)
     }
 }
 

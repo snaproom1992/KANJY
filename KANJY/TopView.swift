@@ -96,7 +96,16 @@ struct TopView: View {
                     }
                 }
             }
-            .sheet(isPresented: $showingPrePlan) {
+            .sheet(isPresented: $showingPrePlan, onDismiss: {
+                // シートが閉じる前に自動保存
+                if !viewModel.editingPlanName.isEmpty {
+                    print("シートが閉じられる際に自動保存を実行: \(viewModel.editingPlanName)")
+                    viewModel.savePlan(
+                        name: viewModel.editingPlanName.isEmpty ? "無題の飲み会" : viewModel.editingPlanName,
+                        date: viewModel.editingPlanDate ?? Date()
+                    )
+                }
+            }) {
                 NavigationStack {
                     PrePlanView(
                         viewModel: viewModel,
