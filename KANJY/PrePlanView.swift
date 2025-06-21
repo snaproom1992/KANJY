@@ -470,6 +470,22 @@ struct PrePlanView: View {
             .onChange(of: viewModel.participants.count) { _, newCount in
                 handleParticipantsCountChange(newCount: newCount)
             }
+            // 削除確認アラートを追加
+            .alert("参加者を削除", isPresented: $showingDeleteAlert) {
+                Button("キャンセル", role: .cancel) {}
+                Button("削除", role: .destructive) {
+                    if let participant = participantToDelete {
+                        viewModel.deleteParticipant(id: participant.id)
+                        participantToDelete = nil
+                    }
+                }
+            } message: {
+                if let participant = participantToDelete {
+                    Text("\(participant.name)を削除しますか？")
+                } else {
+                    Text("この参加者を削除しますか？")
+                }
+            }
         }
     }
     
