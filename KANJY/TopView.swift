@@ -7,50 +7,90 @@ struct TopView: View {
     @State private var planToDelete: Plan? = nil
     @State private var tempPlanName: String = ""
     @State private var tempPlanDate: Date = Date()
+    @State private var displayMode: DisplayMode = .list
+    @State private var selectedDate: Date? = nil
+    @State private var isAnimating = false
+    
+    enum DisplayMode {
+        case list
+        case calendar
+    }
+    
+    private var filteredPlans: [Plan] {
+        if let date = selectedDate {
+            return viewModel.savedPlans.filter { Calendar.current.isDate($0.date, inSameDayAs: date) }
+        } else {
+            return viewModel.savedPlans.sorted(by: { $0.date > $1.date })
+        }
+    }
     
     var body: some View {
         NavigationStack {
             List {
                 // 保存した飲み会セクション
-                if !viewModel.savedPlans.isEmpty {
-                    Section {
-                        ForEach(viewModel.savedPlans.sorted(by: { $0.date > $1.date })) { plan in
-                            Button(action: {
-                                viewModel.loadPlan(plan)
-                                showingPrePlan = true
-                            }) {
-                                PlanListCell(plan: plan, viewModel: viewModel)
+                Section {
+                    if displayMode == .list {
+                        if let date = selectedDate {
+                            HStack {
+                                Text("\(date, formatter: Self.dateFormatter) のイベント")
+                                    .font(.caption)
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 4)
+                                    .background(Color.gray.opacity(0.2))
+                                    .cornerRadius(8)
+                                Button(action: {
+                                    selectedDate = nil
+                                }) {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .foregroundColor(.gray)
+                                }
+                                Spacer()
                             }
-                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                                Button(role: .destructive) {
-                                    planToDelete = plan
-                                    showingDeleteAlert = true
-                                } label: {
-                                    Label("削除", systemImage: "trash")
+                        }
+                        
+                        if filteredPlans.isEmpty {
+                            if selectedDate != nil {
+                                Text("この日のイベントはありません。")
+                                    .foregroundColor(.gray)
+                            } else {
+                                EmptyStateView(isAnimating: $isAnimating)
+                            }
+                        } else {
+                            ForEach(filteredPlans) { plan in
+                                Button(action: {
+                                    viewModel.loadPlan(plan)
+                                    showingPrePlan = true
+                                }) {
+                                    PlanListCell(plan: plan, viewModel: viewModel)
+                                }
+                                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                    Button(role: .destructive) {
+                                        planToDelete = plan
+                                        showingDeleteAlert = true
+                                    } label: {
+                                        Label("削除", systemImage: "trash")
+                                    }
                                 }
                             }
                         }
-                    } header: {
-                        Text("保存した飲み会")
-                    }
-                } else {
-                    Section {
-                        VStack(spacing: 12) {
-                            Image(systemName: "wineglass")
-                                .font(.system(size: 40))
-                                .foregroundColor(.gray)
-                            Text("保存されている飲み会はありません")
-                                .font(.headline)
-                                .foregroundColor(.gray)
-                            Text("飲み会を作成して保存すると、\nここに表示されます")
-                                .font(.subheadline)
-                                .foregroundColor(.gray)
-                                .multilineTextAlignment(.center)
+                    } else {
+                        ZStack {
+                            CalendarView(viewModel: viewModel, selectedDate: $selectedDate, displayMode: $displayMode)
+                                .scaleEffect(0.85)
+                                .offset(y: -15)
                         }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 20)
-                    } header: {
+                        .frame(height: 320)
+                    }
+                } header: {
+                    HStack {
                         Text("保存した飲み会")
+                        Spacer()
+                        Button(action: {
+                            displayMode = displayMode == .list ? .calendar : .list
+                        }) {
+                            Image(systemName: displayMode == .list ? "calendar" : "list.bullet")
+                                .foregroundColor(.blue)
+                        }
                     }
                 }
                 
@@ -92,7 +132,7 @@ struct TopView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     NavigationLink(destination: PaymentSettings()) {
-                        Image(systemName: "gearshape")
+                        Image(systemName: "creditcard")
                     }
                 }
             }
@@ -129,8 +169,78 @@ struct TopView: View {
             } message: {
                 Text("この飲み会を削除してもよろしいですか？")
             }
+            .onAppear {
+                // アニメーション開始
+                withAnimation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true)) {
+                    isAnimating = true
+                }
+            }
         }
     }
+}
+
+// 空状態用のカスタムビュー
+struct EmptyStateView: View {
+    @Binding var isAnimating: Bool
+    
+    var body: some View {
+        VStack(spacing: 20) {
+            // メインイラスト
+            ZStack {
+                // 背景の円
+                Circle()
+                    .fill(Color.blue.opacity(0.1))
+                    .frame(width: 120, height: 120)
+                    .scaleEffect(isAnimating ? 1.1 : 1.0)
+                    .animation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true), value: isAnimating)
+                
+                // 飲み会のイラスト
+                HStack(spacing: 8) {
+                    Text("🍻")
+                        .font(.system(size: 40))
+                        .offset(y: isAnimating ? -5 : 0)
+                        .animation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true), value: isAnimating)
+                    
+                    Text("🎉")
+                        .font(.system(size: 40))
+                        .offset(y: isAnimating ? 5 : 0)
+                        .animation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true).delay(0.5), value: isAnimating)
+                }
+            }
+            
+            VStack(spacing: 12) {
+                // メインメッセージ
+                Text("初めての飲み会を作成しませんか？")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .foregroundColor(.primary)
+                
+                Text("みんなで楽しい時間を過ごしましょう！")
+                    .font(.headline)
+                    .foregroundColor(.blue)
+                    .multilineTextAlignment(.center)
+                
+                // サブメッセージ
+                Text("参加者の管理や集金の計算の\nお手伝いをさせてください")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+            }
+        }
+        .padding(.vertical, 30)
+        .frame(maxWidth: .infinity)
+    }
+}
+
+extension TopView {
+    static let dateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .long
+        formatter.timeStyle = .none
+        formatter.locale = Locale(identifier: "ja_JP")
+        return formatter
+    }()
 }
 
 // サブビュー: プランリストのセル

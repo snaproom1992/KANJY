@@ -8,8 +8,6 @@ struct PaymentSettings: View {
     @AppStorage("accountType") private var accountType = ""
     @AppStorage("accountNumber") private var accountNumber = ""
     @AppStorage("accountHolder") private var accountHolder = ""
-    @AppStorage("paymentMessage") private var paymentMessage = "お支払いよろしくお願いします。"
-    @AppStorage("paymentDueMessage") private var paymentDueMessage = "お支払い期限: 7日以内"
     
     var body: some View {
         Form {
@@ -57,13 +55,6 @@ struct PaymentSettings: View {
                     }
                     .padding(.vertical, 8)
                 }
-            }
-            
-            Section(header: Text("メッセージ設定")) {
-                TextField("案内メッセージ", text: $paymentMessage, axis: .vertical)
-                    .lineLimit(3...)
-                
-                TextField("支払い期限", text: $paymentDueMessage)
             }
             
             Section(header: Text("情報"), footer: Text("ここで設定した情報は集金案内画像に使用されます。プライバシーに配慮し、個人情報の入力には十分ご注意ください。")) {
