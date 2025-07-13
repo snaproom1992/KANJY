@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KANJY - Apple風デザイン</title>
+    <link rel="stylesheet" href="styles-apple.css">
+</head>
+<body>
+    <div id="app">
+        <!-- KANJYブランドヘッダー -->
+        <div class="brand-header">
+            <div class="brand-logo">
+                <h1 class="brand-name">KANJY</h1>
+                <p class="brand-tagline">幹事さんお助けサービス</p>
+            </div>
+        </div>
+
+        <header class="header">
+            <h1 class="event-title-left">新年会2025 🎉</h1>
+            <p class="description">みんなでワクワクする新年会を企画しています！美味しい料理とお酒で楽しい時間を過ごしましょう。</p>
+            <div class="page-description">
+                <p>参加可能な日程の入力・確認ができます</p>
+            </div>
+        </header>
+
+        <main class="main">
+            <!-- イベント情報 -->
+            <section class="event-info">
+                <h2>📋 イベント詳細</h2>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="icon">📍</div>
+                        <span>渋谷の居酒屋（詳細は後日連絡）</span>
+                    </div>
+                    <div class="info-item">
+                        <div class="icon">💰</div>
+                        <span>予算: 4,000円〜5,000円</span>
+                    </div>
+                    <div class="info-item">
+                        <div class="icon">⏰</div>
+                        <span>回答締切: 12月25日</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 候補日時 -->
+            <section class="candidate-dates">
+                <h2>📅 候補日時</h2>
+                <div class="section-description">
+                    <p>以下の日時からスケジュール調整を行います</p>
+                </div>
+                <div class="dates-grid">
+                    <div class="date-item">
+                        <strong>1月10日（金）</strong><br>
+                        19:00〜22:00
+                    </div>
+                    <div class="date-item selected">
+                        <strong>1月11日（土）</strong><br>
+                        18:00〜21:00
+                    </div>
+                    <div class="date-item">
+                        <strong>1月17日（金）</strong><br>
+                        19:00〜22:00
+                    </div>
+                </div>
+            </section>
+
+            <!-- 参加回答 -->
+            <section class="response-section">
+                <h2>✍️ 参加回答</h2>
+                <div class="section-description">
+                    <p>お名前を入力し、各日程の参加状況をクリックして選択してください</p>
+                </div>
+                
+                <form class="response-form">
+                    <div class="form-group">
+                        <label for="participant-name">お名前 *</label>
+                        <input type="text" id="participant-name" placeholder="例：山田太郎">
+                    </div>
+
+                    <div class="form-group">
+                        <label>日程候補 *</label>
+                        <div class="instruction-note">
+                            各日程をクリックして、参加・不参加・未定を選択してください
+                        </div>
+                        <div class="date-responses-grid">
+                            <div class="status-radio attending">
+                                <input type="radio" name="date1" checked>
+                                <span>1月10日（金）- 参加</span>
+                            </div>
+                            <div class="status-radio attending">
+                                <input type="radio" name="date2" checked>
+                                <span>1月11日（土）- 参加</span>
+                            </div>
+                            <div class="status-radio undecided">
+                                <input type="radio" name="date3">
+                                <span>1月17日（金）- 未定</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="comment">コメント</label>
+                        <textarea id="comment" rows="3" placeholder="例：午後からの参加になります"></textarea>
+                    </div>
+
+                    <button type="submit" class="submit-btn">回答を送信</button>
+                </form>
+            </section>
+        </main>
+    </div>
+</body>
+</html> 

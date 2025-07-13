@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="ja" class="h-full bg-gray-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KANJY - 表形式デザイン</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        kanjy: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            200: '#bfdbfe',
+                            300: '#93c5fd',
+                            400: '#60a5fa',
+                            500: '#007AFF',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="h-full">
+    <div id="app" class="min-h-full">
+        <!-- Hero Header -->
+        <div class="bg-gradient-to-r from-kanjy-500 to-blue-600">
+            <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                <div class="py-12 text-center">
+                    <h1 class="text-4xl font-bold tracking-tight text-white sm:text-5xl">
+                        KANJY
+                    </h1>
+                    <p class="mt-2 text-xl text-blue-100">
+                        幹事さんお助けサービス
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Event Header -->
+        <div class="bg-white shadow">
+            <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                <div class="py-8">
+                    <div class="lg:flex lg:items-center lg:justify-between">
+                        <div class="min-w-0 flex-1">
+                            <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight">
+                                新年会2025 🎉
+                            </h2>
+                            <p class="mt-4 text-lg text-gray-600">
+                                みんなでワクワクする新年会を企画しています！美味しい料理とお酒で楽しい時間を過ごしましょう。
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+            <div class="space-y-8">
+                <!-- Event Info Stats -->
+                <div>
+                    <h3 class="text-lg font-medium leading-6 text-gray-900">イベント詳細</h3>
+                    <dl class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-3">
+                        <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
+                            <dt class="truncate text-sm font-medium text-gray-500">開催場所</dt>
+                            <dd class="mt-1 text-2xl font-semibold tracking-tight text-gray-900">渋谷の居酒屋</dd>
+                        </div>
+                        <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
+                            <dt class="truncate text-sm font-medium text-gray-500">予算</dt>
+                            <dd class="mt-1 text-2xl font-semibold tracking-tight text-gray-900">4,000〜5,000円</dd>
+                        </div>
+                        <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
+                            <dt class="truncate text-sm font-medium text-gray-500">回答締切</dt>
+                            <dd class="mt-1 text-2xl font-semibold tracking-tight text-gray-900">12月25日</dd>
+                        </div>
+                    </dl>
+                </div>
+
+                <!-- 参加状況サマリー表 -->
+                <div class="bg-white shadow sm:rounded-lg">
+                    <div class="px-4 py-5 sm:p-6">
+                        <h3 class="text-lg font-medium leading-6 text-gray-900 mb-6">📊 日程別参加状況</h3>
+                        
+                        <!-- Summary Cards -->
+                        <div class="grid grid-cols-1 gap-5 sm:grid-cols-3 mb-6">
+                            <div class="bg-gradient-to-r from-green-400 to-green-600 overflow-hidden rounded-lg">
+                                <div class="p-5">
+                                    <div class="flex items-center">
+                                        <div class="flex-shrink-0">
+                                            <svg class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                            </svg>
+                                        </div>
+                                        <div class="ml-5 w-0 flex-1">
+                                            <dl>
+                                                <dt class="text-sm font-medium text-green-50 truncate">参加確定</dt>
+                                                <dd class="text-lg font-medium text-white">13名</dd>
+                                            </dl>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="bg-gradient-to-r from-yellow-400 to-yellow-600 overflow-hidden rounded-lg">
+                                <div class="p-5">
+                                    <div class="flex items-center">
+                                        <div class="flex-shrink-0">
+                                            <svg class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                        </div>
+                                        <div class="ml-5 w-0 flex-1">
+                                            <dl>
+                                                <dt class="text-sm font-medium text-yellow-50 truncate">調整中</dt>
+                                                <dd class="text-lg font-medium text-white">3名</dd>
+                                            </dl>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="bg-gradient-to-r from-red-400 to-red-600 overflow-hidden rounded-lg">
+                                <div class="p-5">
+                                    <div class="flex items-center">
+                                        <div class="flex-shrink-0">
+                                            <svg class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                        </div>
+                                        <div class="ml-5 w-0 flex-1">
+                                            <dl>
+                                                <dt class="text-sm font-medium text-red-50 truncate">不参加</dt>
+                                                <dd class="text-lg font-medium text-white">4名</dd>
+                                            </dl>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Beautiful Table -->
+                        <div class="mt-6 flex flex-col">
+                            <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+                                <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
+                                    <div class="shadow-lg overflow-hidden border-b border-gray-200 sm:rounded-lg">
+                                        <table class="min-w-full divide-y divide-gray-200">
+                                            <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
+                                                <tr>
+                                                    <th scope="col" class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                        候補日時
+                                                    </th>
+                                                    <th scope="col" class="px-6 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                        参加
+                                                    </th>
+                                                    <th scope="col" class="px-6 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                        未定
+                                                    </th>
+                                                    <th scope="col" class="px-6 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                        不参加
+                                                    </th>
+                                                    <th scope="col" class="px-6 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                        合計
+                                                    </th>
+                                                    <th scope="col" class="px-6 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                        評価
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="bg-white divide-y divide-gray-200">
+                                                <tr class="hover:bg-gray-50 transition-colors">
+                                                    <td class="px-6 py-4 whitespace-nowrap">
+                                                        <div class="flex items-center">
+                                                            <div class="flex-shrink-0 h-10 w-10">
+                                                                <div class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                                                                    <span class="text-sm font-medium text-blue-600">金</span>
+                                                                </div>
+                                                            </div>
+                                                            <div class="ml-4">
+                                                                <div class="text-sm font-medium text-gray-900">1月10日（金）</div>
+                                                                <div class="text-sm text-gray-500">19:00〜22:00</div>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                                                            3名
+                                                        </span>
+                                                    </td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
+                                                            1名
+                                                        </span>
+                                                    </td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
+                                                            2名
+                                                        </span>
+                                                    </td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                                                        <span class="text-sm font-semibold text-gray-900">6名</span>
+                                                    </td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                                            普通
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                                <tr class="hover:bg-kanjy-50 transition-colors bg-kanjy-25">
+                                                    <td class="px-6 py-4 whitespace-nowrap">
+                                                        <div class="flex items-center">
+                                                            <div class="flex-shrink-0 h-10 w-10">
+                                                                <div class="h-10 w-10 rounded-full bg-kanjy-100 flex items-center justify-center">
+                                                                    <span class="text-sm font-medium text-kanjy-600">土</span>
+                                                                </div>
+                                                            </div>
+                                                            <div class="ml-4">
+                                                                <div class="text-sm font-medium text-gray-900 flex items-center">
+                                                                    1月11日（土）
+                                                                    <svg class="ml-2 h-4 w-4 text-kanjy-500" fill="currentColor" viewBox="0 0 20 20">
+                                                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                                                    </svg>
+                                                                </div>
+                                                                <div class="text-sm text-gray-500">18:00〜21:00</div>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                                                            <svg class="mr-1 h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+                                                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                                            </svg>
+                                                            5名
+                                                        </span>
+                                                    </td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
+                                                            1名
+                                                        </span>
+                                                    </td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
+                                                            0名
+                                                        </span>
+                                                    </td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                                                        <span class="text-sm font-semibold text-gray-900">6名</span>
+                                                    </td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                            <svg class="mr-1 h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+                                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                                            </svg>
+                                                            最適
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                                <tr class="hover:bg-gray-50 transition-colors">
+                                                    <td class="px-6 py-4 whitespace-nowrap">
+                                                        <div class="flex items-center">
+                                                            <div class="flex-shrink-0 h-10 w-10">
+                                                                <div class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                                                                    <span class="text-sm font-medium text-blue-600">金</span>
+                                                                </div>
+                                                            </div>
+                                                            <div class="ml-4">
+                                                                <div class="text-sm font-medium text-gray-900">1月17日（金）</div>
+                                                                <div class="text-sm text-gray-500">19:00〜22:00</div>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                                                            2名
+                                                        </span>
+                                                    </td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
+                                                            1名
+                                                        </span>
+                                                    </td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
+                                                            3名
+                                                        </span>
+                                                    </td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                                                        <span class="text-sm font-semibold text-gray-900">6名</span>
+                                                    </td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                                            困難
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 詳細回答一覧表 -->
+                <div class="bg-white shadow sm:rounded-lg">
+                    <div class="px-4 py-5 sm:p-6">
+                        <div class="sm:flex sm:items-center">
+                            <div class="sm:flex-auto">
+                                <h3 class="text-lg font-medium leading-6 text-gray-900">👥 詳細回答一覧</h3>
+                                <p class="mt-2 text-sm text-gray-700">参加者ごとの詳細回答状況を確認できます</p>
+                            </div>
+                            <div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
+                                <button type="button" class="inline-flex items-center justify-center rounded-md border border-transparent bg-kanjy-500 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-kanjy-600 focus:outline-none focus:ring-2 focus:ring-kanjy-500 focus:ring-offset-2">
+                                    Excel出力
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6 flex flex-col">
+                            <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+                                <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
+                                    <div class="shadow-lg overflow-hidden border-b border-gray-200 sm:rounded-lg">
+                                        <table class="min-w-full divide-y divide-gray-200">
+                                            <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
+                                                <tr>
+                                                    <th scope="col" class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                        参加者
+                                                    </th>
+                                                    <th scope="col" class="px-6 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                        1/10(金)
+                                                    </th>
+                                                    <th scope="col" class="px-6 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                        1/11(土)
+                                                    </th>
+                                                    <th scope="col" class="px-6 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                        1/17(金)
+                                                    </th>
+                                                    <th scope="col" class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                        コメント
+                                                    </th>
+                                                    <th scope="col" class="px-6 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                        総合判定
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="bg-white divide-y divide-gray-200">
+                                                <tr class="hover:bg-gray-50 transition-colors">
+                                                    <td class="px-6 py-4 whitespace-nowrap">
+                                                        <div class="flex items-center">
+                                                            <div class="flex-shrink-0 h-8 w-8">
+                                                                <div class="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
+                                                                    <span class="text-xs font-medium text-green-600">田</span>
+                                                                </div>
+                                                            </div>
+                                                            <div class="ml-4">
+                                                                <div class="text-sm font-medium text-gray-900">田中花子</div>
+                                                                <div class="text-sm text-gray-500">営業部</div>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                            ○
+                                                        </span>
+                                                    </td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                            ○
+                                                        </span>
+                                                    </td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                                            ×
+                                                        </span>
+                                                    </td>
+                                                    <td class="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
+                                                        楽しみにしています！お疲れ様でした。
+                                                    </td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                            参加
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                                <tr class="hover:bg-gray-50 transition-colors">
+                                                    <td class="px-6 py-4 whitespace-nowrap">
+                                                        <div class="flex items-center">
+                                                            <div class="flex-shrink-0 h-8 w-8">
+                                                                <div class="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
+                                                                    <span class="text-xs font-medium text-blue-600">佐</span>
+                                                                </div>
+                                                            </div>
+                                                            <div class="ml-4">
+                                                                <div class="text-sm font-medium text-gray-900">佐藤次郎</div>
+                                                                <div class="text-sm text-gray-500">開発部</div>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                                            △
+                                                        </span>
+                                                    </td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                            ○
+                                                        </span>
+                                                    </td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                            ○
+                                                        </span>
+                                                    </td>
+                                                    <td class="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
+                                                        調整中です。できるだけ参加したいと思います。
+                                                    </td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                            参加
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                                <tr class="hover:bg-gray-50 transition-colors">
+                                                    <td class="px-6 py-4 whitespace-nowrap">
+                                                        <div class="flex items-center">
+                                                            <div class="flex-shrink-0 h-8 w-8">
+                                                                <div class="h-8 w-8 rounded-full bg-red-100 flex items-center justify-center">
+                                                                    <span class="text-xs font-medium text-red-600">鈴</span>
+                                                                </div>
+                                                            </div>
+                                                            <div class="ml-4">
+                                                                <div class="text-sm font-medium text-gray-900">鈴木一郎</div>
+                                                                <div class="text-sm text-gray-500">総務部</div>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                                            ×
+                                                        </span>
+                                                    </td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                                            ×
+                                                        </span>
+                                                    </td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                                            ×
+                                                        </span>
+                                                    </td>
+                                                    <td class="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
+                                                        残念ですが、家族の予定があり参加できません。
+                                                    </td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                                            不参加
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                                <tr class="hover:bg-gray-50 transition-colors">
+                                                    <td class="px-6 py-4 whitespace-nowrap">
+                                                        <div class="flex items-center">
+                                                            <div class="flex-shrink-0 h-8 w-8">
+                                                                <div class="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center">
+                                                                    <span class="text-xs font-medium text-purple-600">高</span>
+                                                                </div>
+                                                            </div>
+                                                            <div class="ml-4">
+                                                                <div class="text-sm font-medium text-gray-900">高橋美咲</div>
+                                                                <div class="text-sm text-gray-500">人事部</div>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                            ○
+                                                        </span>
+                                                    </td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                            ○
+                                                        </span>
+                                                    </td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                                            △
+                                                        </span>
+                                                    </td>
+                                                    <td class="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
+                                                        よろしくお願いします！
+                                                    </td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                            参加
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 回答フォーム -->
+                <div class="bg-white shadow sm:rounded-lg">
+                    <div class="px-4 py-5 sm:p-6">
+                        <h3 class="text-lg font-medium leading-6 text-gray-900">✍️ 参加回答</h3>
+                        <div class="mt-2 max-w-xl text-sm text-gray-500">
+                            <p>お名前を入力し、各日程の参加状況を選択してください</p>
+                        </div>
+                        <form id="response-form" class="mt-5 space-y-6">
+                            <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-2">
+                                <div>
+                                    <label for="participant-name" class="block text-sm font-medium text-gray-700">お名前 *</label>
+                                    <div class="mt-1">
+                                        <input type="text" id="participant-name" name="participant-name" required
+                                               class="block w-full rounded-md border-gray-300 shadow-sm focus:border-kanjy-500 focus:ring-kanjy-500 sm:text-sm"
+                                               placeholder="例：山田太郎">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label for="department" class="block text-sm font-medium text-gray-700">部署</label>
+                                    <div class="mt-1">
+                                        <input type="text" id="department" name="department"
+                                               class="block w-full rounded-md border-gray-300 shadow-sm focus:border-kanjy-500 focus:ring-kanjy-500 sm:text-sm"
+                                               placeholder="例：営業部">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-4">日程候補 *</label>
+                                <div class="bg-gray-50 rounded-lg p-4">
+                                    <div class="overflow-x-auto">
+                                        <table class="min-w-full divide-y divide-gray-200">
+                                            <thead>
+                                                <tr>
+                                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">日程</th>
+                                                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">参加</th>
+                                                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">未定</th>
+                                                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">不参加</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="divide-y divide-gray-200">
+                                                <tr class="bg-white">
+                                                    <td class="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                        1月10日（金）<br>
+                                                        <span class="text-xs text-gray-500">19:00〜22:00</span>
+                                                    </td>
+                                                    <td class="px-4 py-4 whitespace-nowrap text-center">
+                                                        <input type="radio" name="date1" value="attending" class="form-radio h-4 w-4 text-green-600">
+                                                    </td>
+                                                    <td class="px-4 py-4 whitespace-nowrap text-center">
+                                                        <input type="radio" name="date1" value="maybe" class="form-radio h-4 w-4 text-yellow-600">
+                                                    </td>
+                                                    <td class="px-4 py-4 whitespace-nowrap text-center">
+                                                        <input type="radio" name="date1" value="not-attending" class="form-radio h-4 w-4 text-red-600">
+                                                    </td>
+                                                </tr>
+                                                <tr class="bg-kanjy-25">
+                                                    <td class="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                        1月11日（土） <span class="text-kanjy-600 text-xs">推奨</span><br>
+                                                        <span class="text-xs text-gray-500">18:00〜21:00</span>
+                                                    </td>
+                                                    <td class="px-4 py-4 whitespace-nowrap text-center">
+                                                        <input type="radio" name="date2" value="attending" class="form-radio h-4 w-4 text-green-600" checked>
+                                                    </td>
+                                                    <td class="px-4 py-4 whitespace-nowrap text-center">
+                                                        <input type="radio" name="date2" value="maybe" class="form-radio h-4 w-4 text-yellow-600">
+                                                    </td>
+                                                    <td class="px-4 py-4 whitespace-nowrap text-center">
+                                                        <input type="radio" name="date2" value="not-attending" class="form-radio h-4 w-4 text-red-600">
+                                                    </td>
+                                                </tr>
+                                                <tr class="bg-white">
+                                                    <td class="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                        1月17日（金）<br>
+                                                        <span class="text-xs text-gray-500">19:00〜22:00</span>
+                                                    </td>
+                                                    <td class="px-4 py-4 whitespace-nowrap text-center">
+                                                        <input type="radio" name="date3" value="attending" class="form-radio h-4 w-4 text-green-600">
+                                                    </td>
+                                                    <td class="px-4 py-4 whitespace-nowrap text-center">
+                                                        <input type="radio" name="date3" value="maybe" class="form-radio h-4 w-4 text-yellow-600">
+                                                    </td>
+                                                    <td class="px-4 py-4 whitespace-nowrap text-center">
+                                                        <input type="radio" name="date3" value="not-attending" class="form-radio h-4 w-4 text-red-600">
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label for="comment" class="block text-sm font-medium text-gray-700">コメント</label>
+                                <div class="mt-1">
+                                    <textarea id="comment" name="comment" rows="3"
+                                              class="block w-full rounded-md border-gray-300 shadow-sm focus:border-kanjy-500 focus:ring-kanjy-500 sm:text-sm"
+                                              placeholder="例：午後からの参加になります"></textarea>
+                                </div>
+                            </div>
+
+                            <div class="flex justify-end">
+                                <button type="submit"
+                                        class="inline-flex items-center rounded-md border border-transparent bg-kanjy-500 px-6 py-3 text-base font-medium text-white shadow-sm hover:bg-kanjy-600 focus:outline-none focus:ring-2 focus:ring-kanjy-500 focus:ring-offset-2 transition-colors">
+                                    回答を送信
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Success Modal -->
+        <div id="success-modal" class="hidden fixed inset-0 z-50 overflow-y-auto">
+            <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
+                <div class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-sm sm:w-full sm:p-6">
+                    <div>
+                        <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
+                            <svg class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                        </div>
+                        <div class="mt-3 text-center sm:mt-5">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900">送信完了</h3>
+                            <div class="mt-2">
+                                <p class="text-sm text-gray-500">回答が正常に送信されました。ありがとうございます！</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-5 sm:mt-6">
+                        <button type="button" onclick="closeSuccessModal()"
+                                class="inline-flex justify-center w-full rounded-md border border-transparent shadow-sm px-4 py-2 bg-kanjy-500 text-base font-medium text-white hover:bg-kanjy-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-kanjy-500 sm:text-sm">
+                            閉じる
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // フォーム送信処理
+        document.getElementById('response-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            document.getElementById('success-modal').classList.remove('hidden');
+            this.reset();
+        });
+        
+        function closeSuccessModal() {
+            document.getElementById('success-modal').classList.add('hidden');
+        }
+    </script>
+</body>
+</html> 

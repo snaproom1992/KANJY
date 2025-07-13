@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="ja" class="h-full bg-gray-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KANJY - スケジュール調整</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        kanjy: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            200: '#bfdbfe',
+                            300: '#93c5fd',
+                            400: '#60a5fa',
+                            500: '#007AFF',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+</head>
+<body class="h-full">
+    <div id="app" class="min-h-full">
+        <!-- Loading Screen -->
+        <div id="loading" class="hidden fixed inset-0 bg-white z-50 flex items-center justify-center">
+            <div class="text-center">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-kanjy-500 mx-auto"></div>
+                <p class="mt-4 text-sm text-gray-600">読み込み中...</p>
+            </div>
+        </div>
+
+        <!-- Error Screen -->
+        <div id="error" class="hidden fixed inset-0 bg-white z-50 flex items-center justify-center">
+            <div class="text-center max-w-md mx-auto p-6">
+                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
+                    <svg class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                </div>
+                <h2 class="mt-4 text-lg font-medium text-gray-900">エラーが発生しました</h2>
+                <p id="error-message" class="mt-2 text-sm text-gray-500"></p>
+                <button onclick="location.reload()" class="mt-6 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-kanjy-500 hover:bg-kanjy-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-kanjy-500">
+                    再読み込み
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div id="event-detail" class="min-h-full">
+            <!-- Hero Header -->
+            <div class="bg-gradient-to-r from-kanjy-500 to-blue-600">
+                <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                    <div class="py-12 text-center">
+                        <h1 class="text-4xl font-bold tracking-tight text-white sm:text-5xl">
+                            KANJY
+                        </h1>
+                        <p class="mt-2 text-xl text-blue-100">
+                            幹事さんお助けサービス
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Event Header -->
+            <div class="bg-white shadow">
+                <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                    <div class="py-8">
+                        <div class="lg:flex lg:items-center lg:justify-between">
+                            <div class="min-w-0 flex-1">
+                                <h2 id="event-title" class="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight">
+                                    新年会2025 🎉
+                                </h2>
+                                <div class="mt-1 flex flex-col sm:mt-0 sm:flex-row sm:flex-wrap sm:space-x-6">
+                                    <div class="mt-2 flex items-center text-sm text-gray-500">
+                                        <svg class="mr-1.5 h-5 w-5 flex-shrink-0 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
+                                        </svg>
+                                        参加可能な日程の入力・確認ができます
+                                    </div>
+                                </div>
+                                <p id="event-description" class="mt-4 text-lg text-gray-600">
+                                    みんなでワクワクする新年会を企画しています！美味しい料理とお酒で楽しい時間を過ごしましょう。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+                <div class="space-y-8">
+                    <!-- Event Info Stats -->
+                    <div>
+                        <h3 class="text-lg font-medium leading-6 text-gray-900">イベント詳細</h3>
+                        <dl class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-3">
+                            <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
+                                <dt class="truncate text-sm font-medium text-gray-500">開催場所</dt>
+                                <dd id="location-text" class="mt-1 text-3xl font-semibold tracking-tight text-gray-900">渋谷の居酒屋</dd>
+                            </div>
+                            <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
+                                <dt class="truncate text-sm font-medium text-gray-500">予算</dt>
+                                <dd id="budget-text" class="mt-1 text-3xl font-semibold tracking-tight text-gray-900">4,000円〜5,000円</dd>
+                            </div>
+                            <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
+                                <dt class="truncate text-sm font-medium text-gray-500">回答締切</dt>
+                                <dd id="deadline-text" class="mt-1 text-3xl font-semibold tracking-tight text-gray-900">12月25日</dd>
+                            </div>
+                        </dl>
+                    </div>
+
+                    <!-- Candidate Dates -->
+                    <div class="bg-white shadow sm:rounded-lg">
+                        <div class="px-4 py-5 sm:p-6">
+                            <h3 class="text-lg font-medium leading-6 text-gray-900">候補日時</h3>
+                            <div class="mt-2 max-w-xl text-sm text-gray-500">
+                                <p>以下の日時からスケジュール調整を行います</p>
+                            </div>
+                            <div id="candidate-dates-list" class="mt-5 space-y-3">
+                                <div class="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-900">1月10日（金）</p>
+                                        <p class="text-sm text-gray-500">19:00〜22:00</p>
+                                    </div>
+                                    <span class="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
+                                        3名参加予定
+                                    </span>
+                                </div>
+                                <div class="flex items-center justify-between rounded-lg border border-kanjy-200 bg-kanjy-50 px-4 py-3">
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-900">1月11日（土）</p>
+                                        <p class="text-sm text-gray-500">18:00〜21:00</p>
+                                    </div>
+                                    <span class="inline-flex items-center rounded-full bg-kanjy-100 px-2.5 py-0.5 text-xs font-medium text-kanjy-800">
+                                        5名参加予定（最多）
+                                    </span>
+                                </div>
+                                <div class="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-900">1月17日（金）</p>
+                                        <p class="text-sm text-gray-500">19:00〜22:00</p>
+                                    </div>
+                                    <span class="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-800">
+                                        2名参加予定
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Response Form -->
+                    <div class="bg-white shadow sm:rounded-lg">
+                        <div class="px-4 py-5 sm:p-6">
+                            <h3 class="text-lg font-medium leading-6 text-gray-900">参加回答</h3>
+                            <div class="mt-2 max-w-xl text-sm text-gray-500">
+                                <p>お名前を入力し、各日程の参加状況を選択してください</p>
+                            </div>
+                            <form id="response-form" class="mt-5 space-y-6">
+                                <div>
+                                    <label for="participant-name" class="block text-sm font-medium text-gray-700">お名前</label>
+                                    <div class="mt-1">
+                                        <input type="text" id="participant-name" name="participant-name" required
+                                               class="block w-full rounded-md border-gray-300 shadow-sm focus:border-kanjy-500 focus:ring-kanjy-500 sm:text-sm"
+                                               placeholder="例：山田太郎">
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">日程候補</label>
+                                    <div class="mt-2 rounded-md bg-gray-50 p-4">
+                                        <p class="text-sm text-gray-600 mb-4">各日程をクリックして、参加・不参加・未定を選択してください</p>
+                                        <div id="date-responses" class="space-y-4">
+                                            <!-- Date response options will be populated here -->
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label for="comment" class="block text-sm font-medium text-gray-700">コメント</label>
+                                    <div class="mt-1">
+                                        <textarea id="comment" name="comment" rows="3"
+                                                  class="block w-full rounded-md border-gray-300 shadow-sm focus:border-kanjy-500 focus:ring-kanjy-500 sm:text-sm"
+                                                  placeholder="例：午後からの参加になります"></textarea>
+                                    </div>
+                                </div>
+
+                                <div class="flex justify-end">
+                                    <button type="submit"
+                                            class="inline-flex items-center rounded-md border border-transparent bg-kanjy-500 px-6 py-3 text-base font-medium text-white shadow-sm hover:bg-kanjy-600 focus:outline-none focus:ring-2 focus:ring-kanjy-500 focus:ring-offset-2">
+                                        回答を送信
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Responses List -->
+                    <div class="bg-white shadow sm:rounded-lg">
+                        <div class="px-4 py-5 sm:p-6">
+                            <h3 class="text-lg font-medium leading-6 text-gray-900">回答一覧</h3>
+                            <div class="mt-2 max-w-xl text-sm text-gray-500">
+                                <p>参加者名をクリックすると回答を編集できます</p>
+                            </div>
+                            <div id="responses-container" class="mt-5">
+                                <!-- Sample responses -->
+                                <div class="flow-root">
+                                    <ul role="list" class="-my-5 divide-y divide-gray-200">
+                                        <li class="py-4">
+                                            <div class="flex items-center space-x-4">
+                                                <div class="flex-shrink-0">
+                                                    <div class="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
+                                                        <svg class="h-4 w-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                                        </svg>
+                                                    </div>
+                                                </div>
+                                                <div class="min-w-0 flex-1">
+                                                    <p class="text-sm font-medium text-gray-900 cursor-pointer hover:text-kanjy-600">田中花子</p>
+                                                    <p class="text-sm text-gray-500">楽しみにしています！</p>
+                                                </div>
+                                                <div>
+                                                    <span class="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
+                                                        参加
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="py-4">
+                                            <div class="flex items-center space-x-4">
+                                                <div class="flex-shrink-0">
+                                                    <div class="h-8 w-8 rounded-full bg-yellow-100 flex items-center justify-center">
+                                                        <svg class="h-4 w-4 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                                        </svg>
+                                                    </div>
+                                                </div>
+                                                <div class="min-w-0 flex-1">
+                                                    <p class="text-sm font-medium text-gray-900 cursor-pointer hover:text-kanjy-600">佐藤次郎</p>
+                                                    <p class="text-sm text-gray-500">調整中です</p>
+                                                </div>
+                                                <div>
+                                                    <span class="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-800">
+                                                        未定
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="py-4">
+                                            <div class="flex items-center space-x-4">
+                                                <div class="flex-shrink-0">
+                                                    <div class="h-8 w-8 rounded-full bg-red-100 flex items-center justify-center">
+                                                        <svg class="h-4 w-4 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                                        </svg>
+                                                    </div>
+                                                </div>
+                                                <div class="min-w-0 flex-1">
+                                                    <p class="text-sm font-medium text-gray-900 cursor-pointer hover:text-kanjy-600">鈴木一郎</p>
+                                                    <p class="text-sm text-gray-500">残念ですが、予定が合いません</p>
+                                                </div>
+                                                <div>
+                                                    <span class="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-800">
+                                                        不参加
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Success/Error Messages -->
+        <div id="success-message" class="hidden fixed inset-0 z-50 overflow-y-auto">
+            <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
+                <div class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-sm sm:w-full sm:p-6">
+                    <div>
+                        <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
+                            <svg class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                        </div>
+                        <div class="mt-3 text-center sm:mt-5">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900">送信完了</h3>
+                            <div class="mt-2">
+                                <p class="text-sm text-gray-500">回答が正常に送信されました。</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-5 sm:mt-6">
+                        <button type="button" onclick="document.getElementById('success-message').classList.add('hidden')"
+                                class="inline-flex justify-center w-full rounded-md border border-transparent shadow-sm px-4 py-2 bg-kanjy-500 text-base font-medium text-white hover:bg-kanjy-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-kanjy-500 sm:text-sm">
+                            閉じる
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html> 

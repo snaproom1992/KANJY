@@ -1,0 +1,1284 @@
+<!DOCTYPE html>
+<html lang="ja" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KANJY - 回答フォーム</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Supabase CDN -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'sans': ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+                    },
+                    colors: {
+                        kanjy: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            200: '#bfdbfe',
+                            300: '#93c5fd',
+                            400: '#60a5fa',
+                            500: '#007AFF',
+                            600: '#0056cc',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                        },
+                        // SwiftUIカラーパレット（洗練版）
+                        attending: {
+                            50: '#ecfdf5',
+                            100: '#d1fae5',
+                            500: '#10b981',
+                            600: '#059669',
+                            700: '#047857',
+                        },
+                        maybe: {
+                            50: '#fff7ed',
+                            100: '#ffedd5',
+                            500: '#f97316',
+                            600: '#ea580c',
+                            700: '#c2410c',
+                        },
+                        notAttending: {
+                            50: '#fef2f2',
+                            100: '#fee2e2',
+                            500: '#ef4444',
+                            600: '#dc2626',
+                            700: '#b91c1c',
+                        },
+                        undecided: {
+                            50: '#f9fafb',
+                            100: '#f3f4f6',
+                            500: '#6b7280',
+                            600: '#4b5563',
+                            700: '#374151',
+                        }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-in-out',
+                        'slide-up': 'slideUp 0.6s ease-out',
+                        'scale-in': 'scaleIn 0.3s ease-out',
+                        'float': 'float 3s ease-in-out infinite',
+                        'shimmer': 'shimmer 2s linear infinite',
+                        'bounce-gentle': 'bounceGentle 2s infinite',
+                        'pulse-soft': 'pulseSoft 2s infinite',
+                        'slide-in-right': 'slideInRight 0.3s ease-out',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(20px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        },
+                        scaleIn: {
+                            '0%': { transform: 'scale(0.95)', opacity: '0' },
+                            '100%': { transform: 'scale(1)', opacity: '1' },
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        },
+                        shimmer: {
+                            '0%': { transform: 'translateX(-100%)' },
+                            '100%': { transform: 'translateX(100%)' },
+                        },
+                        bounceGentle: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-5px)' },
+                        },
+                        pulseSoft: {
+                            '0%, 100%': { opacity: '1' },
+                            '50%': { opacity: '0.5' },
+                        },
+                        slideInRight: {
+                            '0%': { transform: 'translateX(100%)', opacity: '0' },
+                            '100%': { transform: 'translateX(0)', opacity: '1' },
+                        }
+                    },
+                    boxShadow: {
+                        'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.37)',
+                        'elegant': '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                        'soft': '0 2px 15px 0 rgba(0, 0, 0, 0.1)',
+                        'floating': '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        /* CSS変数 */
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8fafc;
+            --bg-tertiary: #f1f5f9;
+            --text-primary: #1e293b;
+            --text-secondary: #475569;
+            --text-tertiary: #64748b;
+            --border-primary: #e2e8f0;
+            --border-secondary: #cbd5e1;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            --glass-bg: rgba(255, 255, 255, 0.25);
+            --glass-border: rgba(255, 255, 255, 0.18);
+        }
+        
+        /* メインページと同じアニメーション付きグラデーション */
+        @keyframes gradient-shift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        
+        .gradient-animated {
+            background: linear-gradient(-45deg, #007AFF, #00C7BE, #007AFF, #5856D6);
+            background-size: 400% 400%;
+            animation: gradient-shift 8s ease infinite;
+        }
+        
+        .glassmorphism {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+        }
+        
+        .floating-element {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .floating-element:hover {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 20px 40px var(--shadow-color);
+        }
+        
+        .status-pill {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .status-pill::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .status-pill:hover::before {
+            left: 100%;
+        }
+        
+        .status-pill:hover {
+            transform: scale(1.05);
+        }
+        
+        /* カスタムスクロールバー */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #007AFF, #5856D6);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, #0056cc, #4c46a6);
+        }
+        
+        /* スムーズなアニメーション */
+        * {
+            transition: all 0.3s ease;
+        }
+        
+        /* フォームスタイル */
+        .form-input {
+            transition: all 0.3s ease;
+        }
+        
+        .form-input:focus {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 122, 255, 0.15);
+        }
+        
+        .choice-button {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .choice-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .choice-button.selected {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.15);
+        }
+        
+        /* アニメーション */
+        .animate-fade-in {
+            animation: fadeIn 0.6s ease-out;
+        }
+        
+        .animate-slide-up {
+            animation: slideUp 0.8s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .animate-scale-in {
+            animation: scaleIn 0.3s ease-out;
+        }
+        
+        @keyframes scaleIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+    </style>
+</head>
+
+<body class="font-sans antialiased text-gray-900 min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+    <!-- メインページと同じアニメーション付きグラデーション背景 -->
+    <div class="fixed inset-0 gradient-animated opacity-90 -z-10"></div>
+    
+    <!-- Navigation - スクロール時に固定しないように改善 -->
+    <nav class="glassmorphism w-full z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- 左側：ロゴ -->
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-white/10 backdrop-blur-sm rounded-xl flex items-center justify-center shadow-soft border border-white/20">
+                        <img src="assets/App icon.png" alt="KANJY" class="w-8 h-8 object-contain rounded-lg">
+                    </div>
+                    <span class="text-white font-semibold text-lg">KANJY</span>
+                </div>
+                
+                <!-- 右側：アプリダウンロードリンク -->
+                <div class="flex items-center">
+                    <a href="https://apps.apple.com/jp/app/kanjy/id6746665673" target="_blank" 
+                       class="bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg px-3 py-1.5 text-white text-sm font-semibold transition-all duration-200 border border-white/30 hover:border-white/50 shadow-soft flex items-center space-x-2" 
+                       style="text-shadow: 0 1px 2px rgba(0,0,0,0.5);">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+                        </svg>
+                        <span>アプリをダウンロード</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Decorative Elements - メインページと同じ -->
+    <div class="fixed top-20 left-10 w-20 h-20 bg-white/10 rounded-full animate-float pointer-events-none"></div>
+    <div class="fixed top-40 right-20 w-12 h-12 bg-white/5 rounded-full animate-float pointer-events-none" style="animation-delay: 1s;"></div>
+    <div class="fixed bottom-20 left-1/2 transform -translate-x-1/2 w-16 h-16 bg-white/5 rounded-full animate-float pointer-events-none" style="animation-delay: 2s;"></div>
+
+    <!-- Main Content - ヘッダーが固定でないのでpadding-top調整 -->
+    <div class="container mx-auto px-4 py-8 max-w-2xl">
+        <div class="space-y-8">
+            <!-- Hero Section -->
+            <div class="text-center space-y-4 animate-fade-in">
+                <h1 id="event-title" class="text-3xl md:text-4xl font-bold text-white mb-2" style="text-shadow: 0 2px 4px rgba(0,0,0,0.3);">
+                    参加回答フォーム
+                </h1>
+                <p id="event-description" class="text-white/90 text-lg leading-relaxed" style="text-shadow: 0 1px 2px rgba(0,0,0,0.3);">
+                    みんなで楽しい時間を過ごしましょう！<br>
+                    あなたの都合をお聞かせください。
+                </p>
+            </div>
+
+            <!-- Response Form - メインページと統一されたカードデザイン -->
+            <div class="floating-element bg-white rounded-3xl shadow-floating p-8 animate-slide-up border border-gray-100">
+                <form id="response-form" class="space-y-8">
+                    <!-- Personal Information -->
+                    <div class="space-y-6">
+                        <h2 class="text-2xl font-bold text-gray-900 flex items-center">
+                            <span class="w-8 h-8 bg-gradient-to-br from-kanjy-400 to-kanjy-600 rounded-lg flex items-center justify-center mr-3">
+                                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                </svg>
+                            </span>
+                            基本情報
+                        </h2>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <label for="name" class="block text-sm font-semibold text-gray-700 mb-2">お名前 *</label>
+                                <input type="text" id="name" name="name" required 
+                                       class="form-input w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-kanjy-500 focus:ring-2 focus:ring-kanjy-500/20 outline-none bg-white/80 backdrop-blur-sm"
+                                       placeholder="例：山田太郎">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Schedule Selection -->
+                    <div class="space-y-6">
+                        <h2 class="text-2xl font-bold text-gray-900 flex items-center">
+                            <span class="w-8 h-8 bg-gradient-to-br from-kanjy-400 to-kanjy-600 rounded-lg flex items-center justify-center mr-3">
+                                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                </svg>
+                            </span>
+                            日程ごとに回答
+                        </h2>
+                        <p class="text-gray-600">各日程について、参加可否をお選びください。</p>
+                        
+                        <div id="schedule-options" class="space-y-6">
+                            <!-- 動的に生成される日程選択肢がここに入ります -->
+                        </div>
+                    </div>
+
+                    <!-- Comment -->
+                    <div class="space-y-6">
+                        <h2 class="text-2xl font-bold text-gray-900 flex items-center">
+                            <span class="w-8 h-8 bg-gradient-to-br from-gray-500 to-gray-700 rounded-lg flex items-center justify-center mr-3">
+                                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/>
+                                </svg>
+                            </span>
+                            コメント
+                        </h2>
+                        <p class="text-gray-600">何かご質問やメッセージがあれば、お気軽にお書きください。</p>
+                        
+                        <div>
+                            <textarea id="comment" name="comment" rows="4" 
+                                      class="form-input w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-kanjy-500 focus:ring-2 focus:ring-kanjy-500/20 outline-none bg-white/80 backdrop-blur-sm resize-none"
+                                      placeholder="例：楽しみにしています！"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Submit Buttons -->
+                    <div class="flex flex-col space-y-4 pt-6">
+                        <button type="submit" 
+                                class="w-full bg-gradient-to-r from-kanjy-500 to-kanjy-600 hover:from-kanjy-600 hover:to-kanjy-700 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none">
+                            <span class="flex items-center justify-center">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                                </svg>
+                                回答を送信
+                            </span>
+                        </button>
+                        
+                        <button type="button" onclick="cancelForm()" 
+                                class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-4 px-6 rounded-xl transition-all duration-200 border border-gray-200 hover:border-gray-300">
+                            <span class="flex items-center justify-center">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                </svg>
+                                キャンセル
+                            </span>
+                        </button>
+                        
+                        <button type="button" id="delete-response-btn" onclick="deleteResponse()" 
+                                class="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 hidden">
+                            <span class="flex items-center justify-center">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                </svg>
+                                この回答を削除
+                            </span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- 通知システム -->
+    <div id="notification-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
+
+    <!-- 確認ダイアログ -->
+    <div id="confirm-dialog" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-2xl shadow-floating p-6 mx-4 max-w-sm w-full animate-scale-in">
+            <div class="text-center">
+                <div class="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16c-.77.833.192 2.5 1.732 2.5z"/>
+                    </svg>
+                </div>
+                <h3 id="confirm-title" class="text-lg font-bold text-gray-900 mb-2">確認</h3>
+                <p id="confirm-message" class="text-gray-600 mb-6 whitespace-pre-line">本当によろしいですか？</p>
+                <div class="flex space-x-3">
+                    <button id="confirm-cancel" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-3 px-4 rounded-xl transition-all duration-200">
+                        キャンセル
+                    </button>
+                    <button id="confirm-ok" class="flex-1 bg-kanjy-500 hover:bg-kanjy-600 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 shadow-md">
+                        実行
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Supabase設定
+        const SUPABASE_URL = 'https://jvluhjifihiuopqdwjll.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2bHVoamlmaWhpdW9wcWR3amxsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTExNTc5OTEsImV4cCI6MjA2NjczMzk5MX0.WDTzIs73X8NHGFcIYFk4CN-7dH5tQT5l0Bd2uY6H9lc';
+        
+        // Supabaseクライアント初期化
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        // デバッグ用: RLS情報を表示
+        console.log('🔑 Supabaseクライアント初期化完了');
+        console.log('- URL:', SUPABASE_URL);
+        console.log('- ANON_KEY:', SUPABASE_ANON_KEY.substring(0, 20) + '...');
+        
+        // RLSポリシーテスト関数
+        async function testRLSPolicies() {
+            try {
+                console.log('🔒 RLSポリシーテスト開始');
+                
+                // 読み取り権限テスト
+                const { data: readTest, error: readError } = await supabase
+                    .from('responses')
+                    .select('id')
+                    .limit(1);
+                
+                console.log('📖 読み取りテスト:', readError ? 'NG' : 'OK');
+                if (readError) console.log('読み取りエラー:', readError);
+                
+                // 削除権限テスト（実際には削除しない、エラーだけ確認）
+                const { error: deleteTestError } = await supabase
+                    .from('responses')
+                    .delete()
+                    .eq('id', '00000000-0000-0000-0000-000000000000'); // 存在しないID
+                
+                console.log('🗑️ 削除権限テスト:', deleteTestError ? '制限あり' : 'OK');
+                if (deleteTestError) {
+                    console.log('削除権限エラー:', deleteTestError);
+                    console.log('RLSによる制限の可能性があります');
+                }
+                
+            } catch (error) {
+                console.error('RLSテストエラー:', error);
+            }
+        }
+        
+        // グローバル変数
+        let currentEvent = null;
+        let currentEventId = null;
+        let editMode = false;
+        let editResponseId = null;
+
+        // 初期化
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('🍙 回答フォーム初期化開始');
+            
+            // URLパラメータを取得
+            const urlParams = new URLSearchParams(window.location.search);
+            currentEventId = urlParams.get('id');
+            editResponseId = urlParams.get('edit');
+            editMode = !!editResponseId;
+            
+            console.log('📋 初期化パラメータ:');
+            console.log('- イベントID:', currentEventId);
+            console.log('- 編集回答ID:', editResponseId);
+            console.log('- 編集モード:', editMode);
+            
+            if (!currentEventId) {
+                showError('イベントIDが指定されていません');
+                return;
+            }
+
+            // Supabase接続テスト
+            try {
+                console.log('🔗 Supabase接続テスト');
+                const { data: testData, error: testError } = await supabase
+                    .from('responses')
+                    .select('count', { count: 'exact', head: true });
+                
+                if (testError) {
+                    console.error('Supabase接続エラー:', testError);
+                } else {
+                    console.log('✅ Supabase接続成功 - レスポンス総数:', testData);
+                }
+                
+                // RLSポリシーテストを実行
+                await testRLSPolicies();
+                
+            } catch (testErr) {
+                console.error('Supabase接続テスト失敗:', testErr);
+            }
+
+            try {
+                // イベント情報を読み込み
+                console.log('📊 イベント情報を読み込み中...');
+                await loadEvent(currentEventId);
+                console.log('✅ イベント情報読み込み完了');
+                
+                if (editMode) {
+                    // 編集モードの場合、既存回答を読み込み
+                    console.log('📝 編集モード：既存回答を読み込み中...');
+                    await loadExistingResponse(editResponseId);
+                    console.log('✅ 既存回答読み込み完了');
+                    
+                    // 送信ボタンのテキストを更新
+                    const submitBtn = document.querySelector('button[type="submit"]');
+                    if (submitBtn) {
+                        submitBtn.innerHTML = `
+                            <span class="flex items-center justify-center">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                                </svg>
+                                回答を更新
+                            </span>
+                        `;
+                    }
+                    
+                    // 削除ボタンを表示
+                    const deleteBtn = document.getElementById('delete-response-btn');
+                    if (deleteBtn) {
+                        deleteBtn.classList.remove('hidden');
+                    }
+                }
+                
+                // フォームイベントリスナーを設定
+                setupFormListeners();
+                
+                console.log('🎉 回答フォーム初期化完了');
+                
+            } catch (error) {
+                console.error('❌ 初期化エラー:', error);
+                showError('データの読み込みに失敗しました: ' + error.message);
+            }
+        });
+
+        // イベント情報を読み込み
+        async function loadEvent(eventId) {
+            try {
+                console.log('イベント読み込み開始:', eventId);
+                
+                const { data: events, error } = await supabase
+                    .from('events')
+                    .select('*')
+                    .eq('id', eventId);
+                
+                if (error) throw error;
+                if (!events || events.length === 0) throw new Error('イベントが見つかりません');
+                
+                currentEvent = events[0];
+                displayEvent(currentEvent);
+                
+            } catch (error) {
+                console.error('イベント読み込みエラー:', error);
+                throw error;
+            }
+        }
+
+        // 既存回答を読み込み（編集モード用）
+        async function loadExistingResponse(responseId) {
+            try {
+                console.log('📖 既存回答を読み込み中:', responseId);
+                
+                const { data: responses, error } = await supabase
+                    .from('responses')
+                    .select('*')
+                    .eq('id', responseId);
+                
+                console.log('📊 Supabase回答読み込み結果:', { responses, error });
+                
+                if (error) {
+                    console.error('❌ Supabaseエラー:', error);
+                    throw error;
+                }
+                
+                if (!responses || responses.length === 0) {
+                    console.error('❌ 回答データが見つかりません');
+                    throw new Error('回答が見つかりません');
+                }
+                
+                const response = responses[0];
+                console.log('✅ 回答データ取得成功:', response);
+                
+                populateForm(response);
+                
+            } catch (error) {
+                console.error('❌ 既存回答読み込みエラー:', error);
+                throw error;
+            }
+        }
+
+        // イベント情報を表示
+        function displayEvent(event) {
+            // タイトル
+            const titleElement = document.getElementById('event-title');
+            if (titleElement) {
+                titleElement.textContent = event.title || '新年会への参加をお聞かせください';
+            }
+            
+            // 説明
+            const descElement = document.getElementById('event-description');
+            if (descElement) {
+                if (event.description) {
+                    descElement.innerHTML = event.description.replace(/\n/g, '<br>');
+                } else {
+                    descElement.innerHTML = 'みんなで楽しい時間を過ごしましょう！<br>あなたの都合をお聞かせください。';
+                }
+            }
+            
+            // 日程選択肢を生成
+            if (event.candidate_dates && Array.isArray(event.candidate_dates)) {
+                generateScheduleOptions(event.candidate_dates);
+            }
+        }
+
+        // 日程選択肢を生成
+        function generateScheduleOptions(dates) {
+            const container = document.getElementById('schedule-options');
+            container.innerHTML = '';
+            
+            dates.forEach((dateStr, index) => {
+                const date = new Date(dateStr);
+                const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+                const weekday = weekdays[date.getDay()];
+                const month = date.getMonth() + 1;
+                const day = date.getDate();
+                const hours = date.getHours().toString().padStart(2, '0');
+                const minutes = date.getMinutes().toString().padStart(2, '0');
+                
+                const optionDiv = document.createElement('div');
+                optionDiv.className = 'bg-gray-50 rounded-2xl p-6';
+                optionDiv.id = `schedule-${index}`;
+                optionDiv.innerHTML = `
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center space-x-4">
+                            <div class="w-12 h-12 bg-gradient-to-br from-kanjy-400 to-kanjy-600 rounded-xl flex items-center justify-center">
+                                <span class="text-white font-bold">${weekday}</span>
+                            </div>
+                            <div>
+                                <div class="text-lg font-bold text-gray-900">${month}月${day}日（${weekday}）</div>
+                                <div class="text-gray-600">${hours}:${minutes}開始</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-3 gap-3">
+                        <button type="button" class="choice-button p-3 rounded-xl border-2 border-attending-200 text-attending-700 hover:bg-attending-50 transition-all duration-300" data-date="${dateStr}" data-status="attending">
+                            <div class="flex items-center justify-center space-x-2">
+                                <span class="text-2xl font-bold">○</span>
+                                <span class="font-semibold">参加</span>
+                            </div>
+                        </button>
+                        
+                        <button type="button" class="choice-button p-3 rounded-xl border-2 border-notAttending-200 text-notAttending-700 hover:bg-notAttending-50 transition-all duration-300" data-date="${dateStr}" data-status="not_attending">
+                            <div class="flex items-center justify-center space-x-2">
+                                <span class="text-2xl font-bold">×</span>
+                                <span class="font-semibold">不参加</span>
+                            </div>
+                        </button>
+                        
+                        <button type="button" class="choice-button p-3 rounded-xl border-2 border-maybe-200 text-maybe-700 hover:bg-maybe-50 transition-all duration-300" data-date="${dateStr}" data-status="maybe">
+                            <div class="flex items-center justify-center space-x-2">
+                                <span class="text-2xl font-bold">△</span>
+                                <span class="font-semibold">未定</span>
+                            </div>
+                        </button>
+                    </div>
+                `;
+                
+                container.appendChild(optionDiv);
+            });
+            
+            // 選択ボタンのイベントリスナーを設定
+            setupChoiceButtons();
+        }
+
+        // 選択ボタンのイベントリスナーを設定
+        function setupChoiceButtons() {
+            document.querySelectorAll('.choice-button').forEach(button => {
+                button.addEventListener('click', function() {
+                    const dateStr = this.dataset.date;
+                    const status = this.dataset.status;
+                    
+                    // 同じ日程の他のボタンから選択状態を解除
+                    document.querySelectorAll(`[data-date="${dateStr}"]`).forEach(btn => {
+                        btn.classList.remove('selected');
+                        btn.classList.remove('bg-attending-100', 'border-attending-500', 'bg-notAttending-100', 'border-notAttending-500', 'bg-maybe-100', 'border-maybe-500');
+                    });
+                    
+                    // このボタンを選択状態にする
+                    this.classList.add('selected');
+                    
+                    if (status === 'attending') {
+                        this.classList.add('bg-attending-100', 'border-attending-500');
+                    } else if (status === 'not_attending') {
+                        this.classList.add('bg-notAttending-100', 'border-notAttending-500');
+                    } else if (status === 'maybe') {
+                        this.classList.add('bg-maybe-100', 'border-maybe-500');
+                    }
+                });
+            });
+        }
+
+        // フォームを既存データで埋める（編集モード用）
+        function populateForm(response) {
+            console.log('📝 フォームにデータを入力中:', response);
+            
+            // 基本情報を設定
+            const nameInput = document.getElementById('name');
+            const commentInput = document.getElementById('comment');
+            
+            if (nameInput) {
+                nameInput.value = response.participant_name || '';
+            } else {
+                console.warn('⚠️ 名前入力フィールドが見つかりません');
+            }
+            
+            if (commentInput) {
+                commentInput.value = response.comment || '';
+            } else {
+                console.warn('⚠️ コメント入力フィールドが見つかりません');
+            }
+            
+            // 日程選択を復元
+            if (currentEvent && currentEvent.candidate_dates) {
+                currentEvent.candidate_dates.forEach(dateStr => {
+                    let status = 'not_attending';
+                    
+                    if (response.available_dates && response.available_dates.includes(dateStr)) {
+                        status = 'attending';
+                    } else if (response.status === 'undecided') {
+                        // 全体ステータスが未定の場合で、参加でない日程は未定として表示
+                        status = 'maybe';
+                    }
+                    
+                    const button = document.querySelector(`[data-date="${dateStr}"][data-status="${status}"]`);
+                    if (button) {
+                        selectChoice(button);
+                        console.log(`✅ 日程選択復元: ${dateStr} -> ${status}`);
+                    } else {
+                        console.warn(`⚠️ 選択ボタンが見つかりません: ${dateStr}, ${status}`);
+                    }
+                });
+            } else {
+                console.warn('⚠️ イベントまたは候補日程が見つかりません');
+            }
+            
+            console.log('✅ フォームデータ入力完了');
+        }
+
+        // フォームイベントリスナーを設定
+        function setupFormListeners() {
+            // フォーム送信
+            document.getElementById('response-form').addEventListener('submit', handleSubmit);
+        }
+
+        // 選択肢を選択状態にする
+        function selectChoice(button) {
+            const status = button.dataset.status;
+            button.classList.add('selected');
+            
+            if (status === 'attending') {
+                button.classList.add('bg-attending-100', 'border-attending-500');
+            } else if (status === 'maybe') {
+                button.classList.add('bg-maybe-100', 'border-maybe-500');
+            } else if (status === 'not_attending') {
+                button.classList.add('bg-notAttending-100', 'border-notAttending-500');
+            }
+        }
+
+        // フォーム送信処理
+        async function handleSubmit(event) {
+            event.preventDefault();
+            
+            const submitBtn = event.target.querySelector('button[type="submit"]');
+            
+            // ローディング状態に変更
+            submitBtn.disabled = true;
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = `
+                <span class="flex items-center justify-center">
+                    <svg class="animate-spin w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    ${editMode ? '更新中...' : '送信中...'}
+                </span>
+            `;
+            
+            try {
+                // フォームデータを収集
+                const formData = collectFormData();
+                
+                if (editMode) {
+                    // 更新用にresponse_dateを除外
+                    const updateData = { ...formData };
+                    delete updateData.response_date;
+                    
+                    await updateResponse(editResponseId, updateData);
+                    showSuccessNotification('回答を更新しました！', '変更内容が正常に保存されました。');
+                } else {
+                    // 新規作成
+                    await createResponse(formData);
+                    showSuccessNotification('回答を送信しました！', 'ご回答いただき、ありがとうございました。');
+                }
+                
+                // 通知を表示してから2秒後に一覧画面に戻る
+                setTimeout(() => {
+                    goBack();
+                }, 2000);
+                
+            } catch (error) {
+                console.error('送信エラー:', error);
+                showErrorNotification('送信に失敗しました', 'もう一度お試しください。問題が続く場合は、イベント主催者またはサポート（snaproom.info@gmail.com）までご連絡ください。');
+            } finally {
+                // ローディング状態を解除
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+        }
+
+        // フォームデータを収集
+        function collectFormData() {
+            const participantName = document.getElementById('name').value.trim();
+            const comment = document.getElementById('comment').value.trim();
+            
+            if (!participantName) {
+                throw new Error('お名前を入力してください');
+            }
+            
+            // 日程選択を収集
+            const availableDates = [];
+            const dateStatuses = {};
+            
+            document.querySelectorAll('.choice-button.selected').forEach(button => {
+                const dateStr = button.dataset.date;
+                const status = button.dataset.status;
+                
+                dateStatuses[dateStr] = status;
+                
+                // 参加のみをavailable_datesに追加（既存のテーブル構造に合わせる）
+                if (status === 'attending') {
+                    availableDates.push(dateStr);
+                }
+            });
+            
+            // 全体の参加状況を判定
+            const statusValues = Object.values(dateStatuses);
+            let overallStatus = 'not_attending';
+            
+            if (statusValues.includes('attending')) {
+                overallStatus = 'attending';
+            } else if (statusValues.includes('maybe')) {
+                overallStatus = 'undecided';
+            }
+            
+            // 少なくとも1つの日程に回答しているかチェック
+            if (statusValues.length === 0) {
+                throw new Error('少なくとも1つの日程について回答してください');
+            }
+            
+            console.log('📋 収集したフォームデータ:', {
+                participantName,
+                availableDates,
+                overallStatus,
+                dateStatuses,
+                comment
+            });
+            
+            return {
+                event_id: currentEventId,
+                participant_name: participantName,
+                comment: comment || null,
+                available_dates: availableDates,
+                status: overallStatus,
+                response_date: new Date().toISOString()
+            };
+        }
+
+        // キャンセル処理
+        async function cancelForm() {
+            const confirmed = await showConfirmDialog(
+                '入力内容の確認',
+                '入力した変更内容が失われますが、\n入力画面に戻りますか？',
+                '入力画面に戻る',
+                'このまま続ける'
+            );
+            
+            if (confirmed) {
+                goBack();
+            }
+        }
+
+        // 新規回答を作成
+        async function createResponse(formData) {
+            console.log('📤 新規回答を作成中:', formData);
+            
+            const { data, error } = await supabase
+                .from('responses')
+                .insert([formData])
+                .select();
+            
+            console.log('📥 Supabase回答結果:', { data, error });
+            
+            if (error) {
+                console.error('❌ 新規回答作成エラー:', error);
+                throw error;
+            }
+            
+            console.log('✅ 新規回答作成成功');
+            return data;
+        }
+
+        // 回答を更新
+        async function updateResponse(responseId, updateData) {
+            console.log('📤 回答を更新中:', { responseId, updateData });
+            
+            const { data, error } = await supabase
+                .from('responses')
+                .update(updateData)
+                .eq('id', responseId)
+                .select();
+            
+            console.log('📥 Supabase更新結果:', { data, error });
+            
+            if (error) {
+                console.error('❌ 回答更新エラー:', error);
+                throw error;
+            }
+            
+            console.log('✅ 回答更新成功');
+            return data;
+        }
+
+        // 回答を削除
+        async function deleteResponse() {
+            console.log('🗑️ 削除機能開始');
+            console.log('編集モード:', editMode);
+            console.log('編集回答ID:', editResponseId);
+            
+            if (!editMode || !editResponseId) {
+                console.error('❌ 削除条件が満たされていません');
+                showErrorNotification('削除できません', '編集モードではないか、回答IDが無効です。');
+                return;
+            }
+            
+            // 参加者名を取得（確認用）
+            const participantName = document.getElementById('name').value.trim() || '参加者';
+            
+            // 確認ダイアログ
+            const confirmed = await showConfirmDialog(
+                '回答削除の確認',
+                `「${participantName}」さんの回答を削除します。\n\nこの操作は取り消せません。\n本当に削除しますか？`,
+                '削除する',
+                '削除しない'
+            );
+            
+            if (!confirmed) {
+                console.log('削除がキャンセルされました');
+                return;
+            }
+            
+            try {
+                console.log('🔄 削除処理開始 - ID:', editResponseId);
+                
+                // 削除ボタンをローディング状態に
+                const deleteBtn = document.getElementById('delete-response-btn');
+                deleteBtn.disabled = true;
+                deleteBtn.innerHTML = `
+                    <svg class="animate-spin w-5 h-5 mr-2 inline" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    削除中...
+                `;
+                
+                // まず削除前にレコードが存在するかを確認
+                console.log('📋 削除前のレコード確認');
+                const { data: beforeCheck, error: checkError } = await supabase
+                    .from('responses')
+                    .select('id, participant_name')
+                    .eq('id', editResponseId);
+                
+                if (checkError) {
+                    console.error('レコード確認エラー:', checkError);
+                    throw new Error('削除前の確認に失敗: ' + checkError.message);
+                }
+                
+                console.log('削除前のレコード:', beforeCheck);
+                
+                if (!beforeCheck || beforeCheck.length === 0) {
+                    throw new Error('削除対象のレコードが見つかりません');
+                }
+                
+                // RLS制限により物理削除ができないため、論理削除を実行
+                console.log('🗑️ 論理削除を実行（RLS制限回避）');
+                console.log('削除対象ID:', editResponseId);
+                console.log('イベントID:', currentEventId);
+                
+                // まず物理削除を試行
+                const { data: deleteResult, error: deleteError } = await supabase
+                    .from('responses')
+                    .delete()
+                    .eq('id', editResponseId)
+                    .select();
+                
+                console.log('物理削除結果:', deleteResult);
+                console.log('物理削除エラー:', deleteError);
+                
+                // 物理削除が失敗した場合は論理削除を実行
+                if (deleteError || !deleteResult || deleteResult.length === 0) {
+                    console.log('⚠️ 物理削除に失敗。論理削除を実行します...');
+                    
+                    // 論理削除: 制約に準拠して削除済みマークを付ける
+                    const originalName = beforeCheck[0]?.participant_name || 'ユーザー';
+                    const { data: updateResult, error: updateError } = await supabase
+                        .from('responses')
+                        .update({ 
+                            status: 'not_attending', // 制約に準拠した値を使用
+                            participant_name: '[削除済み] ' + originalName,
+                            comment: (beforeCheck[0]?.comment || '') + '\n[削除日時: ' + new Date().toLocaleString('ja-JP') + ']',
+                            available_dates: [] // 参加可能日程をクリア
+                        })
+                        .eq('id', editResponseId)
+                        .select();
+                    
+                    console.log('論理削除結果:', updateResult);
+                    console.log('論理削除エラー:', updateError);
+                    
+                    if (updateError) {
+                        console.error('論理削除もエラー:', updateError);
+                        throw new Error('削除に失敗しました: ' + updateError.message);
+                    }
+                    
+                    if (!updateResult || updateResult.length === 0) {
+                        throw new Error('論理削除に失敗しました。対象レコードが見つかりません。');
+                    }
+                    
+                    console.log('✅ 論理削除成功。削除マークを付けました。');
+                } else {
+                    console.log('✅ 物理削除成功。削除されたレコード数:', deleteResult.length);
+                }
+                
+                // 削除後の確認（物理削除または論理削除の確認）
+                console.log('📋 削除処理の確認');
+                const { data: afterCheck, error: afterCheckError } = await supabase
+                    .from('responses')
+                    .select('id, participant_name, status, comment')
+                    .eq('id', editResponseId);
+                
+                console.log('削除後のレコード状態:', afterCheck);
+                console.log('削除後の確認エラー:', afterCheckError);
+                
+                if (afterCheckError) {
+                    console.error('削除後確認エラー:', afterCheckError);
+                    // エラーがある場合は、物理削除が成功した可能性もある
+                    console.log('✅ 物理削除が成功した可能性があります');
+                } else if (afterCheck && afterCheck.length > 0) {
+                    // レコードが残っている場合
+                    const record = afterCheck[0];
+                    
+                    if (record.participant_name.startsWith('[削除済み]')) {
+                        console.log('✅ 論理削除が完了しています');
+                        console.log('削除マーク詳細:', {
+                            status: record.status,
+                            participant_name: record.participant_name,
+                            comment: record.comment
+                        });
+                    } else {
+                        console.error('⚠️ 削除処理が完了していません');
+                        console.error('レコード詳細:', record);
+                        throw new Error('削除処理に失敗しました');
+                    }
+                } else {
+                    console.log('✅ 物理削除が完了しています（レコードが完全に削除されました）');
+                }
+                
+                console.log('✅ 削除成功');
+                showSuccessNotification('回答を削除しました', '回答が正常に削除されました。');
+                
+                // 通知を表示してから2秒後に一覧画面に戻る
+                setTimeout(() => {
+                    goBack();
+                }, 2000);
+                
+            } catch (error) {
+                console.error('❌ 削除エラー:', error);
+                console.error('エラー詳細:', {
+                    name: error.name,
+                    message: error.message,
+                    stack: error.stack
+                });
+                
+                showErrorNotification('削除に失敗しました', 'もう一度お試しください。問題が続く場合は、イベント主催者またはサポート（snaproom.info@gmail.com）までご連絡ください。');
+                
+                // ボタンを元に戻す
+                const deleteBtn = document.getElementById('delete-response-btn');
+                deleteBtn.disabled = false;
+                deleteBtn.innerHTML = `
+                    <svg class="w-5 h-5 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                    この回答を削除
+                `;
+            }
+        }
+
+        // 一覧画面に戻る
+        function goBack() {
+            const urlParams = new URLSearchParams();
+            if (currentEventId) {
+                urlParams.set('id', currentEventId);
+                urlParams.set('t', Date.now());
+                urlParams.set('v', 'beautiful');
+            }
+            window.location.href = `index.html?${urlParams.toString()}`;
+        }
+
+        // エラー表示
+        function showError(message) {
+            console.error('🚨', message);
+            showErrorNotification('エラーが発生しました', `${message} 解決しない場合は、イベント主催者またはサポート（snaproom.info@gmail.com）までご連絡ください。`);
+        }
+
+        // 成功通知を表示
+        function showSuccessNotification(title, message) {
+            showNotification(title, message, 'success');
+        }
+
+        // エラー通知を表示
+        function showErrorNotification(title, message) {
+            showNotification(title, message, 'error');
+        }
+
+        // カスタム確認ダイアログを表示
+        function showConfirmDialog(title, message, okText = '実行', cancelText = 'キャンセル') {
+            return new Promise((resolve) => {
+                const dialog = document.getElementById('confirm-dialog');
+                const titleElement = document.getElementById('confirm-title');
+                const messageElement = document.getElementById('confirm-message');
+                const okButton = document.getElementById('confirm-ok');
+                const cancelButton = document.getElementById('confirm-cancel');
+                
+                // テキストを設定
+                titleElement.textContent = title;
+                messageElement.textContent = message;
+                okButton.textContent = okText;
+                cancelButton.textContent = cancelText;
+                
+                // ボタンの色を設定（削除の場合は赤、それ以外はブルー）
+                if (okText.includes('削除')) {
+                    okButton.className = 'flex-1 bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 shadow-md';
+                } else {
+                    okButton.className = 'flex-1 bg-kanjy-500 hover:bg-kanjy-600 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 shadow-md';
+                }
+                
+                // ダイアログを表示
+                dialog.classList.remove('hidden');
+                
+                // イベントリスナーを設定
+                const handleOk = () => {
+                    dialog.classList.add('hidden');
+                    okButton.removeEventListener('click', handleOk);
+                    cancelButton.removeEventListener('click', handleCancel);
+                    resolve(true);
+                };
+                
+                const handleCancel = () => {
+                    dialog.classList.add('hidden');
+                    okButton.removeEventListener('click', handleOk);
+                    cancelButton.removeEventListener('click', handleCancel);
+                    resolve(false);
+                };
+                
+                okButton.addEventListener('click', handleOk);
+                cancelButton.addEventListener('click', handleCancel);
+                
+                // ESCキーでキャンセル
+                const handleEsc = (e) => {
+                    if (e.key === 'Escape') {
+                        handleCancel();
+                        document.removeEventListener('keydown', handleEsc);
+                    }
+                };
+                document.addEventListener('keydown', handleEsc);
+            });
+        }
+
+        // 通知を表示
+        function showNotification(title, message, type = 'success') {
+            console.log('📢 通知表示:', { title, message, type });
+            
+            const container = document.getElementById('notification-container');
+            if (!container) {
+                console.error('❌ 通知コンテナが見つかりません');
+                return;
+            }
+            
+            const notification = document.createElement('div');
+            
+            const bgColor = type === 'success' ? 'bg-green-500' : 'bg-red-500';
+            const icon = type === 'success' ? 
+                '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>' :
+                '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>';
+            
+            notification.className = `${bgColor} text-white px-6 py-4 rounded-xl shadow-lg transform translate-x-full transition-all duration-300 ease-in-out max-w-sm`;
+            notification.innerHTML = `
+                <div class="flex items-start space-x-3">
+                    <div class="flex-shrink-0 mt-0.5">
+                        ${icon}
+                    </div>
+                    <div class="flex-1">
+                        <h4 class="font-semibold text-sm">${title}</h4>
+                        <p class="text-sm opacity-90 mt-1">${message}</p>
+                    </div>
+                    <button onclick="this.parentElement.parentElement.remove()" class="flex-shrink-0 text-white/80 hover:text-white">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+            `;
+            
+            container.appendChild(notification);
+            
+            // アニメーションで表示
+            setTimeout(() => {
+                notification.classList.remove('translate-x-full');
+            }, 100);
+            
+            // 5秒後に自動削除
+            setTimeout(() => {
+                notification.classList.add('translate-x-full');
+                setTimeout(() => {
+                    if (notification.parentElement) {
+                        notification.remove();
+                    }
+                }, 300);
+            }, 5000);
+        }
+    </script>
+</body>
+</html> 

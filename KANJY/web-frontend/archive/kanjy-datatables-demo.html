@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KANJY - DataTables表デモ</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- DataTables CSS (Tailwind版) -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/2.1.8/css/dataTables.tailwindcss.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/3.0.3/css/responsive.tailwindcss.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/3.1.2/css/buttons.tailwindcss.css">
+    
+    <!-- KANJYカラーパレット設定 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'kanjy': {
+                            50: '#eff6ff',
+                            100: '#dbeafe', 
+                            200: '#bfdbfe',
+                            300: '#93c5fd',
+                            400: '#60a5fa',
+                            500: '#007AFF', // KANJYメインカラー
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a'
+                        },
+                        'kanjy-attending': '#2ECC71',    // 美しい緑
+                        'kanjy-maybe': '#FF9500',        // 鮮やかなオレンジ  
+                        'kanjy-not-attending': '#E74C3C', // 洗練された赤
+                        'kanjy-undecided': '#95A5A6'     // 上品なグレー
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        /* カスタムスタイル */
+        .status-attending { 
+            background-color: rgba(46, 204, 113, 0.1); 
+            color: #2ECC71;
+            font-weight: 600;
+        }
+        .status-maybe { 
+            background-color: rgba(255, 149, 0, 0.1); 
+            color: #FF9500;
+            font-weight: 600;
+        }
+        .status-not-attending { 
+            background-color: rgba(231, 76, 60, 0.1); 
+            color: #E74C3C;
+            font-weight: 600;
+        }
+        .status-undecided { 
+            background-color: rgba(149, 165, 166, 0.1); 
+            color: #95A5A6;
+            font-weight: 600;
+        }
+        
+        /* DataTables カスタマイズ */
+        .dt-button {
+            @apply bg-kanjy-500 text-white px-4 py-2 rounded-lg hover:bg-kanjy-600 transition-colors mr-2;
+        }
+        
+        .dt-search input {
+            @apply border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-kanjy-500 focus:border-transparent;
+        }
+        
+        .dt-length select {
+            @apply border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-kanjy-500 focus:border-transparent;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="min-h-screen">
+        <!-- ヘッダー -->
+        <header class="bg-white shadow-sm border-b border-gray-200">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center h-16">
+                    <div class="flex items-center">
+                        <h1 class="text-xl font-bold text-gray-900">KANJY</h1>
+                        <span class="ml-3 px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">DataTables統合版</span>
+                    </div>
+                    <div class="text-sm text-gray-500">
+                        幹事さんお助けアプリ - 表機能強化デモ
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- メインコンテンツ -->
+        <main class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+            <!-- イベント情報カード -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-6">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h2 class="text-lg font-semibold text-gray-900">新年会の日程調整</h2>
+                    <p class="text-sm text-gray-600 mt-1">候補日程から都合の良い日をお選びください</p>
+                </div>
+                <div class="px-6 py-4">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-kanjy-attending">13</div>
+                            <div class="text-sm text-gray-600">参加予定</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-kanjy-maybe">3</div>
+                            <div class="text-sm text-gray-600">検討中</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-kanjy-not-attending">4</div>
+                            <div class="text-sm text-gray-600">不参加</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DataTables表 -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-900">回答一覧</h3>
+                    <p class="text-sm text-gray-600 mt-1">参加者の回答状況（DataTables機能付き）</p>
+                </div>
+                <div class="p-6">
+                    <table id="responseTable" class="table-auto w-full">
+                        <thead>
+                            <tr>
+                                <th class="text-left">参加者名</th>
+                                <th class="text-left">部署</th>
+                                <th class="text-center">1/10(金) 19:00</th>
+                                <th class="text-center">1/11(土) 18:30</th>
+                                <th class="text-center">1/17(金) 19:30</th>
+                                <th class="text-left">コメント</th>
+                                <th class="text-center">回答日時</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="font-medium">田中 花子</td>
+                                <td>営業部</td>
+                                <td class="text-center"><span class="status-attending px-2 py-1 rounded-full text-xs">○</span></td>
+                                <td class="text-center"><span class="status-attending px-2 py-1 rounded-full text-xs">○</span></td>
+                                <td class="text-center"><span class="status-maybe px-2 py-1 rounded-full text-xs">△</span></td>
+                                <td class="text-sm">金曜日の方が都合良いです</td>
+                                <td class="text-center text-sm">2025/01/05 14:30</td>
+                            </tr>
+                            <tr>
+                                <td class="font-medium">佐藤 次郎</td>
+                                <td>開発部</td>
+                                <td class="text-center"><span class="status-maybe px-2 py-1 rounded-full text-xs">△</span></td>
+                                <td class="text-center"><span class="status-attending px-2 py-1 rounded-full text-xs">○</span></td>
+                                <td class="text-center"><span class="status-attending px-2 py-1 rounded-full text-xs">○</span></td>
+                                <td class="text-sm">土曜日が一番助かります</td>
+                                <td class="text-center text-sm">2025/01/05 16:20</td>
+                            </tr>
+                            <tr>
+                                <td class="font-medium">鈴木 一郎</td>
+                                <td>総務部</td>
+                                <td class="text-center"><span class="status-attending px-2 py-1 rounded-full text-xs">○</span></td>
+                                <td class="text-center"><span class="status-not-attending px-2 py-1 rounded-full text-xs">×</span></td>
+                                <td class="text-center"><span class="status-attending px-2 py-1 rounded-full text-xs">○</span></td>
+                                <td class="text-sm">土曜日は家族の用事があります</td>
+                                <td class="text-center text-sm">2025/01/05 18:45</td>
+                            </tr>
+                            <tr>
+                                <td class="font-medium">高橋 美咲</td>
+                                <td>マーケティング部</td>
+                                <td class="text-center"><span class="status-attending px-2 py-1 rounded-full text-xs">○</span></td>
+                                <td class="text-center"><span class="status-attending px-2 py-1 rounded-full text-xs">○</span></td>
+                                <td class="text-center"><span class="status-attending px-2 py-1 rounded-full text-xs">○</span></td>
+                                <td class="text-sm">どの日程でも大丈夫です！</td>
+                                <td class="text-center text-sm">2025/01/06 09:15</td>
+                            </tr>
+                            <tr>
+                                <td class="font-medium">山田 太郎</td>
+                                <td>営業部</td>
+                                <td class="text-center"><span class="status-not-attending px-2 py-1 rounded-full text-xs">×</span></td>
+                                <td class="text-center"><span class="status-maybe px-2 py-1 rounded-full text-xs">△</span></td>
+                                <td class="text-center"><span class="status-attending px-2 py-1 rounded-full text-xs">○</span></td>
+                                <td class="text-sm">17日なら参加できます</td>
+                                <td class="text-center text-sm">2025/01/06 11:30</td>
+                            </tr>
+                            <tr>
+                                <td class="font-medium">伊藤 京子</td>
+                                <td>人事部</td>
+                                <td class="text-center"><span class="status-attending px-2 py-1 rounded-full text-xs">○</span></td>
+                                <td class="text-center"><span class="status-attending px-2 py-1 rounded-full text-xs">○</span></td>
+                                <td class="text-center"><span class="status-not-attending px-2 py-1 rounded-full text-xs">×</span></td>
+                                <td class="text-sm">17日は別の予定があります</td>
+                                <td class="text-center text-sm">2025/01/06 13:20</td>
+                            </tr>
+                            <tr>
+                                <td class="font-medium">渡辺 健太</td>
+                                <td>開発部</td>
+                                <td class="text-center"><span class="status-maybe px-2 py-1 rounded-full text-xs">△</span></td>
+                                <td class="text-center"><span class="status-attending px-2 py-1 rounded-full text-xs">○</span></td>
+                                <td class="text-center"><span class="status-maybe px-2 py-1 rounded-full text-xs">△</span></td>
+                                <td class="text-sm">調整中です、後日連絡します</td>
+                                <td class="text-center text-sm">2025/01/06 15:45</td>
+                            </tr>
+                            <tr>
+                                <td class="font-medium">加藤 麻衣</td>
+                                <td>経理部</td>
+                                <td class="text-center"><span class="status-attending px-2 py-1 rounded-full text-xs">○</span></td>
+                                <td class="text-center"><span class="status-attending px-2 py-1 rounded-full text-xs">○</span></td>
+                                <td class="text-center"><span class="status-attending px-2 py-1 rounded-full text-xs">○</span></td>
+                                <td class="text-sm">いつでも参加可能です</td>
+                                <td class="text-center text-sm">2025/01/06 17:10</td>
+                            </tr>
+                            <tr>
+                                <td class="font-medium">中村 大輔</td>
+                                <td>営業部</td>
+                                <td class="text-center"><span class="status-not-attending px-2 py-1 rounded-full text-xs">×</span></td>
+                                <td class="text-center"><span class="status-not-attending px-2 py-1 rounded-full text-xs">×</span></td>
+                                <td class="text-center"><span class="status-attending px-2 py-1 rounded-full text-xs">○</span></td>
+                                <td class="text-sm">出張から戻るのが17日です</td>
+                                <td class="text-center text-sm">2025/01/07 08:30</td>
+                            </tr>
+                            <tr>
+                                <td class="font-medium">小林 優子</td>
+                                <td>デザイン部</td>
+                                <td class="text-center"><span class="status-attending px-2 py-1 rounded-full text-xs">○</span></td>
+                                <td class="text-center"><span class="status-maybe px-2 py-1 rounded-full text-xs">△</span></td>
+                                <td class="text-center"><span class="status-attending px-2 py-1 rounded-full text-xs">○</span></td>
+                                <td class="text-sm">金曜日希望ですが、調整できます</td>
+                                <td class="text-center text-sm">2025/01/07 10:15</td>
+                            </tr>
+                            <tr>
+                                <td class="font-medium">松本 誠</td>
+                                <td>総務部</td>
+                                <td class="text-center"><span class="status-attending px-2 py-1 rounded-full text-xs">○</span></td>
+                                <td class="text-center"><span class="status-attending px-2 py-1 rounded-full text-xs">○</span></td>
+                                <td class="text-center"><span class="status-not-attending px-2 py-1 rounded-full text-xs">×</span></td>
+                                <td class="text-sm">17日は結婚記念日なので...</td>
+                                <td class="text-center text-sm">2025/01/07 12:40</td>
+                            </tr>
+                            <tr>
+                                <td class="font-medium">森田 梨花</td>
+                                <td>マーケティング部</td>
+                                <td class="text-center"><span class="status-attending px-2 py-1 rounded-full text-xs">○</span></td>
+                                <td class="text-center"><span class="status-attending px-2 py-1 rounded-full text-xs">○</span></td>
+                                <td class="text-center"><span class="status-attending px-2 py-1 rounded-full text-xs">○</span></td>
+                                <td class="text-sm">楽しみにしています！</td>
+                                <td class="text-center text-sm">2025/01/07 14:25</td>
+                            </tr>
+                            <tr>
+                                <td class="font-medium">石田 拓也</td>
+                                <td>開発部</td>
+                                <td class="text-center"><span class="status-maybe px-2 py-1 rounded-full text-xs">△</span></td>
+                                <td class="text-center"><span class="status-attending px-2 py-1 rounded-full text-xs">○</span></td>
+                                <td class="text-center"><span class="status-attending px-2 py-1 rounded-full text-xs">○</span></td>
+                                <td class="text-sm">リリース作業次第ですが、参加したいです</td>
+                                <td class="text-center text-sm">2025/01/07 16:50</td>
+                            </tr>
+                            <tr>
+                                <td class="font-medium">川島 由美</td>
+                                <td>人事部</td>
+                                <td class="text-center"><span class="status-attending px-2 py-1 rounded-full text-xs">○</span></td>
+                                <td class="text-center"><span class="status-not-attending px-2 py-1 rounded-full text-xs">×</span></td>
+                                <td class="text-center"><span class="status-attending px-2 py-1 rounded-full text-xs">○</span></td>
+                                <td class="text-sm">土曜日は子供の習い事があります</td>
+                                <td class="text-center text-sm">2025/01/07 18:15</td>
+                            </tr>
+                            <tr>
+                                <td class="font-medium">藤田 涼介</td>
+                                <td>営業部</td>
+                                <td class="text-center"><span class="status-attending px-2 py-1 rounded-full text-xs">○</span></td>
+                                <td class="text-center"><span class="status-attending px-2 py-1 rounded-full text-xs">○</span></td>
+                                <td class="text-center"><span class="status-attending px-2 py-1 rounded-full text-xs">○</span></td>
+                                <td class="text-sm">どの日程でも問題ありません</td>
+                                <td class="text-center text-sm">2025/01/08 09:30</td>
+                            </tr>
+                            <tr>
+                                <td class="font-medium">西野 美穂</td>
+                                <td>経理部</td>
+                                <td class="text-center"><span class="status-not-attending px-2 py-1 rounded-full text-xs">×</span></td>
+                                <td class="text-center"><span class="status-attending px-2 py-1 rounded-full text-xs">○</span></td>
+                                <td class="text-center"><span class="status-attending px-2 py-1 rounded-full text-xs">○</span></td>
+                                <td class="text-sm">10日は年末調整の追い込みです</td>
+                                <td class="text-center text-sm">2025/01/08 11:45</td>
+                            </tr>
+                            <tr>
+                                <td class="font-medium">村上 和也</td>
+                                <td>デザイン部</td>
+                                <td class="text-center"><span class="status-attending px-2 py-1 rounded-full text-xs">○</span></td>
+                                <td class="text-center"><span class="status-attending px-2 py-1 rounded-full text-xs">○</span></td>
+                                <td class="text-center"><span class="status-maybe px-2 py-1 rounded-full text-xs">△</span></td>
+                                <td class="text-sm">17日は微妙ですが調整します</td>
+                                <td class="text-center text-sm">2025/01/08 13:20</td>
+                            </tr>
+                            <tr>
+                                <td class="font-medium">清水 亜紀</td>
+                                <td>総務部</td>
+                                <td class="text-center"><span class="status-attending px-2 py-1 rounded-full text-xs">○</span></td>
+                                <td class="text-center"><span class="status-attending px-2 py-1 rounded-full text-xs">○</span></td>
+                                <td class="text-center"><span class="status-attending px-2 py-1 rounded-full text-xs">○</span></td>
+                                <td class="text-sm">新年会の準備もお手伝いします！</td>
+                                <td class="text-center text-sm">2025/01/08 15:05</td>
+                            </tr>
+                            <tr>
+                                <td class="font-medium">木村 隆志</td>
+                                <td>マーケティング部</td>
+                                <td class="text-center"><span class="status-maybe px-2 py-1 rounded-full text-xs">△</span></td>
+                                <td class="text-center"><span class="status-not-attending px-2 py-1 rounded-full text-xs">×</span></td>
+                                <td class="text-center"><span class="status-attending px-2 py-1 rounded-full text-xs">○</span></td>
+                                <td class="text-sm">キャンペーンの関係で調整が必要です</td>
+                                <td class="text-center text-sm">2025/01/08 17:30</td>
+                            </tr>
+                            <tr>
+                                <td class="font-medium">橋本 恵子</td>
+                                <td>人事部</td>
+                                <td class="text-center"><span class="status-attending px-2 py-1 rounded-full text-xs">○</span></td>
+                                <td class="text-center"><span class="status-attending px-2 py-1 rounded-full text-xs">○</span></td>
+                                <td class="text-center"><span class="status-attending px-2 py-1 rounded-full text-xs">○</span></td>
+                                <td class="text-sm">みなさんとお会いできるのを楽しみにしています</td>
+                                <td class="text-center text-sm">2025/01/09 10:20</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 機能説明 -->
+            <div class="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-6">
+                <h3 class="text-lg font-semibold text-blue-900 mb-3">🎉 DataTables機能</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-blue-800">
+                    <div>
+                        <h4 class="font-semibold mb-2">✨ 搭載機能</h4>
+                        <ul class="space-y-1">
+                            <li>• 🔍 リアルタイム検索</li>
+                            <li>• 📊 カラムソート（昇順・降順）</li>
+                            <li>• 📄 ページング（表示件数変更可能）</li>
+                            <li>• 📱 レスポンシブ対応</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold mb-2">📁 エクスポート機能</h4>
+                        <ul class="space-y-1">
+                            <li>• 📋 クリップボードにコピー</li>
+                            <li>• 📊 CSV形式でダウンロード</li>
+                            <li>• 📈 Excel形式でダウンロード</li>
+                            <li>• 🖨️ 印刷機能</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="mt-4 p-3 bg-white rounded-lg border border-blue-200">
+                    <p class="text-sm text-blue-700">
+                        <strong>試してみよう：</strong> 上の表で「田中」と検索したり、「参加者名」カラムをクリックしてソートしてみてください！
+                    </p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    
+    <!-- DataTables JS -->
+    <script src="https://cdn.datatables.net/2.1.8/js/dataTables.js"></script>
+    <script src="https://cdn.datatables.net/2.1.8/js/dataTables.tailwindcss.js"></script>
+    <script src="https://cdn.datatables.net/responsive/3.0.3/js/dataTables.responsive.js"></script>
+    <script src="https://cdn.datatables.net/responsive/3.0.3/js/responsive.tailwindcss.js"></script>
+    
+    <!-- DataTables Buttons -->
+    <script src="https://cdn.datatables.net/buttons/3.1.2/js/dataTables.buttons.js"></script>
+    <script src="https://cdn.datatables.net/buttons/3.1.2/js/buttons.tailwindcss.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+    <script src="https://cdn.datatables.net/buttons/3.1.2/js/buttons.html5.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/3.1.2/js/buttons.print.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            // DataTables初期化
+            $('#responseTable').DataTable({
+                // 基本設定
+                pageLength: 10,
+                lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "全て"]],
+                responsive: true,
+                order: [[6, 'desc']], // 回答日時で降順ソート
+                
+                // 日本語化
+                language: {
+                    url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/ja.json'
+                },
+                
+                // ボタン設定
+                dom: 'Bfrtip',
+                buttons: [
+                    {
+                        extend: 'copy',
+                        text: '📋 コピー',
+                        className: 'dt-button'
+                    },
+                    {
+                        extend: 'csv',
+                        text: '📊 CSV',
+                        className: 'dt-button'
+                    },
+                    {
+                        extend: 'excel',
+                        text: '📈 Excel',
+                        className: 'dt-button'
+                    },
+                    {
+                        extend: 'pdf',
+                        text: '📄 PDF',
+                        className: 'dt-button',
+                        orientation: 'landscape',
+                        pageSize: 'A4'
+                    },
+                    {
+                        extend: 'print',
+                        text: '🖨️ 印刷',
+                        className: 'dt-button'
+                    }
+                ],
+                
+                // カラム設定
+                columnDefs: [
+                    { 
+                        targets: [2, 3, 4, 6], // 日程カラムと回答日時
+                        className: 'text-center'
+                    },
+                    {
+                        targets: [0, 1, 5], // 名前、部署、コメント
+                        className: 'text-left'
+                    },
+                    {
+                        targets: [6], // 回答日時
+                        type: 'date'
+                    }
+                ],
+                
+                // レスポンシブ設定
+                responsive: {
+                    details: {
+                        type: 'column',
+                        target: 'tr'
+                    }
+                },
+                
+                // 初期化完了時の処理
+                initComplete: function() {
+                    console.log('DataTables初期化完了 🎉');
+                    
+                    // カスタム検索フィルターを追加
+                    this.api().columns([1]).every(function() {
+                        var column = this;
+                        var select = $('<select class="ml-2 border border-gray-300 rounded px-2 py-1 text-sm"><option value="">全部署</option></select>')
+                            .appendTo($('.dt-search'))
+                            .on('change', function() {
+                                var val = $.fn.dataTable.util.escapeRegex($(this).val());
+                                column.search(val ? '^' + val + '$' : '', true, false).draw();
+                            });
+                        
+                        column.data().unique().sort().each(function(d, j) {
+                            select.append('<option value="' + d + '">' + d + '</option>');
+                        });
+                    });
+                }
+            });
+            
+            // アニメーション追加
+            $('.status-attending, .status-maybe, .status-not-attending, .status-undecided').hover(
+                function() {
+                    $(this).addClass('scale-110 transition-transform duration-200');
+                },
+                function() {
+                    $(this).removeClass('scale-110 transition-transform duration-200');
+                }
+            );
+        });
+    </script>
+</body>
+</html> 

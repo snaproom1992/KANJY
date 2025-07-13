@@ -1,0 +1,1367 @@
+<!DOCTYPE html>
+<html lang="ja" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KANJY - 美しい表デザイン</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Supabase CDN -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'sans': ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+                    },
+                    colors: {
+                        kanjy: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            200: '#bfdbfe',
+                            300: '#93c5fd',
+                            400: '#60a5fa',
+                            500: '#007AFF',
+                            600: '#0056cc',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                        },
+                        // SwiftUIカラーパレット（洗練版）
+                        attending: {
+                            50: '#ecfdf5',
+                            100: '#d1fae5',
+                            500: '#10b981', // 美しい緑
+                            600: '#059669',
+                            700: '#047857',
+                        },
+                        maybe: {
+                            50: '#fff7ed',
+                            100: '#ffedd5',
+                            500: '#f97316', // 鮮やかなオレンジ
+                            600: '#ea580c',
+                            700: '#c2410c',
+                        },
+                        notAttending: {
+                            50: '#fef2f2',
+                            100: '#fee2e2',
+                            500: '#ef4444', // 洗練された赤
+                            600: '#dc2626',
+                            700: '#b91c1c',
+                        },
+                        undecided: {
+                            50: '#f9fafb',
+                            100: '#f3f4f6',
+                            500: '#6b7280', // 上品なグレー
+                            600: '#4b5563',
+                            700: '#374151',
+                        }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-in-out',
+                        'slide-up': 'slideUp 0.6s ease-out',
+                        'scale-in': 'scaleIn 0.3s ease-out',
+                        'float': 'float 3s ease-in-out infinite',
+                        'shimmer': 'shimmer 2s linear infinite',
+                        'bounce-gentle': 'bounceGentle 2s infinite',
+                        'pulse-soft': 'pulseSoft 2s infinite',
+                        'slide-in-right': 'slideInRight 0.3s ease-out',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(20px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        },
+                        scaleIn: {
+                            '0%': { transform: 'scale(0.95)', opacity: '0' },
+                            '100%': { transform: 'scale(1)', opacity: '1' },
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        },
+                        shimmer: {
+                            '0%': { transform: 'translateX(-100%)' },
+                            '100%': { transform: 'translateX(100%)' },
+                        },
+                        bounceGentle: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-5px)' },
+                        },
+                        pulseSoft: {
+                            '0%, 100%': { opacity: '1' },
+                            '50%': { opacity: '0.8' },
+                        },
+                        slideInRight: {
+                            '0%': { transform: 'translateX(100%)', opacity: '0' },
+                            '100%': { transform: 'translateX(0)', opacity: '1' },
+                        }
+                    },
+                    backdropBlur: {
+                        '3xl': '64px',
+                    },
+                    boxShadow: {
+                        'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.37)',
+                        'elegant': '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                        'soft': '0 2px 15px 0 rgba(0, 0, 0, 0.1)',
+                        'floating': '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        /* CSS変数 */
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8fafc;
+            --bg-tertiary: #f1f5f9;
+            --text-primary: #1e293b;
+            --text-secondary: #475569;
+            --text-tertiary: #64748b;
+            --border-primary: #e2e8f0;
+            --border-secondary: #cbd5e1;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            --glass-bg: rgba(255, 255, 255, 0.25);
+            --glass-border: rgba(255, 255, 255, 0.18);
+        }
+        
+        @keyframes gradient-shift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        
+        .gradient-animated {
+            background: linear-gradient(-45deg, #007AFF, #00C7BE, #007AFF, #5856D6);
+            background-size: 400% 400%;
+            animation: gradient-shift 8s ease infinite;
+        }
+        
+        .glassmorphism {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+        }
+        
+        .table-hover-row:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px var(--shadow-color);
+        }
+        
+        .status-pill {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .status-pill::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .status-pill:hover::before {
+            left: 100%;
+        }
+        
+        .floating-element {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .floating-element:hover {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 20px 40px var(--shadow-color);
+        }
+        
+        .smooth-reveal {
+            animation: fadeIn 0.8s ease-out;
+        }
+        
+        /* カスタムスクロールバー */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #007AFF, #5856D6);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, #0056cc, #4c46a6);
+        }
+        
+        /* スムーズなアニメーション */
+        * {
+            transition: all 0.3s ease;
+        }
+    </style>
+</head>
+
+<body class="font-sans antialiased text-gray-900 min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+    
+    <!-- Hero Section with Glass Effect -->
+    <header class="relative overflow-hidden">
+        <!-- Animated Background -->
+        <div class="absolute inset-0 gradient-animated opacity-90"></div>
+        
+        <!-- Glass Navigation -->
+        <nav class="relative glassmorphism">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center h-16">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-white/10 backdrop-blur-sm rounded-xl flex items-center justify-center shadow-soft border border-white/20">
+                            <img src="assets/App icon.png" alt="KANJY" class="w-8 h-8 object-contain rounded-lg">
+                        </div>
+                        <span class="text-white font-semibold text-lg">KANJY</span>
+                    </div>
+                    <div class="flex items-center">
+                        <a href="https://apps.apple.com/jp/app/kanjy/id6746665673" target="_blank" 
+                           class="bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg px-3 py-1.5 text-white text-sm font-semibold transition-all duration-200 border border-white/30 hover:border-white/50 shadow-soft flex items-center space-x-2" 
+                           style="text-shadow: 0 1px 2px rgba(0,0,0,0.5);">
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+                            </svg>
+                            <span>アプリをダウンロード</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+        
+        <!-- Hero Content -->
+        <div class="relative px-4 sm:px-6 lg:px-8 py-24">
+            <div class="max-w-4xl mx-auto text-center">
+                <h1 id="event-title" class="text-5xl md:text-7xl font-bold text-white mb-6 animate-slide-up">
+                    読み込み中...
+                </h1>
+                <p id="event-description" class="text-xl md:text-2xl text-white/80 max-w-2xl mx-auto leading-relaxed animate-fade-in" style="display: none;">
+                </p>
+            </div>
+        </div>
+        
+        <!-- Decorative Elements -->
+        <div class="absolute top-20 left-10 w-20 h-20 bg-white/10 rounded-full animate-float"></div>
+        <div class="absolute top-40 right-20 w-12 h-12 bg-white/5 rounded-full animate-float" style="animation-delay: 1s;"></div>
+        <div class="absolute bottom-20 left-1/4 w-16 h-16 bg-white/10 rounded-full animate-float" style="animation-delay: 2s;"></div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="relative -mt-16 pb-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <!-- Event Info Cards -->
+            <section class="mb-12 animate-slide-up">
+                <div id="event-info-cards" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Location Card -->
+                    <div id="location-card" class="floating-element bg-white rounded-2xl shadow-elegant p-6 border border-white/50" style="display: none;">
+                        <div class="flex items-center mb-4">
+                            <div class="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center">
+                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <h3 class="text-sm font-medium text-gray-500 mb-2">開催場所</h3>
+                        <p id="location-text" class="text-xl font-semibold text-gray-900"></p>
+                    </div>
+
+                    <!-- Budget Card -->
+                    <div id="budget-card" class="floating-element bg-white rounded-2xl shadow-elegant p-6 border border-white/50" style="display: none;">
+                        <div class="flex items-center mb-4">
+                            <div class="w-12 h-12 bg-gradient-to-br from-green-400 to-emerald-600 rounded-xl flex items-center justify-center">
+                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <h3 class="text-sm font-medium text-gray-500 mb-2">予算</h3>
+                        <p id="budget-text" class="text-xl font-semibold text-gray-900"></p>
+                    </div>
+
+                    <!-- Deadline Card -->
+                    <div id="deadline-card" class="floating-element bg-white rounded-2xl shadow-elegant p-6 border border-white/50" style="display: none;">
+                        <div class="flex items-center mb-4">
+                            <div class="w-12 h-12 bg-gradient-to-br from-orange-400 to-red-500 rounded-xl flex items-center justify-center">
+                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <h3 class="text-sm font-medium text-gray-500 mb-2">回答締切</h3>
+                        <p id="deadline-text" class="text-xl font-semibold text-gray-900"></p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Beautiful Schedule Table -->
+            <section class="animate-slide-up">
+                <div class="bg-white rounded-3xl shadow-floating overflow-hidden border border-white/50">
+                    <div class="px-8 py-6 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200/50">
+                        <div class="flex items-center">
+                            <div>
+                                <h2 class="text-2xl font-bold text-gray-900 flex items-center">
+                                    <span class="w-8 h-8 bg-gradient-to-br from-kanjy-400 to-kanjy-600 rounded-lg flex items-center justify-center mr-3">
+                                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                        </svg>
+                                    </span>
+                                    日程別回答状況
+                                </h2>
+                                <p class="text-gray-600 mt-1">どの日程が一番人気かな？</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead>
+                                <tr class="bg-gradient-to-r from-gray-50/50 to-gray-100/50">
+                                    <th class="text-left py-6 px-8 font-semibold text-gray-700 text-sm uppercase tracking-wider">候補日時</th>
+                                    <th class="text-center py-6 px-6 font-semibold text-attending-600 text-sm uppercase tracking-wider">参加</th>
+                                    <th class="text-center py-6 px-6 font-semibold text-notAttending-600 text-sm uppercase tracking-wider">不参加</th>
+                                    <th class="text-center py-6 px-6 font-semibold text-maybe-600 text-sm uppercase tracking-wider">未定</th>
+                                    <th class="text-center py-6 px-6 font-semibold text-gray-700 text-sm uppercase tracking-wider">合計</th>
+                                    <th class="text-center py-6 px-8 font-semibold text-gray-700 text-sm uppercase tracking-wider">評価</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100">
+                                <!-- 動的に生成される日程別参加状況がここに挿入されます -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Detailed Response Table -->
+            <section class="mt-12 animate-fade-in">
+                <div class="bg-white rounded-3xl shadow-floating overflow-hidden border border-white/50">
+                    <div class="px-8 py-6 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200/50">
+                        <h2 class="text-2xl font-bold text-gray-900 flex items-center">
+                            <span class="w-8 h-8 bg-gradient-to-br from-kanjy-400 to-kanjy-600 rounded-lg flex items-center justify-center mr-3">
+                                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                                </svg>
+                            </span>
+                            回答一覧
+                        </h2>
+                        <p class="text-gray-600 mt-1">みんなの回答をチェック</p>
+                        <div class="mt-3 inline-block bg-white rounded-lg px-3 py-2">
+                            <p class="text-xs text-gray-600 flex items-center">
+                                <svg class="w-3 h-3 mr-1 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                回答の編集は回答者の名前をクリックしてください
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full table-fixed">
+                            <thead>
+                                <tr class="bg-gradient-to-r from-gray-50/50 to-gray-100/50">
+                                    <th class="text-left py-6 px-8 font-semibold text-gray-700 text-sm uppercase tracking-wider w-80">参加者</th>
+                                    <!-- 日程ヘッダーは動的に生成されます -->
+
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100">
+                                <!-- 動的に生成される回答一覧がここに挿入されます -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Show More Button -->
+                    <div id="show-more-section" class="px-8 py-6 bg-gray-50/50 border-t border-gray-200/50 text-center">
+                        <button id="show-more-button" class="floating-element inline-flex items-center px-6 py-3 bg-gradient-to-r from-kanjy-500 to-kanjy-600 text-white font-semibold rounded-xl shadow-soft hover:shadow-elegant transition-all duration-300" onclick="showMoreResponses()">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                            </svg>
+                            <span id="show-more-text">残り15名の回答を表示</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Response Form CTA -->
+            <section class="mt-12 text-center animate-fade-in">
+                <div class="floating-element bg-gradient-to-r from-kanjy-500 to-kanjy-600 rounded-3xl shadow-floating p-8 text-white">
+                    <h2 class="text-3xl font-bold mb-4">まだ回答していない方へ</h2>
+                    <p class="text-xl text-kanjy-100 mb-8 max-w-2xl mx-auto">
+                        ぜひあなたの都合を教えてください！
+                    </p>
+                    <button onclick="goToResponseForm()" class="floating-element inline-flex items-center px-8 py-4 bg-white text-kanjy-600 font-bold text-lg rounded-2xl shadow-elegant hover:shadow-floating transition-all duration-300">
+                        <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                        </svg>
+                        回答フォームに入力
+                    </button>
+                </div>
+            </section>
+
+            <!-- URL Share Section -->
+            <section class="mt-12 text-center animate-fade-in">
+                <div class="floating-element bg-white rounded-3xl shadow-floating p-8 border border-gray-100">
+                    <h2 class="text-3xl font-bold mb-4 text-gray-900">このイベントのURL</h2>
+                    <p class="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+                        このURLをコピーして、他の参加者に共有して下さい
+                    </p>
+                    
+                    <!-- URL Display Box -->
+                    <div class="bg-gray-50 rounded-2xl p-6 mb-6 max-w-4xl mx-auto">
+                        <div class="flex items-center justify-between bg-white rounded-xl p-4 shadow-soft">
+                            <div class="flex-1 text-left">
+                                <div class="text-sm text-gray-500 mb-1">イベントURL</div>
+                                <div id="eventUrl" class="text-lg font-mono text-gray-900 break-all">
+                                    <!-- URL will be populated by JavaScript -->
+                                </div>
+                            </div>
+                            <button id="copyUrlBtn" onclick="copyEventUrl()" class="ml-4 floating-element inline-flex items-center px-6 py-3 bg-kanjy-500 text-white font-bold rounded-xl shadow-elegant hover:bg-kanjy-600 hover:shadow-floating transition-all duration-300">
+                                <svg id="copyIcon" class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                                </svg>
+                                <span id="copyText">コピー</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Share Tips -->
+                    <div class="bg-blue-50 rounded-2xl p-6 max-w-3xl mx-auto">
+                        <div class="flex items-start space-x-3">
+                            <div class="flex-shrink-0 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center mt-0.5">
+                                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                            </div>
+                            <div class="text-left">
+                                <h3 class="text-lg font-semibold text-blue-900 mb-2">シェアのヒント</h3>
+                                <p class="text-blue-800">
+                                    このURLをLINEのグループチャットやSlack、メールで共有。受け取った人は参加の回答ができます。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-20 bg-white border-t border-gray-200/50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div class="text-center">
+                <!-- Logo and Title -->
+                <div class="flex items-center justify-center space-x-3 mb-6">
+                                            <img src="assets/App icon.png" alt="KANJY" class="w-10 h-10 rounded-lg shadow-soft">
+                    <span class="text-2xl font-bold text-gray-900">KANJY</span>
+                </div>
+                
+                <!-- Main Description -->
+                <p class="text-lg text-gray-600 mb-6">
+                    幹事さんの負担を減らし、みんなが楽しめるイベントを
+                </p>
+                
+                <!-- App Description -->
+                <div class="max-w-2xl mx-auto mb-8">
+                    <p class="text-gray-600 mb-4">
+                        KANJYは、幹事さんのための割り勘アプリです。<br>
+                        スケジュール調整から参加者管理、集金計算まで、イベント運営を総合的にサポートします。
+                    </p>
+                    
+                    <!-- App Store Link -->
+                    <a href="https://apps.apple.com/jp/app/kanjy/id6746665673" target="_blank" 
+                       class="inline-flex items-center space-x-2 bg-gray-100 hover:bg-gray-200 transition-colors duration-200 px-6 py-3 rounded-xl">
+                        <svg class="w-6 h-6 text-gray-700" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+                        </svg>
+                        <span class="text-gray-700 font-medium">App Storeでダウンロード</span>
+                    </a>
+                </div>
+                
+                <!-- Copyright -->
+                <div class="space-y-2">
+                    <div class="flex items-center justify-center space-x-4 text-sm text-gray-500">
+                        <span>Made by KANJY Team</span>
+                        <span>•</span>
+                        <span>© 2025 KANJY</span>
+                    </div>
+                    <!-- Contact Info -->
+                    <div class="flex items-center justify-center text-xs text-gray-400">
+                        <span>お問い合わせ: </span>
+                        <a href="mailto:snaproom.info@gmail.com" class="ml-1 hover:text-kanjy-500 transition-colors duration-200">
+                            snaproom.info@gmail.com
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Supabase設定
+        const SUPABASE_URL = 'https://jvluhjifihiuopqdwjll.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2bHVoamlmaWhpdW9wcWR3amxsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTExNTc5OTEsImV4cCI6MjA2NjczMzk5MX0.WDTzIs73X8NHGFcIYFk4CN-7dH5tQT5l0Bd2uY6H9lc';
+        
+        // Supabaseクライアント初期化
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        // グローバル変数
+        let currentEvent = null;
+        let currentEventId = null;
+        let currentResponses = [];
+        
+        // 表示制限機能のための変数
+        let displayLimit = 5; // 最初に表示する件数
+        let showingAll = false; // 全件表示中かどうか
+        
+        // 「もっと表示」ボタンのクリック処理
+        function showMoreResponses() {
+            showingAll = true;
+            displayResponses(currentResponses);
+        }
+        
+        // Supabase接続とデータ確認
+        async function debugSupabaseConnection() {
+            try {
+                console.log('🔍 Supabase接続確認開始');
+                
+                // 1. eventsテーブルの全件確認
+                const { data: allEvents, error: eventsError } = await supabase
+                    .from('events')
+                    .select('*');
+                
+                console.log('📋 eventsテーブル全件:', { allEvents, eventsError });
+                
+                if (eventsError) {
+                    console.error('❌ eventsテーブルアクセスエラー:', eventsError);
+                } else {
+                    console.log('✅ eventsテーブル件数:', allEvents?.length || 0);
+                    if (allEvents && allEvents.length > 0) {
+                        console.log('📄 最初のイベント:', allEvents[0]);
+                    }
+                }
+                
+                // 2. responsesテーブルの全件確認
+                const { data: allResponses, error: responsesError } = await supabase
+                    .from('responses')
+                    .select('*');
+                
+                console.log('📋 responsesテーブル全件:', { allResponses, responsesError });
+                
+                if (responsesError) {
+                    console.error('❌ responsesテーブルアクセスエラー:', responsesError);
+                } else {
+                    console.log('✅ responsesテーブル件数:', allResponses?.length || 0);
+                    if (allResponses && allResponses.length > 0) {
+                        console.log('📄 最初の回答:', allResponses[0]);
+                    }
+                }
+                
+                // 3. 現在のイベントIDが存在するかチェック
+                if (currentEventId) {
+                    const { data: targetEvent, error: targetError } = await supabase
+                        .from('events')
+                        .select('*')
+                        .eq('id', currentEventId);
+                    
+                    console.log('🎯 対象イベント確認:', { targetEvent, targetError, eventId: currentEventId });
+                }
+                
+            } catch (error) {
+                console.error('❌ Supabase接続確認エラー:', error);
+            }
+        }
+        
+        // 初期化
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('🍙 Beautiful KANJY Table初期化開始');
+            
+            // URLパラメータからイベントIDを取得
+            const urlParams = new URLSearchParams(window.location.search);
+            const eventId = urlParams.get('id');
+            
+            if (!eventId) {
+                alert('イベントIDが指定されていません');
+                return;
+            }
+            
+            currentEventId = eventId;
+            
+            try {
+                // Supabaseの接続確認とテーブルの内容を確認
+                await debugSupabaseConnection();
+                
+                // イベントを最初に読み込み（ヘッダー生成のため）
+                await loadEvent(eventId);
+                
+                // 次に回答を読み込み（ヘッダー生成後）
+                await loadResponses(eventId);
+                
+                console.log('🍙 データ読み込み完了');
+                
+            } catch (error) {
+                console.error('初期化エラー:', error);
+                alert('データの読み込みに失敗しました: ' + error.message);
+            }
+            
+            // アニメーション設定
+            setupAnimations();
+            
+            // イベントURLを表示
+            displayEventUrl();
+            
+            console.log('🎉 Beautiful KANJY Table loaded successfully!');
+        });
+        
+        // イベント情報を読み込み
+        async function loadEvent(eventId) {
+            try {
+                console.log('イベント読み込み開始:', eventId);
+                
+                const { data: events, error } = await supabase
+                    .from('events')
+                    .select('*')
+                    .eq('id', eventId);
+                
+                console.log('イベントクエリ結果:', { events, error });
+                
+                if (error) throw error;
+                if (!events || events.length === 0) {
+                    // イベントが見つからない場合、利用可能なイベントを表示
+                    const { data: availableEvents, error: availableError } = await supabase
+                        .from('events')
+                        .select('id, title, created_at')
+                        .order('created_at', { ascending: false })
+                        .limit(5);
+                    
+                    console.log('利用可能なイベント:', availableEvents);
+                    
+                    let errorMessage = `イベントID "${eventId}" が見つかりません。`;
+                    if (availableEvents && availableEvents.length > 0) {
+                        errorMessage += '\n\n利用可能なイベント:';
+                        availableEvents.forEach(event => {
+                            errorMessage += `\n- ${event.title} (ID: ${event.id})`;
+                        });
+                    }
+                    
+                    throw new Error(errorMessage);
+                }
+                
+                const event = events[0];
+                currentEvent = event;
+                console.log('読み込んだイベント:', event);
+                displayEvent(event);
+                
+            } catch (error) {
+                console.error('イベント読み込みエラー:', error);
+                throw error;
+            }
+        }
+        
+        // 回答を読み込み
+        async function loadResponses(eventId) {
+            try {
+                console.log('回答読み込み開始:', eventId);
+                
+                const { data: responses, error } = await supabase
+                    .from('responses')
+                    .select('*')
+                    .eq('event_id', eventId)
+                    .order('created_at', { ascending: false });
+                
+                console.log('回答クエリ結果:', { responses, error });
+                
+                if (error) throw error;
+                
+                // 削除済みレコードをフィルタリング
+                const activeResponses = (responses || []).filter(response => {
+                    const isDeleted = response.participant_name && response.participant_name.startsWith('[削除済み]');
+                    if (isDeleted) {
+                        console.log('🗑️ 削除済みレコードを非表示:', response.participant_name);
+                    }
+                    return !isDeleted;
+                });
+                
+                console.log('📊 フィルタリング結果:', {
+                    total: responses ? responses.length : 0,
+                    deleted: responses ? responses.length - activeResponses.length : 0,
+                    active: activeResponses.length
+                });
+                
+                currentResponses = activeResponses;
+                console.log('読み込んだ回答:', activeResponses);
+                
+                // 表示制限フラグをリセット
+                showingAll = false;
+                
+                displayResponses(activeResponses);
+                
+            } catch (error) {
+                console.error('回答読み込みエラー:', error);
+                throw error;
+            }
+        }
+        
+        // イベント情報を表示
+        function displayEvent(event) {
+            console.log('🍙 イベント情報表示開始:', event);
+            
+            // タイトル
+            const titleElement = document.getElementById('event-title');
+            if (titleElement) {
+                titleElement.textContent = event.title || 'イベント';
+            }
+            
+            // 説明（設定されている場合のみ表示）
+            const descElement = document.getElementById('event-description');
+            if (descElement) {
+                if (event.description && event.description.trim() !== '') {
+                    descElement.textContent = event.description;
+                    descElement.style.display = 'block';
+                } else {
+                    descElement.style.display = 'none';
+                }
+            }
+            
+            // 開催場所カード（設定されている場合のみ表示）
+            const locationCard = document.getElementById('location-card');
+            const locationText = document.getElementById('location-text');
+            if (locationCard && locationText) {
+                if (event.location && event.location.trim() !== '') {
+                    locationText.textContent = event.location;
+                    locationCard.style.display = 'block';
+                } else {
+                    locationCard.style.display = 'none';
+                }
+            }
+            
+            // 予算カード（設定されている場合のみ表示）
+            const budgetCard = document.getElementById('budget-card');
+            const budgetText = document.getElementById('budget-text');
+            if (budgetCard && budgetText) {
+                if (event.budget && event.budget > 0) {
+                    budgetText.textContent = `${event.budget.toLocaleString()}円`;
+                    budgetCard.style.display = 'block';
+                } else {
+                    budgetCard.style.display = 'none';
+                }
+            }
+            
+            // 回答締切カード（設定されている場合のみ表示）
+            const deadlineCard = document.getElementById('deadline-card');
+            const deadlineText = document.getElementById('deadline-text');
+            if (deadlineCard && deadlineText) {
+                if (event.deadline) {
+                    const deadlineDate = new Date(event.deadline);
+                    const options = { 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    };
+                    deadlineText.textContent = deadlineDate.toLocaleDateString('ja-JP', options);
+                    deadlineCard.style.display = 'block';
+                } else {
+                    deadlineCard.style.display = 'none';
+                }
+            }
+            
+            // カードの数に応じてグリッドレイアウトを調整
+            updateGridLayout();
+            
+            // 候補日時を動的に生成
+            if (event.candidate_dates && Array.isArray(event.candidate_dates)) {
+                console.log('🍙 候補日時:', event.candidate_dates);
+                generateDateHeaders(event.candidate_dates);
+            } else {
+                console.warn('⚠️ 候補日時が見つかりません:', event.candidate_dates);
+            }
+            
+            console.log('🍙 イベント情報表示完了');
+        }
+        
+        // カードの数に応じてグリッドレイアウトを調整
+        function updateGridLayout() {
+            const cardsContainer = document.getElementById('event-info-cards');
+            if (!cardsContainer) return;
+            
+            const visibleCards = cardsContainer.querySelectorAll('[id$="-card"][style*="block"], [id$="-card"]:not([style*="none"])');
+            const cardCount = Array.from(visibleCards).filter(card => 
+                card.style.display !== 'none'
+            ).length;
+            
+            // カードの数に応じてグリッドクラスを調整
+            cardsContainer.className = 'grid gap-6 ' + 
+                (cardCount === 1 ? 'grid-cols-1 max-w-md mx-auto' :
+                 cardCount === 2 ? 'grid-cols-1 md:grid-cols-2 max-w-2xl mx-auto' :
+                 'grid-cols-1 md:grid-cols-3');
+        }
+        
+        // 日程ヘッダーを動的生成
+        function generateDateHeaders(dates) {
+            console.log('🗓️ 日程ヘッダー生成開始:', dates);
+            
+            // 回答一覧セクションのtheadを取得
+            const sections = document.querySelectorAll('section');
+            let detailTableHeader = null;
+            
+            sections.forEach(section => {
+                const h2 = section.querySelector('h2');
+                if (h2 && h2.textContent.includes('回答一覧')) {
+                    detailTableHeader = section.querySelector('thead tr');
+                    console.log('🗓️ 回答一覧のheader発見');
+                }
+            });
+            
+            if (!detailTableHeader) {
+                console.error('❌ 回答一覧のheaderが見つかりません');
+                return;
+            }
+            
+            // 新しいヘッダーを完全に作り直す
+            detailTableHeader.innerHTML = '';
+            
+            // 参加者ヘッダー（固定幅）
+            const participantHeader = document.createElement('th');
+            participantHeader.className = 'text-left py-6 px-8 font-semibold text-gray-700 text-sm uppercase tracking-wider bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200/50 w-80';
+            participantHeader.textContent = '参加者';
+            detailTableHeader.appendChild(participantHeader);
+            
+            // 日程ヘッダーを追加
+            dates.forEach(dateStr => {
+                const date = new Date(dateStr);
+                const th = document.createElement('th');
+                th.className = 'py-6 px-4 text-center text-sm font-bold text-gray-700 uppercase tracking-wider bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200/50';
+                th.innerHTML = `
+                    <div class="space-y-1">
+                        <div class="text-base font-bold text-gray-900">${formatDateShort(date)}</div>
+                        <div class="text-xs text-gray-500 flex items-center justify-center">
+                            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            ${formatTimeRange(date)}
+                        </div>
+                    </div>
+                `;
+                detailTableHeader.appendChild(th);
+            });
+            
+            // ヘッダー生成完了
+            
+            // ヘッダー生成完了
+            
+
+            
+            console.log('🗓️ 日程ヘッダー生成完了');
+        }
+        
+        // 回答を表示
+        function displayResponses(responses) {
+            // より確実なセレクター：回答一覧セクションのtbodyを取得
+            const sections = document.querySelectorAll('section');
+            let detailTableBody = null;
+            
+            sections.forEach(section => {
+                const h2 = section.querySelector('h2');
+                if (h2 && h2.textContent.includes('回答一覧')) {
+                    detailTableBody = section.querySelector('tbody');
+                    console.log('✅ 回答一覧セクション発見:', h2.textContent);
+                }
+            });
+            
+            if (!detailTableBody || !currentEvent) {
+                console.error('❌ 回答一覧のtbodyが見つかりません');
+                console.log('セクション数:', sections.length);
+                sections.forEach((section, index) => {
+                    const h2 = section.querySelector('h2');
+                    console.log(`セクション${index}:`, h2 ? h2.textContent : 'h2なし');
+                });
+                return;
+            }
+            
+            console.log('✅ 回答一覧tbody取得成功、responses:', responses ? responses.length : 0, '件');
+            
+            detailTableBody.innerHTML = '';
+            
+            if (!responses || responses.length === 0) {
+                detailTableBody.innerHTML = `
+                    <tr>
+                        <td colspan="100%" class="py-12 text-center text-gray-500">
+                            まだ回答がありません
+                        </td>
+                    </tr>
+                `;
+                // 「もっと表示」ボタンを非表示
+                const showMoreSection = document.getElementById('show-more-section');
+                if (showMoreSection) {
+                    showMoreSection.style.display = 'none';
+                }
+                return;
+            }
+            
+            // 表示する回答を決定
+            const displayResponses = showingAll ? responses : responses.slice(0, displayLimit);
+            const remainingCount = responses.length - displayLimit;
+            
+            displayResponses.forEach(response => {
+                const row = createResponseRow(response);
+                detailTableBody.appendChild(row);
+            });
+            
+            // 「もっと表示」ボタンの表示制御
+            const showMoreSection = document.getElementById('show-more-section');
+            const showMoreText = document.getElementById('show-more-text');
+            
+            if (showMoreSection && showMoreText) {
+                if (showingAll || responses.length <= displayLimit) {
+                    // 全件表示中、または件数が少ない場合は非表示
+                    showMoreSection.style.display = 'none';
+                } else {
+                    // 残りがある場合は表示
+                    showMoreSection.style.display = 'block';
+                    showMoreText.textContent = `残り${remainingCount}名の回答を表示`;
+                }
+            }
+            
+            // サマリー情報を更新
+            // updateSummary(responses);
+            
+            // 日程別参加状況テーブルを更新
+            updateScheduleTable(responses);
+            
+            console.log('🍙 回答表示完了:', displayResponses.length, '件 (全', responses.length, '件中)');
+        }
+        
+        // 回答行を作成
+        function createResponseRow(response) {
+            const tr = document.createElement('tr');
+            tr.className = 'table-hover-row transition-all duration-300 hover:bg-gradient-to-r hover:from-blue-50/30 hover:to-indigo-50/30';
+            
+            // 参加者名（クリック可能なリンク、固定幅）
+            const nameCell = document.createElement('td');
+            nameCell.className = 'py-5 px-8 w-80';
+            nameCell.innerHTML = `
+                <div class="flex items-center space-x-3 cursor-pointer hover:bg-blue-50 rounded-lg p-2 transition-all duration-200" onclick="editResponse('${response.id}')">
+                    <div class="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center shadow-soft">
+                        <span class="text-white font-semibold text-sm">${response.participant_name.charAt(0)}</span>
+                    </div>
+                    <div>
+                        <div class="text-base font-semibold text-blue-600 hover:text-blue-800 transition-colors duration-200">${response.participant_name}</div>
+                        ${response.comment ? `
+                            <div class="text-sm text-gray-500 max-w-xs relative group">
+                                <span class="cursor-help">${
+                                    response.comment.length > 10 ? response.comment.substring(0, 10) + '...' : response.comment
+                                }</span>
+                                ${response.comment.length > 10 ? `
+                                    <div class="absolute bottom-full left-0 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none whitespace-nowrap z-50 transform -translate-y-1 group-hover:translate-y-0">
+                                        ${response.comment}
+                                        <div class="absolute top-full left-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        ` : ''}
+                    </div>
+                    <div class="ml-2">
+                        <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                        </svg>
+                    </div>
+                </div>
+            `;
+            tr.appendChild(nameCell);
+            
+            // 各日程の回答
+            if (currentEvent && currentEvent.candidate_dates && Array.isArray(currentEvent.candidate_dates)) {
+                currentEvent.candidate_dates.forEach(dateStr => {
+                    const cell = document.createElement('td');
+                    cell.className = 'py-5 px-4 text-center';
+                    
+                    const status = getStatusForDate(response, dateStr);
+                    cell.innerHTML = createStatusBadge(status);
+                    
+                    tr.appendChild(cell);
+                });
+            } else {
+                console.warn('⚠️ currentEvent.candidate_datesが存在しません:', currentEvent);
+                // 最低1つの日程セルを作成
+                const cell = document.createElement('td');
+                cell.className = 'py-5 px-4 text-center';
+                cell.innerHTML = createStatusBadge('notAttending');
+                tr.appendChild(cell);
+            }
+            
+            // 行生成完了
+            
+            // 行生成完了
+            
+            return tr;
+        }
+        
+        // 指定日時の回答ステータスを取得
+        function getStatusForDate(response, dateStr) {
+            const targetDate = new Date(dateStr);
+            
+            // available_datesをチェック
+            if (response.available_dates && Array.isArray(response.available_dates)) {
+                for (const availableDate of response.available_dates) {
+                    if (isSameDay(new Date(availableDate), targetDate)) {
+                        return 'attending';
+                    }
+                }
+            }
+            
+            // 全体のステータスから未定かどうかを判定
+            if (response.status === 'undecided') {
+                return 'maybe';
+            }
+            
+            return 'notAttending';
+        }
+        
+        // ステータスバッジを作成
+        function createStatusBadge(status) {
+            const configs = {
+                attending: {
+                    symbol: '○',
+                    classes: 'bg-attending-100 text-attending-600 border-attending-200/50'
+                },
+                maybe: {
+                    symbol: '△',
+                    classes: 'bg-maybe-100 text-maybe-600 border-maybe-200/50'
+                },
+                notAttending: {
+                    symbol: '×',
+                    classes: 'bg-notAttending-100 text-notAttending-600 border-notAttending-200/50'
+                }
+            };
+            
+            const config = configs[status] || configs.notAttending;
+            
+            return `
+                <span class="inline-flex items-center justify-center w-8 h-8 rounded-full ${config.classes} font-bold border shadow-soft">
+                    ${config.symbol}
+                </span>
+            `;
+        }
+        
+        // 日付が同じ日かチェック
+        function isSameDay(date1, date2) {
+            return date1.getFullYear() === date2.getFullYear() &&
+                   date1.getMonth() === date2.getMonth() &&
+                   date1.getDate() === date2.getDate();
+        }
+        
+        // 日程別参加状況テーブルを更新
+        function updateScheduleTable(responses) {
+            if (!currentEvent || !currentEvent.candidate_dates) return;
+            
+            // より確実なセレクター：日程別参加状況セクションのtbodyを取得
+            const sections = document.querySelectorAll('section');
+            let scheduleTableBody = null;
+            
+            sections.forEach(section => {
+                const h2 = section.querySelector('h2');
+                if (h2 && h2.textContent.includes('日程別回答状況')) {
+                    scheduleTableBody = section.querySelector('tbody');
+                }
+            });
+            
+            if (!scheduleTableBody) return;
+            
+            scheduleTableBody.innerHTML = '';
+            
+            // 各候補日時の統計を計算
+            const dateStats = currentEvent.candidate_dates.map(dateStr => {
+                const date = new Date(dateStr);
+                const stats = {
+                    date: date,
+                    dateStr: dateStr,
+                    attending: 0,
+                    maybe: 0,
+                    notAttending: 0
+                };
+                
+                responses.forEach(response => {
+                    if (response.available_dates && response.available_dates.some(d => isSameDay(new Date(d), date))) {
+                        stats.attending++;
+                    } else if (response.status === 'undecided') {
+                        stats.maybe++;
+                    } else {
+                        stats.notAttending++;
+                    }
+                });
+                
+                stats.total = stats.attending + stats.maybe + stats.notAttending;
+                
+                return stats;
+            });
+            
+            // 人気順でソート
+            dateStats.sort((a, b) => b.attending - a.attending);
+            
+            // テーブル行を生成
+            dateStats.forEach((stats, index) => {
+                const row = createScheduleTableRow(stats, index);
+                scheduleTableBody.appendChild(row);
+            });
+        }
+        
+        // 日程別参加状況テーブルの行を作成
+        function createScheduleTableRow(stats, index) {
+            const tr = document.createElement('tr');
+            tr.className = 'table-hover-row transition-all duration-300 hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-indigo-50/50';
+            
+            // 評価を決定
+            let evaluation = { emoji: '🤷‍♂️', text: '未定', color: 'gray' };
+            if (index === 0 && stats.attending >= 3) {
+                evaluation = { emoji: '🌟', text: '最有力', color: 'attending' };
+            } else if (index <= 1 && stats.attending >= 2) {
+                evaluation = { emoji: '👍', text: '候補', color: 'maybe' };
+            }
+            
+            // 曜日アイコンの色を決定
+            const weekdayColors = ['red', 'blue', 'green', 'orange', 'purple', 'blue', 'green'];
+            const weekdayColor = weekdayColors[stats.date.getDay()];
+            const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+            const weekday = weekdays[stats.date.getDay()];
+            
+            tr.innerHTML = `
+                <td class="py-6 px-8">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-12 h-12 bg-gradient-to-br from-${weekdayColor}-400 to-${weekdayColor}-600 rounded-xl flex items-center justify-center shadow-soft">
+                            <span class="text-white font-bold text-sm">${weekday}</span>
+                        </div>
+                        <div>
+                            <div class="text-lg font-semibold text-gray-900">${formatDateLong(stats.date)}</div>
+                            <div class="text-sm text-gray-500 flex items-center mt-1">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                ${formatTimeRange(stats.date)}
+                            </div>
+                        </div>
+                    </div>
+                </td>
+                <td class="py-6 px-6 text-center">
+                    <span class="status-pill inline-flex items-center px-4 py-2 rounded-xl text-sm font-semibold bg-attending-100 text-attending-700 border border-attending-200/50 shadow-soft">
+                        ${stats.attending}名
+                    </span>
+                </td>
+                <td class="py-6 px-6 text-center">
+                    <span class="status-pill inline-flex items-center px-4 py-2 rounded-xl text-sm font-semibold bg-notAttending-100 text-notAttending-700 border border-notAttending-200/50 shadow-soft">
+                        ${stats.notAttending}名
+                    </span>
+                </td>
+                <td class="py-6 px-6 text-center">
+                    <span class="status-pill inline-flex items-center px-4 py-2 rounded-xl text-sm font-semibold bg-maybe-100 text-maybe-700 border border-maybe-200/50 shadow-soft">
+                        ${stats.maybe}名
+                    </span>
+                </td>
+                <td class="py-6 px-6 text-center">
+                    <span class="inline-flex items-center px-4 py-2 rounded-xl text-sm font-semibold bg-gray-100 text-gray-700 border border-gray-200/50 shadow-soft">
+                        ${stats.total}名
+                    </span>
+                </td>
+                <td class="py-6 px-8 text-center">
+                    <div class="flex items-center justify-center space-x-1">
+                        <span class="text-2xl">${evaluation.emoji}</span>
+                        <span class="text-lg font-bold text-${evaluation.color}-600">${evaluation.text}</span>
+                    </div>
+                </td>
+            `;
+            
+            return tr;
+        }
+        
+        // 日付フォーマット（長形式）
+        function formatDateLong(date) {
+            const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+            const month = date.getMonth() + 1;
+            const day = date.getDate();
+            const weekday = weekdays[date.getDay()];
+            return `${month}月${day}日（${weekday}）`;
+        }
+        
+        // 時間フォーマット（開始時間のみ）
+        function formatTimeRange(date) {
+            const startHour = date.getHours();
+            const startMinute = date.getMinutes();
+            const startTime = `${startHour.toString().padStart(2, '0')}:${startMinute.toString().padStart(2, '0')}`;
+            
+            return `${startTime}〜`;
+        }
+        
+        // 日付フォーマット関数
+        function formatDateShort(date) {
+            const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+            const month = date.getMonth() + 1;
+            const day = date.getDate();
+            const weekday = weekdays[date.getDay()];
+            return `${month}/${day}(${weekday})`;
+        }
+        
+        function formatTimeShort(date) {
+            const hours = date.getHours().toString().padStart(2, '0');
+            const minutes = date.getMinutes().toString().padStart(2, '0');
+            return `${hours}:${minutes}`;
+        }
+        
+        function formatDateTimeShort(date) {
+            const month = date.getMonth() + 1;
+            const day = date.getDate();
+            const hours = date.getHours().toString().padStart(2, '0');
+            const minutes = date.getMinutes().toString().padStart(2, '0');
+            return `${month}/${day} ${hours}:${minutes}`;
+        }
+        
+        // 回答を編集
+        function editResponse(responseId) {
+            // 回答フォームページに遷移（編集モード）
+            const urlParams = new URLSearchParams();
+            urlParams.set('id', currentEventId);
+            urlParams.set('edit', responseId);
+            window.location.href = `response-form.html?${urlParams.toString()}`;
+        }
+        
+        // 新規回答フォームに遷移
+        function goToResponseForm() {
+            // 回答フォームページに遷移（新規モード）
+            const urlParams = new URLSearchParams();
+            urlParams.set('id', currentEventId);
+            window.location.href = `response-form.html?${urlParams.toString()}`;
+        }
+
+        // イベントURLをコピー
+        async function copyEventUrl() {
+            const currentUrl = window.location.href;
+            const copyBtn = document.getElementById('copyUrlBtn');
+            const copyText = document.getElementById('copyText');
+            const copyIcon = document.getElementById('copyIcon');
+            
+            try {
+                await navigator.clipboard.writeText(currentUrl);
+                
+                // コピー成功時の視覚的フィードバック
+                copyText.textContent = 'コピー完了！';
+                copyBtn.classList.add('bg-green-500', 'hover:bg-green-600');
+                copyBtn.classList.remove('bg-kanjy-500', 'hover:bg-kanjy-600');
+                
+                // チェックアイコンに変更
+                copyIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>';
+                
+                // 2秒後に元に戻す
+                setTimeout(() => {
+                    copyText.textContent = 'コピー';
+                    copyBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
+                    copyBtn.classList.add('bg-kanjy-500', 'hover:bg-kanjy-600');
+                    copyIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>';
+                }, 2000);
+                
+            } catch (err) {
+                console.error('URLのコピーに失敗しました:', err);
+                // フォールバック: テキストを選択状態にする
+                const urlElement = document.getElementById('eventUrl');
+                const range = document.createRange();
+                range.selectNode(urlElement);
+                window.getSelection().removeAllRanges();
+                window.getSelection().addRange(range);
+                
+                copyText.textContent = 'URLを選択しました';
+                setTimeout(() => {
+                    copyText.textContent = 'コピー';
+                }, 2000);
+            }
+        }
+
+        // イベントURLを表示
+        function displayEventUrl() {
+            const urlElement = document.getElementById('eventUrl');
+            if (urlElement) {
+                urlElement.textContent = window.location.href;
+            }
+        }
+        
+
+        
+        // エラー表示
+        function showError(message) {
+            console.error('🚨', message);
+            // 実装は次のステップで
+        }
+        
+
+        
+        // アニメーション設定
+        function setupAnimations() {
+            // Intersection Observer for animations
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            };
+            
+            const observer = new IntersectionObserver(function(entries) {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = '1';
+                        entry.target.style.transform = 'translateY(0)';
+                    }
+                });
+            }, observerOptions);
+            
+            // Observe all animated elements
+            document.querySelectorAll('.animate-slide-up, .animate-fade-in, .animate-scale-in').forEach(el => {
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(20px)';
+                el.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
+                observer.observe(el);
+            });
+            
+            // Add interactive hover effects
+            document.querySelectorAll('.status-pill').forEach(pill => {
+                pill.addEventListener('mouseenter', function() {
+                    this.style.transform = 'scale(1.05)';
+                });
+                
+                pill.addEventListener('mouseleave', function() {
+                    this.style.transform = 'scale(1)';
+                });
+            });
+            
+            // Smooth scroll for better UX
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                });
+            });
+        }
+
+    </script>
+</body>
+</html> 
