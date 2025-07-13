@@ -669,6 +669,15 @@
                 const event = events[0];
                 currentEvent = event;
                 console.log('読み込んだイベント:', event);
+                console.log('🍙 イベント詳細確認:', {
+                    id: event.id,
+                    title: event.title,
+                    deadline: event.deadline,
+                    deadline_type: typeof event.deadline,
+                    location: event.location,
+                    budget: event.budget,
+                    candidate_dates: event.candidate_dates
+                });
                 displayEvent(event);
                 
             } catch (error) {
@@ -724,6 +733,7 @@
         // イベント情報を表示
         function displayEvent(event) {
             console.log('🍙 イベント情報表示開始:', event);
+            console.log('🍙 deadline確認:', event.deadline);
             
             // タイトル
             const titleElement = document.getElementById('event-title');
@@ -770,8 +780,16 @@
             const deadlineCard = document.getElementById('deadline-card');
             const deadlineText = document.getElementById('deadline-text');
             if (deadlineCard && deadlineText) {
+                console.log('🍙 deadline処理開始:', {
+                    deadline: event.deadline,
+                    type: typeof event.deadline,
+                    hasDeadline: !!event.deadline
+                });
+                
                 if (event.deadline) {
                     const deadlineDate = new Date(event.deadline);
+                    console.log('🍙 deadline日付変換:', deadlineDate);
+                    
                     const options = { 
                         year: 'numeric', 
                         month: 'long', 
@@ -779,11 +797,18 @@
                         hour: '2-digit',
                         minute: '2-digit'
                     };
-                    deadlineText.textContent = deadlineDate.toLocaleDateString('ja-JP', options);
+                    const formattedDate = deadlineDate.toLocaleDateString('ja-JP', options);
+                    console.log('🍙 フォーマット済み日付:', formattedDate);
+                    
+                    deadlineText.textContent = formattedDate;
                     deadlineCard.style.display = 'block';
+                    console.log('🍙 deadline表示完了');
                 } else {
                     deadlineCard.style.display = 'none';
+                    console.log('🍙 deadline未設定のため非表示');
                 }
+            } else {
+                console.warn('⚠️ deadlineCard または deadlineText が見つかりません');
             }
             
             // カードの数に応じてグリッドレイアウトを調整
