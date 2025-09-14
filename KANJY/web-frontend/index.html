@@ -1004,29 +1004,22 @@
                 scheduleChart.destroy();
             }
             
-            // テスト用：複数日程を追加（実際のデータに影響しません）
-            const testDates = [
-                ...currentEvent.candidate_dates,
-                '2024-07-12T10:00:00',
-                '2024-07-13T14:00:00',
-                '2024-07-14T16:00:00',
-                '2024-07-15T18:00:00'
-            ];
+            // 実際の候補日程を使用（テストデータは削除）
+            const actualDates = currentEvent.candidate_dates || [];
             
-            console.log('テスト用候補日程:', testDates);
+            console.log('実際の候補日程:', actualDates);
             
             // 各候補日時の統計を計算
-            const dateStats = testDates.map(dateStr => {
+            const dateStats = actualDates.map(dateStr => {
                 const date = new Date(dateStr);
                 const label = `${date.getMonth() + 1}/${date.getDate()} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
                 
                 console.log(`日付処理中: ${dateStr} -> ${label}`);
                 
-                // テスト用のダミーデータ生成（複数日程の表示確認用）
+                // 実際のデータを使用してカウント
                 let attending, notAttending, maybe;
                 
-                if (currentEvent.candidate_dates.includes(dateStr)) {
-                    // 実際のデータを使用
+                // 実際のデータを使用
                     attending = responses.filter(r => {
                         if (r.status === 'attending' && r.available_dates && Array.isArray(r.available_dates)) {
                             const isAvailable = r.available_dates.includes(dateStr);
@@ -1053,15 +1046,6 @@
                         }
                         return false;
                     }).length;
-                } else {
-                    // テスト用のランダムデータ
-                    const totalResponses = responses.length;
-                    const randomFactor = Math.random();
-                    attending = Math.floor(totalResponses * randomFactor * 0.8); // 0-80%の参加率
-                    notAttending = Math.floor(totalResponses * 0.1); // 固定で10%不参加
-                    maybe = Math.floor(totalResponses * 0.1); // 固定で10%未定
-                    console.log(`テストデータ生成: ${label} -> 参加=${attending}, 不参加=${notAttending}, 未定=${maybe}`);
-                }
                 
                 console.log(`${label}: 参加=${attending}, 不参加=${notAttending}, 未定=${maybe}`);
                 
