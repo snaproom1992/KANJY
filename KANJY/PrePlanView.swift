@@ -133,6 +133,7 @@ public struct CustomRole: Identifiable, Codable, Hashable {
 
 struct PrePlanView: View {
     @ObservedObject var viewModel: PrePlanViewModel
+    @StateObject private var scheduleViewModel = ScheduleManagementViewModel()
     var planName: String
     var planDate: Date?
     var onFinish: (() -> Void)? = nil
@@ -159,8 +160,18 @@ struct PrePlanView: View {
     @FocusState private var focusedField: Field?
     
     // 編集用バインディング
-    @State private var localPlanName: String = ""
-    @State private var localPlanDate: Date? = nil
+    @State private var localPlanName: String = "" {
+        didSet {
+            // 自動保存
+            autoSavePlan()
+        }
+    }
+    @State private var localPlanDate: Date? = nil {
+        didSet {
+            // 自動保存
+            autoSavePlan()
+        }
+    }
     @State private var isEditingTitle: Bool = false
     @FocusState private var isTitleFocused: Bool
     
@@ -184,6 +195,13 @@ struct PrePlanView: View {
     // 新しい状態変数を追加
     @State private var showPaymentGenerator = false
     
+    // スケジュール調整関連の状態変数を追加
+    @State private var showScheduleCreation = false
+    @State private var showScheduleEdit = false
+    @State private var scheduleEvent: ScheduleEvent?
+    @State private var showingScheduleUrlSheet = false
+    @State private var hasScheduleEvent = false // スケジュール調整済みかどうか
+    
     enum Field {
         case totalAmount, newParticipant, editParticipant, additionalAmount
     }
@@ -202,9 +220,22 @@ struct PrePlanView: View {
             Button(action: { startEdit(participant) }) {
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
+                        HStack {
                         Text(participant.name)
                             .font(.body)
                             .foregroundColor(.primary)
+                            
+                            // スケジュール調整の結果を表示
+                            if hasScheduleEvent, let event = scheduleEvent {
+                                let response = event.responses.first { $0.participantName == participant.name }
+                                if let response = response {
+                                    Image(systemName: response.status == .attending ? "checkmark.circle.fill" : "xmark.circle.fill")
+                                        .foregroundColor(response.status == .attending ? .green : .red)
+                                        .imageScale(.small)
+                                }
+                            }
+                        }
+                        
                         // 役職名と倍率を直接参照
                         switch participant.roleType {
                         case .standard(let role):
@@ -217,16 +248,22 @@ struct PrePlanView: View {
                                 .foregroundColor(.secondary)
                         }
                     }
-                    
                     Spacer()
                 }
             }
             .buttonStyle(.plain)
-            
-            // 金額表示部分（ここをタップすると金額編集ダイアログが表示される）
-            AmountDisplayView(participant: participant)
-            
-            // 集金確認用のトグル（ここをタップしても編集画面に遷移しない）
+            // 金額表示部分（Textのみ）
+            if viewModel.totalAmount.filter({ $0.isNumber }).isEmpty {
+                Text("¥---")
+                    .font(.headline)
+                    .foregroundColor(.gray)
+            } else {
+                let amount = viewModel.paymentAmount(for: participant)
+                Text("¥\(viewModel.formatAmount(String(amount)))")
+                    .font(.headline)
+                    .foregroundColor(participant.hasCollected ? .green : .blue)
+            }
+            // 集金確認用のトグル
             Toggle("", isOn: Binding(
                 get: { participant.hasCollected },
                 set: { newValue in
@@ -251,7 +288,6 @@ struct PrePlanView: View {
             }) {
                 Label("編集", systemImage: "pencil")
             }
-            
             Button(action: {
                 viewModel.updateCollectionStatus(participant: participant, hasCollected: !participant.hasCollected)
             }) {
@@ -261,7 +297,6 @@ struct PrePlanView: View {
                     Label("集金済みに変更", systemImage: "checkmark.circle")
                 }
             }
-            
             Button(action: {
                 toggleFixedAmount(participant)
             }) {
@@ -271,9 +306,7 @@ struct PrePlanView: View {
                     Label("金額を固定", systemImage: "lock")
                 }
             }
-            
             Divider()
-            
             Button(role: .destructive, action: {
                 confirmDelete(participant: participant)
             }) {
@@ -296,120 +329,6 @@ struct PrePlanView: View {
             viewModel.participants[index] = updatedParticipant
             viewModel.saveData()
         }
-    }
-    
-    // 金額表示ビュー
-    private func AmountDisplayView(participant: Participant) -> some View {
-        HStack(spacing: 2) {
-            // 金額固定トグル（鍵アイコン）- 金額の左側に配置
-            // 金額固定時のみ表示
-            if participant.hasFixedAmount {
-                Button(action: {
-                    toggleFixedAmount(participant)
-                }) {
-                    Image(systemName: "lock.fill")
-                        .foregroundColor(.orange)
-                        .font(.system(size: 12))
-                        .padding(4)
-                        .background(
-                            Circle()
-                                .fill(Color.orange.opacity(0.2))
-                        )
-                }
-                .buttonStyle(.plain)
-            }
-            
-            // 金額表示部分（タップで金額編集モーダルを表示）
-            Button(action: {
-                showAmountEditDialog(for: participant)
-            }) {
-                if viewModel.totalAmount.filter({ $0.isNumber }).isEmpty {
-                    Text("¥---")
-                        .font(.headline)
-                        .foregroundColor(.gray)
-                } else {
-                    // 固定金額の場合は0円でも表示
-                    let amount = viewModel.paymentAmount(for: participant)
-                    Text("¥\(viewModel.formatAmount(String(amount)))")
-                        .font(.headline)
-                        .foregroundColor(participant.hasCollected ? .green : .blue)
-                }
-            }
-            .buttonStyle(.plain)
-        }
-    }
-    
-    // 金額編集ダイアログを表示
-    @State private var editingAmountParticipant: Participant? = nil
-    @State private var editingAmountValue: String = ""
-    @State private var showAmountEditDialog = false
-    
-    private func showAmountEditDialog(for participant: Participant) {
-        editingAmountParticipant = participant
-        
-        // 金額が固定されている場合はその金額、そうでなければ計算金額を表示
-        if participant.hasFixedAmount {
-            editingAmountValue = String(participant.fixedAmount)
-        } else {
-            editingAmountValue = String(viewModel.paymentAmount(for: participant))
-        }
-        
-        print("金額編集ダイアログを表示: 参加者=\(participant.name), 金額=\(editingAmountValue)")
-        showAmountEditDialog = true
-    }
-    
-    // 編集した金額を保存
-    private func saveEditedAmount(fixed: Bool) {
-        guard let participant = editingAmountParticipant else { 
-            print("参加者が選択されていません")
-            return 
-        }
-        
-        if let index = viewModel.participants.firstIndex(where: { $0.id == participant.id }) {
-            var updatedParticipant = viewModel.participants[index]
-            
-            // 金額を取得（数字以外の文字を除去）
-            let amountString = editingAmountValue.filter { $0.isNumber }
-            print("変換前の金額文字列: '\(amountString)'")
-            
-            // 空文字列の場合は0として扱う
-            if amountString.isEmpty {
-                print("空の金額文字列を0として処理")
-                updatedParticipant.fixedAmount = 0
-                updatedParticipant.hasFixedAmount = fixed
-                
-                viewModel.participants[index] = updatedParticipant
-                viewModel.saveData()
-                print("参加者の金額を更新しました: \(updatedParticipant.name), 金額: 0円, 固定: \(updatedParticipant.hasFixedAmount)")
-            }
-            // 数値に変換できる場合
-            else if let amount = Int(amountString) {
-                print("金額を更新: \(amount)円, 固定: \(fixed)")
-                
-                // 金額が0でも保存する（意図的に0円に設定したい場合もある）
-                updatedParticipant.fixedAmount = amount
-                updatedParticipant.hasFixedAmount = fixed
-                
-                viewModel.participants[index] = updatedParticipant
-                viewModel.saveData()
-                print("参加者の金額を更新しました: \(updatedParticipant.name), 金額: \(updatedParticipant.fixedAmount)円, 固定: \(updatedParticipant.hasFixedAmount)")
-            } else {
-                print("金額の変換に失敗: '\(editingAmountValue)'")
-                // 変換に失敗した場合は、現在の計算金額を使用
-                let calculatedAmount = viewModel.paymentAmount(for: participant)
-                print("計算金額を使用: \(calculatedAmount)円")
-                
-                updatedParticipant.fixedAmount = calculatedAmount
-                updatedParticipant.hasFixedAmount = fixed
-                
-                viewModel.participants[index] = updatedParticipant
-                viewModel.saveData()
-                print("参加者の金額を更新しました（計算金額を使用）: \(updatedParticipant.name), 金額: \(updatedParticipant.fixedAmount)円, 固定: \(updatedParticipant.hasFixedAmount)")
-            }
-        }
-        
-        editingAmountParticipant = nil
-        editingAmountValue = ""
     }
     
     // 参加者個別の支払い案内を生成
@@ -654,8 +573,51 @@ struct PrePlanView: View {
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
             }
-            .sheet(isPresented: $showAmountEditDialog) {
-                AmountEditDialogView()
+            .sheet(isPresented: $showScheduleCreation) {
+                NavigationStack {
+                    CreateScheduleEventView(viewModel: scheduleViewModel) { event in
+                        // イベント作成完了時の処理
+                        scheduleEvent = event
+                        hasScheduleEvent = true
+                        showingScheduleUrlSheet = true
+                        showScheduleCreation = false
+                        
+                        // 開催日に反映
+                        if let optimalDate = event.optimalDate {
+                            localPlanDate = optimalDate
+                        }
+                    }
+                }
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
+            }
+            .sheet(isPresented: $showScheduleEdit) {
+                if let event = scheduleEvent {
+                    NavigationStack {
+                        EditScheduleEventView(event: event, viewModel: scheduleViewModel)
+                            .onDisappear {
+                                // 編集画面が閉じられたら、更新されたイベントを取得
+                                if let updatedEvent = scheduleViewModel.events.first(where: { $0.id == event.id }) {
+                                    scheduleEvent = updatedEvent
+                                    
+                                    // 開催日に反映
+                                    if let optimalDate = updatedEvent.optimalDate {
+                                        localPlanDate = optimalDate
+                                    }
+                                }
+                            }
+                    }
+                    .presentationDetents([.large])
+                    .presentationDragIndicator(.visible)
+                }
+            }
+            .sheet(isPresented: $showingScheduleUrlSheet) {
+                if let event = scheduleEvent {
+                    EventUrlSheet(event: event, viewModel: scheduleViewModel) {
+                        showingScheduleUrlSheet = false
+                        // URL表示完了後は飲み会作成画面に戻る（トップには戻らない）
+                    }
+                }
             }
             .onAppear {
                 setupInitialState()
@@ -857,6 +819,13 @@ struct PrePlanView: View {
     @ViewBuilder
     private func PlanContentList() -> some View {
         List {
+            // スケジュール調整セクション（一番上）
+            Section {
+                ScheduleSectionContent()
+            } header: {
+                Text("スケジュール調整").font(.headline)
+            }
+            
             // 日付入力セクション
             Section {
                 DateSectionContent()
@@ -1031,18 +1000,16 @@ struct PrePlanView: View {
     @ViewBuilder
     private func SaveButton() -> some View {
         Button {
-            viewModel.editingPlanName = localPlanName
-            viewModel.savePlan(name: localPlanName, date: localPlanDate ?? Date())
+            // 既に自動保存されているので、トップに戻る
             onFinish?()
         } label: {
-            Label("飲み会を保存してトップに戻る", systemImage: "folder")
+            Label("完了", systemImage: "checkmark")
         }
         .buttonStyle(.borderedProminent)
         .controlSize(.large)
         .frame(maxWidth: .infinity)
         .padding(.horizontal)
-        .padding(.vertical, 16)
-        .background(Color(.systemGroupedBackground))
+        .padding(.bottom, 20)
     }
     
     // 金額追加ダイアログビュー
@@ -1148,7 +1115,7 @@ struct PrePlanView: View {
                 Section {
                     // ランダム絵文字ボタン
                     Button(action: {
-                        let emojis = ["🍻", "🍺", "🥂", "🍷", "🍸", "🍹", "🍾", "🥃", "🍴", "🍖", "🍗", "🍣", "🍕", "🍔", "🥩", "🍙", "🤮", "🤢", "🥴", "🤪", "😵‍💫", "💸", "🎊"]
+                        let emojis = ["🍻", "🍺", "🥂", "🍷", "🍸", "🍹", "🍾", "🥃", "🍴", "🍖", "🍗", "🍣", "🍕", "🍔", "🥩", "🍙", "🤮", "🤢", "🥴", "��", "😵‍💫", "💸", "🎊"]
                         viewModel.selectedEmoji = emojis.randomElement() ?? "🍻"
                         showEmojiPicker = false
                     }) {
@@ -1538,84 +1505,103 @@ struct PrePlanView: View {
         .padding(.vertical, 12)
     }
     
-    // 金額編集ダイアログビュー
+    // 自動保存処理
+    private func autoSavePlan() {
+        viewModel.editingPlanName = localPlanName
+        viewModel.savePlan(name: localPlanName, date: localPlanDate ?? Date())
+    }
+    
+    // スケジュール調整セクションの内容
     @ViewBuilder
-    private func AmountEditDialogView() -> some View {
-        NavigationStack {
-            VStack(spacing: 20) {
-                if let participant = editingAmountParticipant {
-                    Text("\(participant.name)の支払金額")
+    private func ScheduleSectionContent() -> some View {
+        VStack(spacing: 12) {
+            if hasScheduleEvent, let event = scheduleEvent {
+                // スケジュール調整済みの場合
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundColor(.green)
+                        Text("スケジュール調整完了")
                         .font(.headline)
+                            .foregroundColor(.green)
+                        Spacer()
                 }
                 
+                    Text(event.title)
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                    
+                    if let optimalDate = event.optimalDate {
                 HStack {
-                    Text("¥")
-                        .font(.title2)
-                    TextField("金額", text: $editingAmountValue)
-                        .font(.title2)
-                        .keyboardType(.numberPad)
-                        .multilineTextAlignment(.trailing)
-                        .padding()
-                        .background(Color(.systemGray6))
-                        .cornerRadius(8)
-                        .onChange(of: editingAmountValue) { _, newValue in
-                            // 数字以外の文字を除去
-                            let filtered = newValue.filter { $0.isNumber }
-                            if filtered != newValue {
-                                editingAmountValue = filtered
-                            }
+                            Image(systemName: "calendar")
+                                .foregroundColor(.blue)
+                            Text("決定日時: \(scheduleViewModel.formatDateTime(optimalDate))")
+                                .font(.subheadline)
                         }
-                }
-                .padding(.horizontal)
-                
-                VStack(spacing: 12) {
-                    Button(action: {
-                        saveEditedAmount(fixed: true)
-                        showAmountEditDialog = false
-                    }) {
-                        HStack {
-                            Image(systemName: "lock.fill")
-                            Text("金額を固定する")
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.blue)
-                        .foregroundColor(.white)
-                        .cornerRadius(10)
                     }
                     
+                    // 参加者状況の表示
+                    let attendingCount = event.responses.filter { $0.status == .attending }.count
+                    let totalResponses = event.responses.count
+                    HStack {
+                        Image(systemName: "person.2")
+                            .foregroundColor(.blue)
+                        Text("参加者: \(attendingCount)/\(totalResponses)人")
+                            .font(.subheadline)
+                    }
+                    
+                    HStack {
                     Button(action: {
-                        saveEditedAmount(fixed: false)
-                        showAmountEditDialog = false
+                            showingScheduleUrlSheet = true
                     }) {
-                        HStack {
-                            Image(systemName: "lock.open")
-                            Text("キャンセル（固定しない）")
+                            Label("URLを表示", systemImage: "link")
                         }
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.gray.opacity(0.2))
-                        .foregroundColor(.primary)
-                        .cornerRadius(10)
+                        .buttonStyle(.bordered)
+                        
+                        Spacer()
+                    
+                    Button(action: {
+                            showScheduleEdit = true
+                    }) {
+                            Label("編集", systemImage: "pencil")
+                        }
+                        .buttonStyle(.bordered)
                     }
                 }
-                .padding(.horizontal)
-                
+                        .padding()
+                .background(Color(.systemGray6))
+                .cornerRadius(12)
+            } else {
+                // スケジュール調整未完了の場合
+                VStack(spacing: 8) {
+                    HStack {
+                        Image(systemName: "calendar.badge.plus")
+                            .foregroundColor(.blue)
+                        Text("スケジュール調整を開始")
+                            .font(.headline)
                 Spacer()
             }
-            .padding(.top, 30)
-            .navigationTitle("金額を編集")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("キャンセル") {
-                        showAmountEditDialog = false
-                    }
-                }
+                    
+                    Text("候補日時を設定して参加者に共有できます")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    
+                    Button(action: {
+                        showScheduleCreation = true
+                    }) {
+                        Label("スケジュール調整を開始", systemImage: "calendar.badge.plus")
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.blue)
+                            .foregroundColor(.white)
+                            .cornerRadius(12)
             }
         }
-        .presentationDetents([.height(300)])
-        .presentationDragIndicator(.visible)
+                .padding()
+                .background(Color(.systemGray6))
+                .cornerRadius(12)
+            }
+        }
     }
 }
 

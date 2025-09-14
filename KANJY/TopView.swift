@@ -16,6 +16,23 @@ struct TopView: View {
         case calendar
     }
     
+    // テスト用のサンプルイベント
+    private var sampleEvent: ScheduleEvent {
+        ScheduleEvent(
+            id: UUID(),
+            title: "サンプル飲み会",
+            description: "テスト用のスケジュール調整です",
+            candidateDates: [
+                Calendar.current.date(from: DateComponents(year: 2024, month: 12, day: 15, hour: 18, minute: 0))!,
+                Calendar.current.date(from: DateComponents(year: 2024, month: 12, day: 16, hour: 18, minute: 0))!,
+                Calendar.current.date(from: DateComponents(year: 2024, month: 12, day: 17, hour: 18, minute: 0))!
+            ],
+            responses: [],
+            createdBy: "テストユーザー",
+            createdAt: Date()
+        )
+    }
+    
     private var filteredPlans: [Plan] {
         if let date = selectedDate {
             return viewModel.savedPlans.filter { Calendar.current.isDate($0.date, inSameDayAs: date) }
@@ -115,6 +132,28 @@ struct TopView: View {
                 
                 // 設定セクション
                 Section {
+                    NavigationLink(destination: ScheduleManagementView()) {
+                        HStack {
+                            Image(systemName: "calendar.badge.plus")
+                                .font(.title2)
+                            Text("スケジュール調整")
+                                .font(.headline)
+                        }
+                        .padding(.vertical, 8)
+                    }
+                    
+                    // テスト用：出欠回答画面
+                    NavigationLink(destination: ScheduleResponseView(event: sampleEvent)) {
+                        HStack {
+                            Image(systemName: "hand.raised.fill")
+                                .font(.title2)
+                                .foregroundColor(.purple)
+                            Text("出欠回答（テスト）")
+                                .font(.headline)
+                        }
+                        .padding(.vertical, 8)
+                    }
+                    
                     NavigationLink(destination: PaymentSettings()) {
                         HStack {
                             Image(systemName: "creditcard")

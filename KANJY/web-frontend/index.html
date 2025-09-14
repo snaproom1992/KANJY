@@ -5,12 +5,42 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KANJY - 美しい表デザイン</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- カスタムスタイル -->
+    <style>
+        /* 基本的なリセット */
+        * {
+            box-sizing: border-box;
+        }
+        
+        /* 横スクロールバーを完全に非表示 */
+        body, html {
+            overflow-x: hidden !important;
+        }
+        
+        /* テーブルコンテナも横スクロール非表示 */
+        .overflow-x-auto {
+            overflow-x: hidden !important;
+        }
+        
+        
+        /* テーブル行のホバー効果 */
+        tbody tr:hover,
+        .table-row:hover,
+        tr:hover {
+            background: rgba(248,250,252,0.7) !important;
+            transform: translateX(2px) !important;
+        }
+    </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     
     <!-- Supabase CDN -->
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <script>
         tailwind.config = {
@@ -21,16 +51,16 @@
                     },
                     colors: {
                         kanjy: {
-                            50: '#eff6ff',
-                            100: '#dbeafe',
-                            200: '#bfdbfe',
-                            300: '#93c5fd',
-                            400: '#60a5fa',
-                            500: '#007AFF',
-                            600: '#0056cc',
-                            700: '#1d4ed8',
-                            800: '#1e40af',
-                            900: '#1e3a8a',
+                            50: '#f9fafb',
+                            100: '#f3f4f6',
+                            200: '#e5e7eb',
+                            300: '#d1d5db',
+                            400: '#9ca3af',
+                            500: '#000000',
+                            600: '#374151',
+                            700: '#1f2937',
+                            800: '#111827',
+                            900: '#030712',
                         },
                         // SwiftUIカラーパレット（洗練版）
                         attending: {
@@ -142,9 +172,7 @@
         }
         
         .gradient-animated {
-            background: linear-gradient(-45deg, #007AFF, #00C7BE, #007AFF, #5856D6);
-            background-size: 400% 400%;
-            animation: gradient-shift 8s ease infinite;
+            background: #ffffff;
         }
         
         .glassmorphism {
@@ -210,141 +238,488 @@
             background: linear-gradient(135deg, #0056cc, #4c46a6);
         }
         
-        /* スムーズなアニメーション */
+        /* 高度なマイクロインタラクション */
         * {
-            transition: all 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        /* ボタンホバー効果の強化 */
+        .interactive-element {
+            position: relative;
+            overflow: hidden;
+            transform: translateZ(0);
+            will-change: transform, box-shadow;
+        }
+        
+        .interactive-element::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            transition: left 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .interactive-element:hover::before {
+            left: 100%;
+        }
+        
+        .interactive-element:hover {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        .interactive-element:active {
+            transform: translateY(0) scale(0.98);
+            transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        /* テーブル行のホバー効果強化 */
+        .table-row {
+            position: relative;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .table-row:hover {
+            background: rgba(248,250,252,0.7) !important;
+            transform: translateX(2px) !important;
+            border: none !important;
+            box-shadow: none !important;
+        }
+        
+        /* ステータスバッジの改善 */
+        .status-badge {
+            position: relative;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(10px);
+        }
+        
+        .status-badge:hover {
+            transform: scale(1.1) rotate(5deg);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+        
+        /* パルス効果 */
+        .pulse-effect {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.8;
+                transform: scale(1.05);
+            }
+        }
+        
+        /* ローディング効果の改善 */
+        .loading-shimmer {
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+        
+        @keyframes shimmer {
+            0% {
+                background-position: -200% 0;
+            }
+            100% {
+                background-position: 200% 0;
+            }
+        }
+        
+        /* カードの改善されたホバー効果 */
+        .enhanced-card {
+            position: relative;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .enhanced-card:hover {
+            background: rgba(255, 255, 255, 0.95);
+            transform: translateY(-8px) scale(1.01);
+            box-shadow: 
+                0 25px 50px rgba(0, 0, 0, 0.15),
+                0 0 0 1px rgba(255, 255, 255, 0.3);
+        }
+        
+        /* スクロール時の要素表示アニメーション */
+        .fade-in-up {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .fade-in-up.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        /* モバイル最適化 */
+        @media (max-width: 768px) {
+            /* ナビゲーションの改善 */
+            .max-w-7xl {
+                padding-left: 1rem;
+                padding-right: 1rem;
+            }
+            
+            /* タッチフレンドリーなボタン */
+            .interactive-element {
+                min-height: 44px;
+                padding: 0.75rem 1rem;
+            }
+            
+            /* テーブルの改善 */
+            .table-row:hover {
+                transform: none;
+                background: rgba(248,250,252,0.7);
+            }
+            
+            /* ステータスバッジのタッチ対応 */
+            .status-badge {
+                min-width: 44px;
+                min-height: 44px;
+                padding: 0.5rem;
+            }
+            
+            .status-badge:hover {
+                transform: scale(1.05);
+                rotate: 0deg;
+            }
+            
+            /* カードのモバイル表示 */
+            .enhanced-card {
+                margin: 0.5rem;
+                border-radius: 1rem;
+            }
+            
+            .enhanced-card:hover {
+                transform: translateY(-2px) scale(1.005);
+            }
+            
+            /* フォントサイズの調整 */
+            .text-3xl {
+                font-size: 1.875rem;
+            }
+            
+            .text-2xl {
+                font-size: 1.5rem;
+            }
+            
+            /* スペーシングの調整 */
+            .px-8 {
+                padding-left: 1rem;
+                padding-right: 1rem;
+            }
+            
+            .py-6 {
+                padding-top: 1rem;
+                padding-bottom: 1rem;
+            }
+            
+            /* テーブルスクロールの改善 */
+            .overflow-x-auto {
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: thin;
+            }
+            
+            .overflow-x-auto::-webkit-scrollbar {
+                height: 4px;
+            }
+            
+            .overflow-x-auto::-webkit-scrollbar-thumb {
+                background: rgba(0, 0, 0, 0.2);
+                border-radius: 2px;
+            }
+        }
+        
+        /* タブレット対応 */
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .enhanced-card:hover {
+                transform: translateY(-6px) scale(1.008);
+            }
+            
+            .table-row:hover {
+                transform: translateX(2px);
+            }
+        }
+        
+        /* ダークモード対応 */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-primary: #1a1a1a;
+                --bg-secondary: #2d2d2d;
+                --text-primary: #ffffff;
+                --text-secondary: #b0b0b0;
+                --border-primary: #404040;
+            }
+            
+            .bg-white {
+                background-color: var(--bg-secondary);
+                color: var(--text-primary);
+            }
+            
+            .text-gray-900 {
+                color: var(--text-primary);
+            }
+            
+            .text-stone-600 {
+                color: var(--text-secondary);
+            }
+            
+            .border-stone-200\/60 {
+                border-color: var(--border-primary);
+            }
+        }
+        
+        /* 高解像度ディスプレイ対応 */
+        @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+            .enhanced-card {
+                border-width: 0.5px;
+            }
+            
+            .status-badge {
+                border-width: 0.5px;
+            }
+        }
+        
+        /* アクセシビリティ改善 */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+            
+            .fade-in-up {
+                opacity: 1;
+                transform: none;
+            }
+        }
+        
+        /* フォーカス表示の改善 */
+        .interactive-element:focus {
+            outline: 2px solid #007AFF;
+            outline-offset: 2px;
+        }
+        
+        .status-badge:focus {
+            outline: 2px solid #007AFF;
+            outline-offset: 2px;
+        }
+        
+        /* プリント対応 */
+        @media print {
+            .interactive-element,
+            .status-badge {
+                box-shadow: none;
+                transform: none;
+            }
+            
+            .enhanced-card {
+                box-shadow: none;
+                border: 1px solid #ccc;
+            }
+        }
+        
+        /* 青いラインを完全に削除 - より強力な方法 */
+        * {
+            border: none !important;
+        }
+        
+        table, table *, 
+        .table-row, .table-row *,
+        tbody, tbody *,
+        thead, thead *,
+        tr, tr *,
+        th, th *,
+        td, td * {
+            border: none !important;
+            border-bottom: none !important;
+            border-left: none !important;
+            border-right: none !important;
+            border-top: none !important;
+            border-color: transparent !important;
+            outline: none !important;
+        }
+        
+        /* ホバー時も確実に削除 */
+        table tr:hover,
+        .table-row:hover,
+        tbody tr:hover,
+        thead tr:hover {
+            border: none !important;
+            border-bottom: none !important;
+            border-left: none !important;
+            border-right: none !important;
+            border-top: none !important;
+            border-color: transparent !important;
+            outline: none !important;
+        }
+        
+        /* Tailwind CSSの全ボーダークラスを無効化 */
+        .border, .border-b, .border-t, .border-l, .border-r,
+        .border-stone-200, .border-stone-200\/60,
+        .border-gray-200, .border-gray-300 {
+            border: none !important;
+            border-color: transparent !important;
+        }
+        
+        /* 必要なボーダーのみ復活 */
+        .enhanced-card {
+            border: 1px solid rgba(0, 0, 0, 0.1) !important;
+            border-radius: 0.5rem !important;
+        }
+        
+        nav {
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
+        }
+        
+        /* カードとナビゲーション以外のボーダーを強制削除 */
+        :not(.enhanced-card):not(nav) {
+            border: none !important;
         }
     </style>
 </head>
 
-<body class="font-sans antialiased text-gray-900 min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+<body class="font-sans antialiased text-gray-900 min-h-screen bg-stone-50">
     
     <!-- Hero Section with Glass Effect -->
-    <header class="relative overflow-hidden">
-        <!-- Animated Background -->
-        <div class="absolute inset-0 gradient-animated opacity-90"></div>
-        
-        <!-- Glass Navigation -->
-        <nav class="relative glassmorphism">
+    <header class="relative">
+        <!-- Ultra Minimal Navigation -->
+        <nav class="bg-white shadow-sm backdrop-blur-xl">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex justify-between items-center h-16">
-                    <div class="flex items-center space-x-3">
-                        <div class="w-10 h-10 bg-white/10 backdrop-blur-sm rounded-xl flex items-center justify-center shadow-soft border border-white/20">
-                            <img src="assets/App icon.png" alt="KANJY" class="w-8 h-8 object-contain rounded-lg">
-                        </div>
-                        <span class="text-white font-semibold text-lg">KANJY</span>
+                <div class="flex justify-between items-center h-20">
+                    <div class="flex items-center">
+                        <span class="text-gray-900 font-light text-xl tracking-[0.2em] uppercase">K A N J Y</span>
                     </div>
                     <div class="flex items-center">
                         <a href="https://apps.apple.com/jp/app/kanjy/id6746665673" target="_blank" 
-                           class="bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg px-3 py-1.5 text-white text-sm font-semibold transition-all duration-200 border border-white/30 hover:border-white/50 shadow-soft flex items-center space-x-2" 
-                           style="text-shadow: 0 1px 2px rgba(0,0,0,0.5);">
-                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
-                            </svg>
-                            <span>アプリをダウンロード</span>
+                           class="text-gray-600 hover:text-black text-sm font-light tracking-wide transition-colors duration-200">
+                            Download
                         </a>
                     </div>
                 </div>
             </div>
         </nav>
-        
-        <!-- Hero Content -->
-        <div class="relative px-4 sm:px-6 lg:px-8 py-24">
-            <div class="max-w-4xl mx-auto text-center">
-                <h1 id="event-title" class="text-5xl md:text-7xl font-bold text-white mb-6 animate-slide-up">
+
+        <!-- Event Title Section (Refined) -->
+        <div class="bg-white py-8">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <h2 id="event-title" class="text-3xl font-semibold text-gray-900 mb-2">
                     読み込み中...
-                </h1>
-                <p id="event-description" class="text-xl md:text-2xl text-white/80 max-w-2xl mx-auto leading-relaxed animate-fade-in" style="display: none;">
+                </h2>
+                <p id="event-description" class="text-base text-gray-600 leading-relaxed" style="display: none;">
                 </p>
             </div>
         </div>
-        
-        <!-- Decorative Elements -->
-        <div class="absolute top-20 left-10 w-20 h-20 bg-white/10 rounded-full animate-float"></div>
-        <div class="absolute top-40 right-20 w-12 h-12 bg-white/5 rounded-full animate-float" style="animation-delay: 1s;"></div>
-        <div class="absolute bottom-20 left-1/4 w-16 h-16 bg-white/10 rounded-full animate-float" style="animation-delay: 2s;"></div>
     </header>
 
     <!-- Main Content -->
-    <main class="relative -mt-16 pb-20">
+    <main class="pb-20">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <!-- Event Info Cards -->
-            <section class="mb-12 animate-slide-up">
-                <div id="event-info-cards" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <section class="bg-white py-6">
+                <div id="event-info-cards" class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
                     <!-- Location Card -->
-                    <div id="location-card" class="floating-element bg-white rounded-2xl shadow-elegant p-6 border border-white/50" style="display: none;">
-                        <div class="flex items-center mb-4">
-                            <div class="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center">
-                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                </svg>
-                            </div>
-                        </div>
-                        <h3 class="text-sm font-medium text-gray-500 mb-2">開催場所</h3>
-                        <p id="location-text" class="text-xl font-semibold text-gray-900"></p>
+                    <div id="location-card" style="display: none;">
+                        <h3 class="text-xs font-medium text-gray-500 uppercase tracking-widest mb-3">Location</h3>
+                        <p id="location-text" class="text-xl font-light text-gray-900"></p>
                     </div>
 
                     <!-- Budget Card -->
-                    <div id="budget-card" class="floating-element bg-white rounded-2xl shadow-elegant p-6 border border-white/50" style="display: none;">
-                        <div class="flex items-center mb-4">
-                            <div class="w-12 h-12 bg-gradient-to-br from-green-400 to-emerald-600 rounded-xl flex items-center justify-center">
-                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/>
-                                </svg>
-                            </div>
-                        </div>
-                        <h3 class="text-sm font-medium text-gray-500 mb-2">予算</h3>
-                        <p id="budget-text" class="text-xl font-semibold text-gray-900"></p>
+                    <div id="budget-card" style="display: none;">
+                        <h3 class="text-xs font-medium text-gray-500 uppercase tracking-widest mb-3">Budget</h3>
+                        <p id="budget-text" class="text-xl font-light text-gray-900"></p>
                     </div>
 
                     <!-- Deadline Card -->
-                    <div id="deadline-card" class="floating-element bg-white rounded-2xl shadow-elegant p-6 border border-white/50" style="display: none;">
-                        <div class="flex items-center mb-4">
-                            <div class="w-12 h-12 bg-gradient-to-br from-orange-400 to-red-500 rounded-xl flex items-center justify-center">
-                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                                </svg>
-                            </div>
-                        </div>
-                        <h3 class="text-sm font-medium text-gray-500 mb-2">回答締切</h3>
-                        <p id="deadline-text" class="text-xl font-semibold text-gray-900"></p>
+                    <div id="deadline-card" style="display: none;">
+                        <h3 class="text-xs font-medium text-gray-500 uppercase tracking-widest mb-3">Deadline</h3>
+                        <p id="deadline-text" class="text-xl font-light text-gray-900"></p>
                     </div>
                 </div>
             </section>
 
             <!-- Beautiful Schedule Table -->
-            <section class="animate-slide-up">
-                <div class="bg-white rounded-3xl shadow-floating overflow-hidden border border-white/50">
-                    <div class="px-8 py-6 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200/50">
-                        <div class="flex items-center">
-                            <div>
-                                <h2 class="text-2xl font-bold text-gray-900 flex items-center">
-                                    <span class="w-8 h-8 bg-gradient-to-br from-kanjy-400 to-kanjy-600 rounded-lg flex items-center justify-center mr-3">
-                                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                                        </svg>
-                                    </span>
+            <section class="animate-slide-up fade-in-up">
+                <div class="enhanced-card shadow-sm border border-stone-200/60 rounded-lg overflow-hidden">
+                    <div class="px-8 py-4 bg-stone-50/30 ">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-1 h-6 bg-gradient-to-b from-gray-800 to-gray-900 rounded-full"></div>
+                                <h2 class="text-xl font-semibold text-gray-900 tracking-tight">
                                     日程別回答状況
                                 </h2>
-                                <p class="text-gray-600 mt-1">どの日程が一番人気かな？</p>
+                            </div>
+                            <!-- 表示切り替えボタン -->
+                            <div class="flex bg-gray-100 rounded-lg p-1">
+                <button id="chart-view-btn" class="px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 bg-white shadow-sm text-gray-900 flex items-center space-x-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
+                    <span>グラフ</span>
+                </button>
+                <button id="table-view-btn" class="px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 text-gray-600 hover:text-gray-900 flex items-center space-x-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                    </svg>
+                    <span>表</span>
+                </button>
                             </div>
                         </div>
+                        <p class="text-sm text-stone-600 leading-relaxed">各候補日時の参加者数と人気度を一覧で確認できます</p>
                     </div>
 
-                    <div class="overflow-x-auto">
-                        <table class="w-full">
+                    <!-- グラフ表示エリア -->
+                    <div id="chart-container" class="p-8">
+                        <canvas id="schedule-chart" class="w-full" style="height: 400px;"></canvas>
+                    </div>
+
+                    <!-- テーブル表示エリア -->
+                    <div id="table-container" class="overflow-x-auto" style="display: none;">
+                        <table class="w-full" role="table" aria-label="日程別回答状況一覧">
                             <thead>
-                                <tr class="bg-gradient-to-r from-gray-50/50 to-gray-100/50">
-                                    <th class="text-left py-6 px-8 font-semibold text-gray-700 text-sm uppercase tracking-wider">候補日時</th>
-                                    <th class="text-center py-6 px-6 font-semibold text-attending-600 text-sm uppercase tracking-wider">参加</th>
-                                    <th class="text-center py-6 px-6 font-semibold text-notAttending-600 text-sm uppercase tracking-wider">不参加</th>
-                                    <th class="text-center py-6 px-6 font-semibold text-maybe-600 text-sm uppercase tracking-wider">未定</th>
-                                    <th class="text-center py-6 px-6 font-semibold text-gray-700 text-sm uppercase tracking-wider">合計</th>
-                                    <th class="text-center py-6 px-8 font-semibold text-gray-700 text-sm uppercase tracking-wider">評価</th>
+                                <tr>
+                                    <th class="text-left py-4 px-6 font-medium text-stone-700 text-sm uppercase tracking-wider" scope="col">候補日時</th>
+                                    <th class="text-center py-4 px-4 font-medium text-stone-700 text-sm uppercase tracking-wider" scope="col">
+                                        <div class="flex items-center justify-center space-x-1">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                                <circle cx="12" cy="12" r="9" stroke-width="2.5"/>
+                                            </svg>
+                                            <span>参加</span>
+                                        </div>
+                                    </th>
+                                    <th class="text-center py-4 px-4 font-medium text-stone-700 text-sm uppercase tracking-wider">
+                                        <div class="flex items-center justify-center space-x-1">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
+                                            </svg>
+                                            <span>不参加</span>
+                                        </div>
+                                    </th>
+                                    <th class="text-center py-4 px-4 font-medium text-stone-700 text-sm uppercase tracking-wider">
+                                        <div class="flex items-center justify-center space-x-1">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01"/>
+                                            </svg>
+                                            <span>未定</span>
+                                        </div>
+                                    </th>
+                                    <th class="text-center py-4 px-4 font-medium text-stone-700 text-sm uppercase tracking-wider">合計</th>
+                                    <th class="text-center py-4 px-6 font-medium text-stone-700 text-sm uppercase tracking-wider">評価</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-gray-100">
+                            <tbody class="">
                                 <!-- 動的に生成される日程別参加状況がここに挿入されます -->
                             </tbody>
                         </table>
@@ -353,47 +728,37 @@
             </section>
 
             <!-- Detailed Response Table -->
-            <section class="mt-12 animate-fade-in">
-                <div class="bg-white rounded-3xl shadow-floating overflow-hidden border border-white/50">
-                    <div class="px-8 py-6 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200/50">
-                        <h2 class="text-2xl font-bold text-gray-900 flex items-center">
-                            <span class="w-8 h-8 bg-gradient-to-br from-kanjy-400 to-kanjy-600 rounded-lg flex items-center justify-center mr-3">
-                                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
-                                </svg>
-                            </span>
-                            回答一覧
-                        </h2>
-                        <p class="text-gray-600 mt-1">みんなの回答をチェック</p>
-                        <div class="mt-3 inline-block bg-white rounded-lg px-3 py-2">
-                            <p class="text-xs text-gray-600 flex items-center">
-                                <svg class="w-3 h-3 mr-1 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                </svg>
-                                回答の編集は回答者の名前をクリックしてください
-                            </p>
+            <section class="mt-12 animate-fade-in fade-in-up">
+                <div class="enhanced-card shadow-sm border border-stone-200/60 rounded-lg overflow-hidden">
+                    <div class="px-8 py-4 bg-stone-50/30 ">
+                        <div class="flex items-center space-x-3 mb-2">
+                            <div class="w-1 h-6 bg-gradient-to-b from-gray-700 to-gray-800 rounded-full"></div>
+                            <h2 class="text-xl font-semibold text-stone-900 tracking-tight">
+                                回答一覧
+                            </h2>
                         </div>
+                        <p class="text-sm text-stone-600 leading-relaxed">全参加者の詳細な回答状況を確認・編集できます（名前クリックで編集）</p>
                     </div>
 
                     <div class="overflow-x-auto">
                         <table class="w-full table-fixed">
                             <thead>
-                                <tr class="bg-gradient-to-r from-gray-50/50 to-gray-100/50">
+                                <tr class="">
                                     <th class="text-left py-6 px-8 font-semibold text-gray-700 text-sm uppercase tracking-wider w-80">参加者</th>
                                     <!-- 日程ヘッダーは動的に生成されます -->
 
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-gray-100">
+                            <tbody class="">
                                 <!-- 動的に生成される回答一覧がここに挿入されます -->
                             </tbody>
                         </table>
                     </div>
 
                     <!-- Show More Button -->
-                    <div id="show-more-section" class="px-8 py-6 bg-gray-50/50 border-t border-gray-200/50 text-center">
-                        <button id="show-more-button" class="floating-element inline-flex items-center px-6 py-3 bg-gradient-to-r from-kanjy-500 to-kanjy-600 text-white font-semibold rounded-xl shadow-soft hover:shadow-elegant transition-all duration-300" onclick="showMoreResponses()">
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div id="show-more-section" class="px-8 py-4 bg-stone-50/30 border-t border-stone-200/60 text-center">
+                        <button id="show-more-button" class="inline-flex items-center px-4 py-2 bg-stone-600 hover:bg-stone-700 text-white font-medium rounded-lg transition-colors duration-200" onclick="showMoreResponses()">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                             </svg>
                             <span id="show-more-text">残り15名の回答を表示</span>
@@ -403,14 +768,17 @@
             </section>
 
             <!-- Response Form CTA -->
-            <section class="mt-12 text-center animate-fade-in">
-                <div class="floating-element bg-gradient-to-r from-kanjy-500 to-kanjy-600 rounded-3xl shadow-floating p-8 text-white">
-                    <h2 class="text-3xl font-bold mb-4">まだ回答していない方へ</h2>
-                    <p class="text-xl text-kanjy-100 mb-8 max-w-2xl mx-auto">
-                        ぜひあなたの都合を教えてください！
+            <section class="mt-12 text-center">
+                <div class="enhanced-card border border-stone-200/60 rounded-lg p-8 shadow-sm">
+                    <div class="flex items-center space-x-3 mb-2">
+                        <div class="w-1 h-6 bg-gradient-to-b from-gray-600 to-gray-700 rounded-full"></div>
+                        <h2 class="text-xl font-semibold text-stone-900 tracking-tight">まだ回答していない方へ</h2>
+                    </div>
+                    <p class="text-stone-600 mb-6">
+                        ぜひあなたの都合を教えてください
                     </p>
-                    <button onclick="goToResponseForm()" class="floating-element inline-flex items-center px-8 py-4 bg-white text-kanjy-600 font-bold text-lg rounded-2xl shadow-elegant hover:shadow-floating transition-all duration-300">
-                        <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <button onclick="goToResponseForm()" class="interactive-element inline-flex items-center px-6 py-3 bg-stone-900 hover:bg-stone-800 text-white font-medium rounded-lg transition-colors duration-200" aria-label="回答フォームに移動して参加状況を入力する">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                         </svg>
                         回答フォームに入力
@@ -419,10 +787,13 @@
             </section>
 
             <!-- URL Share Section -->
-            <section class="mt-12 text-center animate-fade-in">
-                <div class="floating-element bg-white rounded-3xl shadow-floating p-8 border border-gray-100">
-                    <h2 class="text-3xl font-bold mb-4 text-gray-900">このイベントのURL</h2>
-                    <p class="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+            <section class="mt-12 text-center">
+                <div class="enhanced-card border border-stone-200/60 rounded-lg p-8 shadow-sm">
+                    <div class="flex items-center space-x-3 mb-2">
+                        <div class="w-1 h-6 bg-gradient-to-b from-gray-500 to-gray-600 rounded-full"></div>
+                        <h2 class="text-xl font-semibold text-stone-900 tracking-tight">このイベントのURL</h2>
+                    </div>
+                    <p class="text-stone-600 mb-6">
                         このURLをコピーして、他の参加者に共有して下さい
                     </p>
                     
@@ -435,7 +806,7 @@
                                     <!-- URL will be populated by JavaScript -->
                                 </div>
                             </div>
-                            <button id="copyUrlBtn" onclick="copyEventUrl()" class="ml-4 floating-element inline-flex items-center px-6 py-3 bg-kanjy-500 text-white font-bold rounded-xl shadow-elegant hover:bg-kanjy-600 hover:shadow-floating transition-all duration-300">
+                            <button id="copyUrlBtn" onclick="copyEventUrl()" class="ml-4 interactive-element inline-flex items-center px-6 py-3 bg-kanjy-500 text-white font-bold rounded-xl shadow-elegant hover:bg-kanjy-600 hover:shadow-floating transition-all duration-300" aria-label="イベントURLをクリップボードにコピーする">
                                 <svg id="copyIcon" class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
                                 </svg>
@@ -466,13 +837,13 @@
     </main>
 
     <!-- Footer -->
-    <footer class="mt-20 bg-white border-t border-gray-200/50">
+    <footer class="mt-20 bg-white">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <div class="text-center">
                 <!-- Logo and Title -->
                 <div class="flex items-center justify-center space-x-3 mb-6">
                                             <img src="assets/App icon.png" alt="KANJY" class="w-10 h-10 rounded-lg shadow-soft">
-                    <span class="text-2xl font-bold text-gray-900">KANJY</span>
+                    <span class="text-2xl font-thin text-gray-900 tracking-widest uppercase">K A N J Y</span>
                 </div>
                 
                 <!-- Main Description -->
@@ -591,6 +962,309 @@
             }
         }
         
+        // グラフ変数
+        let scheduleChart = null;
+        
+        // 日程別回答状況グラフを作成
+        function createScheduleChart(responses) {
+            const canvas = document.getElementById('schedule-chart');
+            if (!canvas || !currentEvent) {
+                console.warn('⚠️ グラフ作成をスキップ: canvas または currentEvent が見つかりません');
+                return;
+            }
+            
+            // Chart.jsの読み込み確認
+            if (typeof Chart === 'undefined') {
+                console.error('❌ Chart.jsが読み込まれていません');
+                return;
+            }
+            
+            // データの構造をデバッグ
+            console.log('🔍 グラフ作成開始');
+            console.log('🔍 responses:', responses);
+            console.log('🔍 currentEvent:', currentEvent);
+            console.log('🔍 candidate_dates:', currentEvent.candidate_dates);
+            
+            // 回答データの構造を確認
+            if (responses && responses.length > 0) {
+                console.log('🔍 最初の回答データ:', responses[0]);
+                console.log('🔍 date_responses構造:', responses[0].date_responses);
+                
+                // 全回答のステータス値を一覧表示
+                const statusList = responses.map(r => ({ name: r.participant_name, status: r.status }));
+                console.log('🔍 全回答のステータス一覧:', statusList);
+                
+                // ユニークなステータス値を抽出
+                const uniqueStatuses = [...new Set(responses.map(r => r.status))];
+                console.log('🔍 使用されているステータス値:', uniqueStatuses);
+            }
+            
+            // 既存のグラフを破棄
+            if (scheduleChart) {
+                scheduleChart.destroy();
+            }
+            
+            // テスト用：複数日程を追加（実際のデータに影響しません）
+            const testDates = [
+                ...currentEvent.candidate_dates,
+                '2024-07-12T10:00:00',
+                '2024-07-13T14:00:00',
+                '2024-07-14T16:00:00',
+                '2024-07-15T18:00:00'
+            ];
+            
+            console.log('テスト用候補日程:', testDates);
+            
+            // 各候補日時の統計を計算
+            const dateStats = testDates.map(dateStr => {
+                const date = new Date(dateStr);
+                const label = `${date.getMonth() + 1}/${date.getDate()} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+                
+                console.log(`日付処理中: ${dateStr} -> ${label}`);
+                
+                // テスト用のダミーデータ生成（複数日程の表示確認用）
+                let attending, notAttending, maybe;
+                
+                if (currentEvent.candidate_dates.includes(dateStr)) {
+                    // 実際のデータを使用
+                    attending = responses.filter(r => {
+                        if (r.status === 'attending' && r.available_dates && Array.isArray(r.available_dates)) {
+                            const isAvailable = r.available_dates.includes(dateStr);
+                            console.log(`${r.participant_name}: status=${r.status}, ${dateStr}が利用可能=${isAvailable}`);
+                            return isAvailable;
+                        }
+                        return false;
+                    }).length;
+                    
+                    notAttending = responses.filter(r => {
+                        if (r.status === 'not_attending') {
+                            console.log(`${r.participant_name}: status=${r.status} -> 不参加`);
+                            return true;
+                        }
+                        return false;
+                    }).length;
+                    
+                    maybe = responses.filter(r => {
+                        if (r.status === 'maybe' || r.status === 'pending' || r.status === 'undecided') {
+                            return true;
+                        }
+                        if (r.status !== 'attending' && r.status !== 'not_attending') {
+                            return true;
+                        }
+                        return false;
+                    }).length;
+                } else {
+                    // テスト用のランダムデータ
+                    const totalResponses = responses.length;
+                    const randomFactor = Math.random();
+                    attending = Math.floor(totalResponses * randomFactor * 0.8); // 0-80%の参加率
+                    notAttending = Math.floor(totalResponses * 0.1); // 固定で10%不参加
+                    maybe = Math.floor(totalResponses * 0.1); // 固定で10%未定
+                    console.log(`テストデータ生成: ${label} -> 参加=${attending}, 不参加=${notAttending}, 未定=${maybe}`);
+                }
+                
+                console.log(`${label}: 参加=${attending}, 不参加=${notAttending}, 未定=${maybe}`);
+                
+                return {
+                    label,
+                    attending,
+                    notAttending,
+                    maybe,
+                    total: attending + notAttending + maybe
+                };
+            });
+            
+            const ctx = canvas.getContext('2d');
+            
+            // 参加者数の最大値を取得して強弱を計算
+            const attendingCounts = dateStats.map(stat => stat.attending);
+            const maxAttending = Math.max(...attendingCounts);
+            
+            // 最も参加者が多い日程のみ緑色、他はグレー（戦略的アクセント）
+            const backgroundColors = attendingCounts.map(count => {
+                if (maxAttending === 0) return 'rgba(107, 114, 128, 0.2)'; // 全て0の場合は薄いグレー
+                if (count === maxAttending && count > 0) {
+                    return 'rgba(16, 185, 129, 0.8)'; // emerald-500 - 最人気の日程のみ
+                } else {
+                    return 'rgba(107, 114, 128, 0.3)'; // stone-500 - その他の日程
+                }
+            });
+            
+            const borderColors = attendingCounts.map(count => {
+                if (maxAttending === 0) return 'rgba(75, 85, 99, 0.4)'; // 全て0の場合
+                if (count === maxAttending && count > 0) {
+                    return 'rgba(5, 150, 105, 1.0)'; // emerald-600 - 最人気の日程のみ
+                } else {
+                    return 'rgba(75, 85, 99, 0.5)'; // stone-600 - その他の日程
+                }
+            });
+            
+            console.log('最大参加者数:', maxAttending);
+            console.log('色付け対象:', attendingCounts.map((count, index) => 
+                count === maxAttending && count > 0 ? `${dateStats[index].label}: 緑色` : `${dateStats[index].label}: グレー`
+            ));
+            
+            scheduleChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: dateStats.map(stat => stat.label),
+                    datasets: [{
+                        label: '参加者数',
+                        data: attendingCounts,
+                        backgroundColor: backgroundColors,
+                        borderColor: borderColors,
+                        borderWidth: 1,
+                        borderRadius: 2,
+                        borderSkipped: false,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: '日程別参加者数',
+                            font: {
+                                size: 16,
+                                weight: 'bold'
+                            },
+                            color: '#374151'
+                        },
+                        legend: {
+                            display: false // シンプルにするため凡例を非表示
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleFont: {
+                                size: 14,
+                                weight: 'bold'
+                            },
+                            bodyFont: {
+                                size: 13
+                            },
+                            callbacks: {
+                                label: function(context) {
+                                    const dataIndex = context.dataIndex;
+                                    const attending = dateStats[dataIndex].attending;
+                                    const notAttending = dateStats[dataIndex].notAttending;
+                                    const maybe = dateStats[dataIndex].maybe;
+                                    const total = attending + notAttending + maybe;
+                                    
+                                    const isTopChoice = attending === maxAttending && attending > 0;
+                                    const topChoiceLabel = isTopChoice ? '【最人気の日程】' : '';
+                                    
+                                    return [
+                                        topChoiceLabel,
+                                        `参加: ${attending}名`,
+                                        `未定: ${maybe}名`, 
+                                        `不参加: ${notAttending}名`,
+                                        `合計回答: ${total}名`
+                                    ].filter(Boolean); // 空文字列を除外
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: '候補日時',
+                                color: '#6b7280',
+                                font: {
+                                    size: 12,
+                                    weight: 'bold'
+                                }
+                            },
+                            grid: {
+                                display: false
+                            },
+                            border: {
+                                color: '#e5e7eb'
+                            },
+                            ticks: {
+                                color: '#6b7280',
+                                font: {
+                                    size: 11
+                                }
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: '参加者数',
+                                color: '#6b7280',
+                                font: {
+                                    size: 12,
+                                    weight: 'bold'
+                                }
+                            },
+                            beginAtZero: true,
+                            grid: {
+                                color: '#f9fafb',
+                                borderColor: '#e5e7eb',
+                                borderWidth: 1
+                            },
+                            ticks: {
+                                color: '#6b7280',
+                                font: {
+                                    size: 11
+                                },
+                                stepSize: 1
+                            }
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    animation: {
+                        duration: 1000,
+                        easing: 'easeInOutQuart'
+                    }
+                }
+            });
+            
+            console.log('日程別回答状況グラフを作成しました');
+            console.log('グラフデータ:', dateStats);
+            console.log('回答データ件数:', responses.length);
+        }
+        
+        // 表示切り替え機能
+        function initializeViewToggle() {
+            const chartViewBtn = document.getElementById('chart-view-btn');
+            const tableViewBtn = document.getElementById('table-view-btn');
+            const chartContainer = document.getElementById('chart-container');
+            const tableContainer = document.getElementById('table-container');
+            
+            if (!chartViewBtn || !tableViewBtn || !chartContainer || !tableContainer) return;
+            
+            // グラフ表示
+            chartViewBtn.addEventListener('click', function() {
+                chartContainer.style.display = 'block';
+                tableContainer.style.display = 'none';
+                
+                chartViewBtn.classList.add('bg-white', 'shadow-sm', 'text-gray-900');
+                chartViewBtn.classList.remove('text-gray-600', 'hover:text-gray-900');
+                
+                tableViewBtn.classList.remove('bg-white', 'shadow-sm', 'text-gray-900');
+                tableViewBtn.classList.add('text-gray-600', 'hover:text-gray-900');
+            });
+            
+            // 表表示
+            tableViewBtn.addEventListener('click', function() {
+                chartContainer.style.display = 'none';
+                tableContainer.style.display = 'block';
+                
+                tableViewBtn.classList.add('bg-white', 'shadow-sm', 'text-gray-900');
+                tableViewBtn.classList.remove('text-gray-600', 'hover:text-gray-900');
+                
+                chartViewBtn.classList.remove('bg-white', 'shadow-sm', 'text-gray-900');
+                chartViewBtn.classList.add('text-gray-600', 'hover:text-gray-900');
+            });
+        }
+        
+        
         // 初期化
         document.addEventListener('DOMContentLoaded', async function() {
             console.log('🍙 Beautiful KANJY Table初期化開始');
@@ -618,9 +1292,22 @@
                 
                 console.log('🍙 データ読み込み完了');
                 
+                // 表示切り替え機能を初期化
+                initializeViewToggle();
+                
             } catch (error) {
                 console.error('初期化エラー:', error);
-                alert('データの読み込みに失敗しました: ' + error.message);
+                console.error('初期化エラー詳細:', error.message);
+                console.error('初期化スタックトレース:', error.stack);
+                
+                // ユーザーフレンドリーなエラーメッセージ
+                let userMessage = 'データの読み込みに失敗しました。';
+                if (error.message) {
+                    userMessage += '\n詳細: ' + error.message;
+                }
+                userMessage += '\n\nページをリロードして再試行してください。';
+                
+                alert(userMessage);
             }
             
             // アニメーション設定
@@ -726,6 +1413,13 @@
                 
             } catch (error) {
                 console.error('回答読み込みエラー:', error);
+                console.error('エラー詳細:', error.message);
+                console.error('スタックトレース:', error.stack);
+                
+                // エラーをより詳しく調査
+                if (error.name) console.error('エラー名:', error.name);
+                if (error.code) console.error('エラーコード:', error.code);
+                
                 throw error;
             }
         }
@@ -868,7 +1562,7 @@
             
             // 参加者ヘッダー（固定幅）
             const participantHeader = document.createElement('th');
-            participantHeader.className = 'text-left py-6 px-8 font-semibold text-gray-700 text-sm uppercase tracking-wider bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200/50 w-80';
+            participantHeader.className = 'text-left py-4 px-6 font-medium text-stone-700 text-sm uppercase tracking-wider bg-stone-50/50 w-80';
             participantHeader.textContent = '参加者';
             detailTableHeader.appendChild(participantHeader);
             
@@ -876,11 +1570,11 @@
             dates.forEach(dateStr => {
                 const date = new Date(dateStr);
                 const th = document.createElement('th');
-                th.className = 'py-6 px-4 text-center text-sm font-bold text-gray-700 uppercase tracking-wider bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200/50';
+                th.className = 'py-4 px-4 text-center text-sm font-medium text-stone-700 uppercase tracking-wider bg-stone-50/50';
                 th.innerHTML = `
                     <div class="space-y-1">
-                        <div class="text-base font-bold text-gray-900">${formatDateShort(date)}</div>
-                        <div class="text-xs text-gray-500 flex items-center justify-center">
+                        <div class="text-base font-semibold text-stone-900">${formatDateShort(date)}</div>
+                        <div class="text-xs text-stone-600 flex items-center justify-center">
                             <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                             </svg>
@@ -974,24 +1668,27 @@
             // 日程別参加状況テーブルを更新
             updateScheduleTable(responses);
             
+            // 日程別回答状況グラフを作成
+            createScheduleChart(responses);
+            
             console.log('🍙 回答表示完了:', displayResponses.length, '件 (全', responses.length, '件中)');
         }
         
         // 回答行を作成
         function createResponseRow(response) {
             const tr = document.createElement('tr');
-            tr.className = 'table-hover-row transition-all duration-300 hover:bg-gradient-to-r hover:from-blue-50/30 hover:to-indigo-50/30';
+            tr.className = 'table-row';
             
             // 参加者名（クリック可能なリンク、固定幅）
             const nameCell = document.createElement('td');
             nameCell.className = 'py-5 px-8 w-80';
             nameCell.innerHTML = `
-                <div class="flex items-center space-x-3 cursor-pointer hover:bg-blue-50 rounded-lg p-2 transition-all duration-200" onclick="editResponse('${response.id}')">
-                    <div class="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center shadow-soft">
+                <div class="flex items-center space-x-3 cursor-pointer hover:bg-stone-50 rounded-lg p-2 transition-all duration-200" onclick="editResponse('${response.id}')">
+                    <div class="w-10 h-10 bg-stone-600 rounded-full flex items-center justify-center shadow-sm">
                         <span class="text-white font-semibold text-sm">${response.participant_name.charAt(0)}</span>
                     </div>
                     <div>
-                        <div class="text-base font-semibold text-blue-600 hover:text-blue-800 transition-colors duration-200">${response.participant_name}</div>
+                        <div class="text-base font-semibold text-stone-900 hover:text-stone-700 transition-colors duration-200">${response.participant_name}</div>
                         ${response.comment ? `
                             <div class="text-sm text-gray-500 max-w-xs relative group">
                                 <span class="cursor-help">${
@@ -1063,28 +1760,34 @@
             return 'notAttending';
         }
         
-        // ステータスバッジを作成
+        // ステータスバッジを作成（プロフェッショナルアイコン）
         function createStatusBadge(status) {
             const configs = {
                 attending: {
-                    symbol: '○',
-                    classes: 'bg-attending-100 text-attending-600 border-attending-200/50'
+                    icon: `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="9" stroke-width="2.5"/>
+                    </svg>`,
+                    classes: 'bg-emerald-50 text-emerald-600 border-emerald-200'
                 },
                 maybe: {
-                    symbol: '△',
-                    classes: 'bg-maybe-100 text-maybe-600 border-maybe-200/50'
+                    icon: `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01"/>
+                    </svg>`,
+                    classes: 'bg-amber-50 text-amber-600 border-amber-200'
                 },
                 notAttending: {
-                    symbol: '×',
-                    classes: 'bg-notAttending-100 text-notAttending-600 border-notAttending-200/50'
+                    icon: `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>`,
+                    classes: 'bg-stone-50 text-stone-500 border-stone-200'
                 }
             };
             
             const config = configs[status] || configs.notAttending;
             
             return `
-                <span class="inline-flex items-center justify-center w-8 h-8 rounded-full ${config.classes} font-bold border shadow-soft">
-                    ${config.symbol}
+                <span class="status-badge inline-flex items-center justify-center w-8 h-8 rounded-full ${config.classes} border shadow-sm">
+                    ${config.icon}
                 </span>
             `;
         }
@@ -1154,18 +1857,36 @@
         // 日程別参加状況テーブルの行を作成
         function createScheduleTableRow(stats, index) {
             const tr = document.createElement('tr');
-            tr.className = 'table-hover-row transition-all duration-300 hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-indigo-50/50';
+            tr.className = 'table-row';
             
             // 評価を決定
-            let evaluation = { emoji: '🤷‍♂️', text: '未定', color: 'gray' };
+            let evaluation = { 
+                icon: `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>`, 
+                text: '検討中', 
+                color: 'stone' 
+            };
             if (index === 0 && stats.attending >= 3) {
-                evaluation = { emoji: '🌟', text: '最有力', color: 'attending' };
+                evaluation = { 
+                    icon: `<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                    </svg>`, 
+                    text: '最有力', 
+                    color: 'emerald' 
+                };
             } else if (index <= 1 && stats.attending >= 2) {
-                evaluation = { emoji: '👍', text: '候補', color: 'maybe' };
+                evaluation = { 
+                    icon: `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"/>
+                    </svg>`, 
+                    text: '候補', 
+                    color: 'amber' 
+                };
             }
             
             // 曜日アイコンの色を決定
-            const weekdayColors = ['red', 'blue', 'green', 'orange', 'purple', 'blue', 'green'];
+            const weekdayColors = ['red', 'stone', 'emerald', 'amber', 'purple', 'stone', 'emerald'];
             const weekdayColor = weekdayColors[stats.date.getDay()];
             const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
             const weekday = weekdays[stats.date.getDay()];
@@ -1173,12 +1894,12 @@
             tr.innerHTML = `
                 <td class="py-6 px-8">
                     <div class="flex items-center space-x-4">
-                        <div class="w-12 h-12 bg-gradient-to-br from-${weekdayColor}-400 to-${weekdayColor}-600 rounded-xl flex items-center justify-center shadow-soft">
-                            <span class="text-white font-bold text-sm">${weekday}</span>
+                        <div class="w-10 h-10 bg-${weekdayColor}-600 rounded-lg flex items-center justify-center">
+                            <span class="text-white font-semibold text-sm">${weekday}</span>
                         </div>
                         <div>
-                            <div class="text-lg font-semibold text-gray-900">${formatDateLong(stats.date)}</div>
-                            <div class="text-sm text-gray-500 flex items-center mt-1">
+                            <div class="text-lg font-semibold text-stone-900">${formatDateLong(stats.date)}</div>
+                            <div class="text-sm text-stone-600 flex items-center mt-1">
                                 <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                 </svg>
@@ -1188,29 +1909,29 @@
                     </div>
                 </td>
                 <td class="py-6 px-6 text-center">
-                    <span class="status-pill inline-flex items-center px-4 py-2 rounded-xl text-sm font-semibold bg-attending-100 text-attending-700 border border-attending-200/50 shadow-soft">
+                    <span class="text-lg font-semibold text-emerald-700">
                         ${stats.attending}名
                     </span>
                 </td>
                 <td class="py-6 px-6 text-center">
-                    <span class="status-pill inline-flex items-center px-4 py-2 rounded-xl text-sm font-semibold bg-notAttending-100 text-notAttending-700 border border-notAttending-200/50 shadow-soft">
+                    <span class="text-lg font-semibold text-stone-600">
                         ${stats.notAttending}名
                     </span>
                 </td>
                 <td class="py-6 px-6 text-center">
-                    <span class="status-pill inline-flex items-center px-4 py-2 rounded-xl text-sm font-semibold bg-maybe-100 text-maybe-700 border border-maybe-200/50 shadow-soft">
+                    <span class="text-lg font-semibold text-amber-700">
                         ${stats.maybe}名
                     </span>
                 </td>
                 <td class="py-6 px-6 text-center">
-                    <span class="inline-flex items-center px-4 py-2 rounded-xl text-sm font-semibold bg-gray-100 text-gray-700 border border-gray-200/50 shadow-soft">
+                    <span class="text-lg font-semibold text-stone-900">
                         ${stats.total}名
                     </span>
                 </td>
                 <td class="py-6 px-8 text-center">
-                    <div class="flex items-center justify-center space-x-1">
-                        <span class="text-2xl">${evaluation.emoji}</span>
-                        <span class="text-lg font-bold text-${evaluation.color}-600">${evaluation.text}</span>
+                    <div class="flex items-center justify-center space-x-2">
+                        <span class="text-${evaluation.color}-600">${evaluation.icon}</span>
+                        <span class="text-sm font-semibold text-${evaluation.color}-600">${evaluation.text}</span>
                     </div>
                 </td>
             `;
@@ -1338,7 +2059,7 @@
         
         // アニメーション設定
         function setupAnimations() {
-            // Intersection Observer for animations
+            // 改善されたIntersection Observer for animations
             const observerOptions = {
                 threshold: 0.1,
                 rootMargin: '0px 0px -50px 0px'
@@ -1349,15 +2070,18 @@
                     if (entry.isIntersecting) {
                         entry.target.style.opacity = '1';
                         entry.target.style.transform = 'translateY(0)';
+                        entry.target.classList.add('visible');
                     }
                 });
             }, observerOptions);
             
             // Observe all animated elements
-            document.querySelectorAll('.animate-slide-up, .animate-fade-in, .animate-scale-in').forEach(el => {
-                el.style.opacity = '0';
-                el.style.transform = 'translateY(20px)';
-                el.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
+            document.querySelectorAll('.animate-slide-up, .animate-fade-in, .animate-scale-in, .fade-in-up').forEach(el => {
+                if (!el.classList.contains('visible')) {
+                    el.style.opacity = '0';
+                    el.style.transform = 'translateY(20px)';
+                    el.style.transition = 'opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
+                }
                 observer.observe(el);
             });
             

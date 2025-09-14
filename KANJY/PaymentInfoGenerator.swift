@@ -65,12 +65,44 @@ struct PaymentInfoGenerator: View {
         }
     }
     
+    @State private var showingShareSheet = false
+    
     var body: some View {
         ZStack {
             Form {
-                // 支払い方法セクション
+                paymentMethodSection
+                messageCustomizationSection
+                previewSection
+            }
+            .navigationTitle("支払い情報生成")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("共有") {
+                        showingShareSheet = true
+                    }
+                    .disabled(selectedPaymentMethods.isEmpty || previewImage == nil)
+                }
+            }
+            .sheet(isPresented: $showingShareSheet) {
+                if let image = previewImage {
+                    ShareSheet(activityItems: [image])
+                }
+            }
+        }
+    }
+    
+    // MARK: - 支払い方法セクション
+    private var paymentMethodSection: some View {
                 Section(header: Text("支払い方法（複数選択可）")) {
                     ForEach(PaymentMethod.allCases) { method in
+                paymentMethodRow(method)
+            }
+            paymentMethodWarnings
+        }
+    }
+    
+    private func paymentMethodRow(_ method: PaymentMethod) -> some View {
                         HStack {
                             Image(systemName: method.icon)
                                 .foregroundColor(.blue)
@@ -104,53 +136,53 @@ struct PaymentInfoGenerator: View {
                         }
                     }
                     
+    private var paymentMethodWarnings: some View {
+        Group {
                     if selectedPaymentMethods.contains(.payPay) && payPayID.isEmpty {
-                        HStack {
-                            Image(systemName: "exclamationmark.triangle")
-                                .foregroundColor(.orange)
-                            Text("PayPay IDが設定されていません")
-                                .font(.footnote)
-                                .foregroundColor(.orange)
-                            Spacer()
-                        }
-                        .padding(.top, 4)
-                        .padding(.horizontal, 4)
-                        .padding(.bottom, 2)
+                warningRow("PayPay IDが設定されていません", color: .orange)
                     }
                     
                     if selectedPaymentMethods.contains(.bankTransfer) && bankInfo.isEmpty {
-                        HStack {
-                            Image(systemName: "exclamationmark.triangle")
-                                .foregroundColor(.orange)
-                            Text("銀行振込情報が設定されていません")
-                                .font(.footnote)
-                                .foregroundColor(.orange)
-                            Spacer()
-                        }
-                        .padding(.top, 4)
-                        .padding(.horizontal, 4)
-                        .padding(.bottom, 2)
+                warningRow("銀行振込情報が設定されていません", color: .orange)
                     }
                     
                     if selectedPaymentMethods.isEmpty {
+                warningRow("少なくとも1つの支払い方法を選択してください", color: .red)
+            }
+        }
+    }
+    
+    private func warningRow(_ text: String, color: Color) -> some View {
                         HStack {
                             Image(systemName: "exclamationmark.triangle")
-                                .foregroundColor(.red)
-                            Text("少なくとも1つの支払い方法を選択してください")
+                .foregroundColor(color)
+            Text(text)
                                 .font(.footnote)
-                                .foregroundColor(.red)
+                .foregroundColor(color)
                             Spacer()
                         }
                         .padding(.top, 4)
                         .padding(.horizontal, 4)
                         .padding(.bottom, 2)
-                    }
                 }
                 
-                // メッセージカスタマイズセクション
+    // MARK: - メッセージカスタマイズセクション
+    private var messageCustomizationSection: some View {
                 Section {
                     VStack(alignment: .leading, spacing: 8) {
-                        // 案内メッセージラベルとランダムボタン
+                messageHeader
+                messageEditor
+                dueDateSection
+            }
+            .padding(.vertical, 4)
+            .onTapGesture {}
+        } header: {
+            Text("メッセージ設定")
+        }
+        .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
+    }
+    
+    private var messageHeader: some View {
                         HStack {
                             Text("案内メッセージ")
                                 .font(.subheadline)
@@ -159,9 +191,7 @@ struct PaymentInfoGenerator: View {
                             
                             Spacer()
                             
-                            // コンパクトなランダムボタン
                             Button {
-                                // メッセージをランダムに変更
                                 messageText = messageTemplates.randomElement() ?? "お支払いよろしくお願いします。"
                                 updatePreviewImage()
                             } label: {
@@ -176,12 +206,13 @@ struct PaymentInfoGenerator: View {
                                 .background(Color.blue.opacity(0.1))
                                 .cornerRadius(8)
                             }
-                            .buttonStyle(BorderlessButtonStyle()) // ボタンスタイルを明示的に設定
+            .buttonStyle(BorderlessButtonStyle())
                             .padding(.top, 2)
                         }
                         .padding(.bottom, 4)
+    }
                         
-                        // テキストエディタを個別のビューで囲み、クリックイベントを独立させる
+    private var messageEditor: some View {
                         Group {
                             ZStack(alignment: .topLeading) {
                                 TextEditor(text: $messageText)
@@ -197,7 +228,6 @@ struct PaymentInfoGenerator: View {
                                 updatePreviewImage()
                             }
                                 
-                                // プレースホルダー
                                 if messageText.isEmpty {
                                     Text("お支払いよろしくお願いします。")
                                         .foregroundColor(Color(.placeholderText))
@@ -209,16 +239,16 @@ struct PaymentInfoGenerator: View {
                             }
                         }
                         .padding(.vertical, 4)
+    }
                         
-                        // 支払い期限部分
+    private var dueDateSection: some View {
+        Group {
                             Text("支払い期限")
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
                             .padding(.top, 8)
                             .padding(.bottom, 4)
                         
-                        // テキストフィールドを個別のビューで囲み、クリックイベントを独立させる
-                        Group {
                         TextField("お支払い期限: 7日以内", text: $dueText)
                             .textFieldStyle(RoundedBorderTextFieldStyle())
                                 .padding(.vertical, 2)
@@ -227,26 +257,21 @@ struct PaymentInfoGenerator: View {
                             }
                         }
                     }
-                    .padding(.vertical, 4)
-                    // タップイベントが子ビューに伝播しないようにする
-                    .onTapGesture {}
-                } header: {
-                    Text("メッセージ設定")
-                }
-                .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
-                
-                // プレビューセクション
+    
+    // MARK: - プレビューセクション
+    private var previewSection: some View {
+        Group {
                 if !viewModel.participants.isEmpty {
                     Section(header: Text("プレビュー")) {
-                        VStack(alignment: .center, spacing: 0) { // spacingを0に変更
+                    VStack(alignment: .center, spacing: 0) {
                             if let preview = previewImage {
                                 ScrollView(.vertical) {
                                     Image(uiImage: preview)
                                         .resizable()
                                         .scaledToFit()
-                                        .padding(.top, 20) // 上部に余白を追加
+                                    .padding(.top, 20)
                                 }
-                                .padding(0) // すべての余白を削除
+                            .padding(0)
                             } else {
                                 Rectangle()
                                     .fill(Color.gray.opacity(0.2))
@@ -265,120 +290,14 @@ struct PaymentInfoGenerator: View {
                                                         .foregroundColor(.gray)
                                                 }
                                             } else {
-                                                Text("プレビューを生成できません")
+                                            Text("プレビューを生成中...")
                                                     .foregroundColor(.gray)
                                             }
                                         }
                                     )
-                                    .padding(.vertical, 10)
-                            }
-                            
-                            Button(action: {
-                                shareImage()
-                            }) {
-                                HStack {
-                                    Image(systemName: "square.and.arrow.up")
-                                        .imageScale(.medium)
-                                    Text("プレビューを共有")
-                                        .font(.headline)
-                                }
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                                .background(isGeneratingDisabled ? Color.gray : Color.blue)
-                                .foregroundColor(.white)
-                                .cornerRadius(10)
-                            }
-                            .disabled(isGeneratingDisabled)
-                            .padding(.vertical, 16)
-                            
-                            // 支払い方法が選択されていない場合のヒント
-                            if selectedPaymentMethods.isEmpty {
-                                Text("支払い方法を1つ以上選択してください")
-                                    .font(.caption)
-                                    .foregroundColor(.orange)
-                                    .padding(.vertical, 8) // 上下の余白を増やす
-                            }
                         }
                     }
                 }
-                
-                // 参加者一覧セクション
-                if !viewModel.participants.isEmpty {
-                    Section(header: Text("参加者一覧")) {
-                        ForEach(viewModel.participants) { participant in
-                            HStack {
-                                // 集金状況インジケータ
-                                Image(systemName: participant.hasCollected ? "checkmark.circle.fill" : "circle")
-                                    .foregroundColor(participant.hasCollected ? .green : .gray)
-                                    .imageScale(.large)
-                                
-                                // 参加者情報
-                                Text(participant.name)
-                                
-                                Spacer()
-                                
-                                // 金額
-                                Text("¥\(viewModel.formatAmount(String(viewModel.paymentAmount(for: participant))))")
-                                    .foregroundColor(.blue)
-                                    .fontWeight(.semibold)
-                            }
-                            .opacity(participant.hasCollected ? 0.6 : 1.0)
-                            .padding(.vertical, 4)
-                            .background(
-                                selectedParticipant?.id == participant.id 
-                                ? Color.blue.opacity(0.1) 
-                                : Color.clear
-                            )
-                            .cornerRadius(8)
-                        }
-                    }
-                } else {
-                    Section(header: Text("参加者一覧")) {
-                        Text("参加者が登録されていません")
-                            .foregroundColor(.gray)
-                            .italic()
-                            .padding(.vertical, 8)
-                    }
-                }
-            }
-            .navigationTitle("集金案内作成")
-            .sheet(isPresented: $showShareSheet) {
-                ShareSheet(items: itemsToShare)
-            }
-            .onAppear {
-                // 画面表示時にプレビュー更新
-                // 支払い方法が選択されていない場合は更新しない（デフォルトでは空のため）
-                if !selectedPaymentMethods.isEmpty {
-                    updatePreviewImage()
-                }
-            }
-            .onChange(of: selectedPaymentMethods) { _, newValue in
-                // 支払い方法が変更されたらプレビュー更新
-                if !newValue.isEmpty {
-                    updatePreviewImage()
-                } else {
-                    // 選択がなくなったらプレビューをクリア
-                    previewImage = nil
-                }
-            }
-            
-            // プログレスオーバーレイ
-            if showProgress {
-                VStack {
-                    ProgressView(value: progressValue)
-                        .progressViewStyle(LinearProgressViewStyle())
-                        .padding()
-                    
-                    Text("集金案内を生成中...")
-                        .font(.headline)
-                        .padding()
-                }
-                .frame(width: 250, height: 150)
-                .background(
-                    RoundedRectangle(cornerRadius: 16)
-                        .fill(Color(.systemBackground))
-                        .shadow(radius: 10)
-                )
             }
         }
     }
@@ -1172,18 +1091,6 @@ struct PaymentInfoGenerator: View {
         
         return image
     }
-}
-
-// 共有シート
-struct ShareSheet: UIViewControllerRepresentable {
-    var items: [Any]
-    
-    func makeUIViewController(context: Context) -> UIActivityViewController {
-        let controller = UIActivityViewController(activityItems: items, applicationActivities: nil)
-        return controller
-    }
-    
-    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
 
 #Preview {
