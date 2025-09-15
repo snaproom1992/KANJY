@@ -31,6 +31,76 @@
             background: rgba(248,250,252,0.7) !important;
             transform: translateX(2px) !important;
         }
+        
+        /* Notion風タイポグラフィーシステム */
+        .notion-heading-1 {
+            font-size: 2.5rem;
+            line-height: 1.2;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: #111827;
+        }
+        
+        .notion-heading-2 {
+            font-size: 2rem;
+            line-height: 1.3;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            color: #111827;
+        }
+        
+        .notion-heading-3 {
+            font-size: 1.5rem;
+            line-height: 1.4;
+            font-weight: 600;
+            letter-spacing: -0.005em;
+            color: #111827;
+        }
+        
+        .notion-heading-4 {
+            font-size: 1.25rem;
+            line-height: 1.5;
+            font-weight: 600;
+            color: #374151;
+        }
+        
+        .notion-body {
+            font-size: 1rem;
+            line-height: 1.6;
+            font-weight: 400;
+            color: #4B5563;
+        }
+        
+        .notion-body-medium {
+            font-size: 1rem;
+            line-height: 1.6;
+            font-weight: 500;
+            color: #374151;
+        }
+        
+        .notion-caption {
+            font-size: 0.875rem;
+            line-height: 1.5;
+            font-weight: 400;
+            color: #6B7280;
+        }
+        
+        .notion-small {
+            font-size: 0.75rem;
+            line-height: 1.4;
+            font-weight: 500;
+            color: #9CA3AF;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .notion-mono {
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+            font-size: 0.875rem;
+            line-height: 1.6;
+            font-weight: 400;
+            color: #374151;
+        }
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -591,85 +661,110 @@
     </style>
 </head>
 
-<body class="font-sans antialiased text-gray-900 min-h-screen bg-stone-50">
+<body class="font-sans antialiased text-gray-900 min-h-screen bg-stone-50" style="background: #FAFAFA;">
     
     <!-- Hero Section with Glass Effect -->
     <header class="relative">
         <!-- Ultra Minimal Navigation -->
         <nav class="bg-white shadow-sm backdrop-blur-xl">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="max-w-4xl mx-auto px-6 sm:px-8 lg:px-12">
                 <div class="flex justify-between items-center h-20">
                     <div class="flex items-center">
                         <span class="text-gray-900 font-light text-xl tracking-[0.2em] uppercase">K A N J Y</span>
                     </div>
                     <div class="flex items-center">
                         <a href="https://apps.apple.com/jp/app/kanjy/id6746665673" target="_blank" 
-                           class="text-gray-600 hover:text-black text-sm font-light tracking-wide transition-colors duration-200">
-                            Download
+                           class="inline-flex items-center space-x-2 bg-gray-100 hover:bg-gray-200 transition-colors duration-200 px-4 py-2 rounded-lg text-sm font-medium text-gray-700">
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+                            </svg>
+                            <span>App Storeでダウンロード</span>
                         </a>
                     </div>
                 </div>
             </div>
         </nav>
 
-        <!-- Event Title Section (Refined) -->
-        <div class="bg-white py-8">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <h2 id="event-title" class="text-3xl font-semibold text-gray-900 mb-2">
-                    読み込み中...
-                </h2>
-                <p id="event-description" class="text-base text-gray-600 leading-relaxed" style="display: none;">
-                </p>
-            </div>
-        </div>
     </header>
 
     <!-- Main Content -->
-    <main class="pb-20">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <!-- Event Info Cards -->
-            <section class="bg-white py-6">
+    <main class="pb-24">
+        <!-- Event Info Block - Full Width -->
+        <section class="bg-white py-8 border-t border-b border-stone-200/60" style="background: #FFFFFF; border-color: #E9E5E0;">
+            <div class="max-w-4xl mx-auto px-6 sm:px-8 lg:px-12">
+                <!-- Event Title & Description -->
+                <div class="mb-8">
+                    <h1 id="event-title" class="notion-heading-2 mb-3">
+                        読み込み中...
+                    </h1>
+                    <p id="event-description" class="notion-body" style="display: none;">
+                    </p>
+                </div>
+
+                <!-- Event Details -->
                 <div id="event-info-cards" class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
                     <!-- Location Card -->
-                    <div id="location-card" style="display: none;">
-                        <h3 class="text-xs font-medium text-gray-500 uppercase tracking-widest mb-3">Location</h3>
-                        <p id="location-text" class="text-xl font-light text-gray-900"></p>
+                    <div id="location-section" style="display: none;">
+                        <h3 class="notion-small mb-3">場所</h3>
+                        <p id="location-text" class="notion-body-medium"></p>
                     </div>
 
                     <!-- Budget Card -->
                     <div id="budget-card" style="display: none;">
-                        <h3 class="text-xs font-medium text-gray-500 uppercase tracking-widest mb-3">Budget</h3>
-                        <p id="budget-text" class="text-xl font-light text-gray-900"></p>
+                        <h3 class="notion-small mb-3">Budget</h3>
+                        <p id="budget-text" class="notion-body-medium"></p>
                     </div>
 
                     <!-- Deadline Card -->
-                    <div id="deadline-card" style="display: none;">
-                        <h3 class="text-xs font-medium text-gray-500 uppercase tracking-widest mb-3">Deadline</h3>
-                        <p id="deadline-text" class="text-xl font-light text-gray-900"></p>
+                    <div id="deadline-section" style="display: none;">
+                        <h3 class="notion-small mb-3">回答期限</h3>
+                        <p id="deadline-text" class="notion-body-medium"></p>
                     </div>
+                </div>
+            </div>
+        </section>
+
+        <div class="max-w-4xl mx-auto px-6 sm:px-8 lg:px-12 space-y-12 mt-12">
+
+            <!-- Response Form CTA -->
+            <section class="mt-12 text-center">
+                <div class="enhanced-card border rounded-xl p-8 transition-all duration-200 hover:shadow-sm" style="background: #FFFFFF; border-color: #E7E5E4; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);">
+                    <div class="flex items-center space-x-3 mb-2">
+                        <div class="w-1 h-6 bg-gradient-to-b from-gray-600 to-gray-700 rounded-full"></div>
+                        <h2 class="notion-heading-4">まだ回答していない方へ</h2>
+                    </div>
+                    <p class="notion-body mb-6">
+                        ぜひあなたの都合を教えてください
+                    </p>
+                        <button onclick="goToResponseForm()" class="interactive-element inline-flex items-center px-6 py-3 bg-stone-900 hover:bg-stone-800 text-white font-medium rounded-xl transition-all duration-200 shadow-sm hover:shadow-md" aria-label="回答フォームに移動して参加状況を入力する">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                        </svg>
+                        回答フォームに入力
+                    </button>
                 </div>
             </section>
 
             <!-- Beautiful Schedule Table -->
             <section class="animate-slide-up fade-in-up">
-                <div class="enhanced-card shadow-sm border border-stone-200/60 rounded-lg overflow-hidden">
-                    <div class="px-8 py-4 bg-stone-50/30 ">
+                <div class="enhanced-card border rounded-xl overflow-hidden transition-all duration-200 hover:shadow-sm" style="background: #FFFFFF; border-color: #E7E5E4; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);">
+                    <div class="px-8 py-6" style="border-bottom: 1px solid #E9E5E0;">
                         <div class="flex items-center justify-between mb-2">
                             <div class="flex items-center space-x-3">
                                 <div class="w-1 h-6 bg-gradient-to-b from-gray-800 to-gray-900 rounded-full"></div>
-                                <h2 class="text-xl font-semibold text-gray-900 tracking-tight">
+                                <h2 class="notion-heading-4">
                                     日程別回答状況
                                 </h2>
                             </div>
                             <!-- 表示切り替えボタン -->
-                            <div class="flex bg-gray-100 rounded-lg p-1">
-                <button id="chart-view-btn" class="px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 bg-white shadow-sm text-gray-900 flex items-center space-x-2">
+                            <div class="flex bg-stone-100 rounded-lg p-1">
+                <button id="chart-view-btn" class="px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 bg-white shadow-sm text-stone-900 flex items-center space-x-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                     </svg>
                     <span>グラフ</span>
                 </button>
-                <button id="table-view-btn" class="px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 text-gray-600 hover:text-gray-900 flex items-center space-x-2">
+                <button id="table-view-btn" class="px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 text-stone-600 hover:text-stone-900 flex items-center space-x-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
                     </svg>
@@ -687,36 +782,30 @@
 
                     <!-- テーブル表示エリア -->
                     <div id="table-container" class="overflow-x-auto" style="display: none;">
-                        <table class="w-full" role="table" aria-label="日程別回答状況一覧">
+                        <table class="w-full" role="table" aria-label="日程別回答状況一覧" style="border-collapse: separate; border-spacing: 0;">
                             <thead>
-                                <tr>
-                                    <th class="text-left py-4 px-6 font-medium text-stone-700 text-sm uppercase tracking-wider" scope="col">候補日時</th>
-                                    <th class="text-center py-4 px-4 font-medium text-stone-700 text-sm uppercase tracking-wider" scope="col">
-                                        <div class="flex items-center justify-center space-x-1">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                                <circle cx="12" cy="12" r="9" stroke-width="2.5"/>
-                                            </svg>
+                                <tr style="background: #F7F6F3; border-bottom: 1px solid #E9E5E0;">
+                                    <th class="text-left py-3 px-6 font-medium text-stone-600 text-sm" scope="col" style="background: #F7F6F3; border-right: 1px solid #E9E5E0;">候補日時</th>
+                                    <th class="text-center py-3 px-4 font-medium text-stone-600 text-sm" scope="col" style="background: #F7F6F3; border-right: 1px solid #E9E5E0;">
+                                        <div class="flex items-center justify-center space-x-2">
+                                            <span class="text-lg" style="color: #0F7B0F;">○</span>
                                             <span>参加</span>
                                         </div>
                                     </th>
-                                    <th class="text-center py-4 px-4 font-medium text-stone-700 text-sm uppercase tracking-wider">
-                                        <div class="flex items-center justify-center space-x-1">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
-                                            </svg>
-                                            <span>不参加</span>
-                                        </div>
-                                    </th>
-                                    <th class="text-center py-4 px-4 font-medium text-stone-700 text-sm uppercase tracking-wider">
-                                        <div class="flex items-center justify-center space-x-1">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01"/>
-                                            </svg>
+                                    <th class="text-center py-3 px-4 font-medium text-stone-600 text-sm" style="background: #F7F6F3; border-right: 1px solid #E9E5E0;">
+                                        <div class="flex items-center justify-center space-x-2">
+                                            <span class="text-lg" style="color: #D97706;">?</span>
                                             <span>未定</span>
                                         </div>
                                     </th>
-                                    <th class="text-center py-4 px-4 font-medium text-stone-700 text-sm uppercase tracking-wider">合計</th>
-                                    <th class="text-center py-4 px-6 font-medium text-stone-700 text-sm uppercase tracking-wider">評価</th>
+                                    <th class="text-center py-3 px-4 font-medium text-stone-600 text-sm" style="background: #F7F6F3; border-right: 1px solid #E9E5E0;">
+                                        <div class="flex items-center justify-center space-x-2">
+                                            <span class="text-lg" style="color: #6B7280;">×</span>
+                                            <span>不参加</span>
+                                        </div>
+                                    </th>
+                                    <th class="text-center py-3 px-4 font-medium text-stone-600 text-sm" style="background: #F7F6F3; border-right: 1px solid #E9E5E0;">合計</th>
+                                    <th class="text-center py-3 px-6 font-medium text-stone-600 text-sm" style="background: #F7F6F3;">評価</th>
                                 </tr>
                             </thead>
                             <tbody class="">
@@ -729,21 +818,21 @@
 
             <!-- Detailed Response Table -->
             <section class="mt-12 animate-fade-in fade-in-up">
-                <div class="enhanced-card shadow-sm border border-stone-200/60 rounded-lg overflow-hidden">
-                    <div class="px-8 py-4 bg-stone-50/30 ">
+                <div class="enhanced-card border rounded-xl overflow-hidden transition-all duration-200 hover:shadow-sm" style="background: #FFFFFF; border-color: #E7E5E4; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);">
+                    <div class="px-8 py-6" style="border-bottom: 1px solid #E9E5E0;">
                         <div class="flex items-center space-x-3 mb-2">
                             <div class="w-1 h-6 bg-gradient-to-b from-gray-700 to-gray-800 rounded-full"></div>
-                            <h2 class="text-xl font-semibold text-stone-900 tracking-tight">
+                            <h2 class="notion-heading-4">
                                 回答一覧
                             </h2>
                         </div>
-                        <p class="text-sm text-stone-600 leading-relaxed">全参加者の詳細な回答状況を確認・編集できます（名前クリックで編集）</p>
+                        <p class="notion-caption">全参加者の詳細な回答状況を確認・編集できます（名前クリックで編集）</p>
                     </div>
 
                     <div class="overflow-x-auto">
-                        <table class="w-full table-fixed">
+                        <table class="w-full table-fixed" style="border-collapse: separate; border-spacing: 0;">
                             <thead>
-                                <tr class="">
+                                <tr style="background: #F7F6F3; border-bottom: 1px solid #E9E5E0;">
                                     <th class="text-left py-6 px-8 font-semibold text-gray-700 text-sm uppercase tracking-wider w-80">参加者</th>
                                     <!-- 日程ヘッダーは動的に生成されます -->
 
@@ -757,7 +846,7 @@
 
                     <!-- Show More Button -->
                     <div id="show-more-section" class="px-8 py-4 bg-stone-50/30 border-t border-stone-200/60 text-center">
-                        <button id="show-more-button" class="inline-flex items-center px-4 py-2 bg-stone-600 hover:bg-stone-700 text-white font-medium rounded-lg transition-colors duration-200" onclick="showMoreResponses()">
+                        <button id="show-more-button" class="inline-flex items-center px-4 py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 font-medium rounded-lg transition-all duration-200 border border-stone-200" onclick="showMoreResponses()">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                             </svg>
@@ -767,33 +856,15 @@
                 </div>
             </section>
 
-            <!-- Response Form CTA -->
-            <section class="mt-12 text-center">
-                <div class="enhanced-card border border-stone-200/60 rounded-lg p-8 shadow-sm">
-                    <div class="flex items-center space-x-3 mb-2">
-                        <div class="w-1 h-6 bg-gradient-to-b from-gray-600 to-gray-700 rounded-full"></div>
-                        <h2 class="text-xl font-semibold text-stone-900 tracking-tight">まだ回答していない方へ</h2>
-                    </div>
-                    <p class="text-stone-600 mb-6">
-                        ぜひあなたの都合を教えてください
-                    </p>
-                        <button onclick="goToResponseForm()" class="interactive-element inline-flex items-center px-6 py-3 bg-stone-900 hover:bg-stone-800 text-white font-medium rounded-lg transition-colors duration-200" aria-label="回答フォームに移動して参加状況を入力する">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                        </svg>
-                        回答フォームに入力
-                    </button>
-                </div>
-            </section>
 
             <!-- URL Share Section -->
             <section class="mt-12 text-center">
-                <div class="enhanced-card border border-stone-200/60 rounded-lg p-8 shadow-sm">
+                <div class="enhanced-card border rounded-xl p-8 transition-all duration-200 hover:shadow-sm" style="background: #FFFFFF; border-color: #E7E5E4; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);">
                     <div class="flex items-center space-x-3 mb-2">
                         <div class="w-1 h-6 bg-gradient-to-b from-gray-500 to-gray-600 rounded-full"></div>
-                        <h2 class="text-xl font-semibold text-stone-900 tracking-tight">このイベントのURL</h2>
+                        <h2 class="notion-heading-4">このイベントのURL</h2>
                     </div>
-                    <p class="text-stone-600 mb-6">
+                    <p class="notion-body mb-6">
                         このURLをコピーして、他の参加者に共有して下さい
                     </p>
                     
@@ -801,12 +872,12 @@
                     <div class="bg-gray-50 rounded-2xl p-6 mb-6 max-w-4xl mx-auto">
                         <div class="flex items-center justify-between bg-white rounded-xl p-4 shadow-soft">
                             <div class="flex-1 text-left">
-                                <div class="text-sm text-gray-500 mb-1">イベントURL</div>
-                                <div id="eventUrl" class="text-lg font-mono text-gray-900 break-all">
+                                <div class="notion-small mb-1">イベントURL</div>
+                                <div id="eventUrl" class="notion-mono break-all">
                                     <!-- URL will be populated by JavaScript -->
                                 </div>
                             </div>
-                            <button id="copyUrlBtn" onclick="copyEventUrl()" class="ml-4 interactive-element inline-flex items-center px-6 py-3 bg-kanjy-500 text-white font-bold rounded-xl shadow-elegant hover:bg-kanjy-600 hover:shadow-floating transition-all duration-300" aria-label="イベントURLをクリップボードにコピーする">
+                            <button id="copyUrlBtn" onclick="copyEventUrl()" class="ml-4 interactive-element inline-flex items-center px-6 py-3 bg-stone-100 hover:bg-stone-200 text-stone-700 font-medium rounded-xl border border-stone-200 transition-all duration-200 hover:shadow-sm" aria-label="イベントURLをクリップボードにコピーする">
                                 <svg id="copyIcon" class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
                                 </svg>
@@ -816,16 +887,16 @@
                     </div>
 
                     <!-- Share Tips -->
-                    <div class="bg-blue-50 rounded-2xl p-6 max-w-3xl mx-auto">
+                    <div class="bg-stone-50 rounded-2xl p-6 max-w-3xl mx-auto">
                         <div class="flex items-start space-x-3">
-                            <div class="flex-shrink-0 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center mt-0.5">
+                            <div class="flex-shrink-0 w-6 h-6 bg-stone-500 rounded-full flex items-center justify-center mt-0.5">
                                 <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                 </svg>
                             </div>
                             <div class="text-left">
-                                <h3 class="text-lg font-semibold text-blue-900 mb-2">シェアのヒント</h3>
-                                <p class="text-blue-800">
+                                <h3 class="notion-heading-4 mb-2">シェアのヒント</h3>
+                                <p class="notion-caption">
                                     このURLをLINEのグループチャットやSlack、メールで共有。受け取った人は参加の回答ができます。
                                 </p>
                             </div>
@@ -1005,7 +1076,14 @@
             }
             
             // 実際の候補日程を使用（テストデータは削除）
-            const actualDates = currentEvent.candidate_dates || [];
+            let actualDates = currentEvent.candidate_dates || [];
+            
+            // グラフでも重複除去
+            const uniqueGraphDates = [...new Set(actualDates)];
+            if (actualDates.length !== uniqueGraphDates.length) {
+                console.warn('🔧 グラフ用データでも重複を除去:', actualDates.length, '→', uniqueGraphDates.length);
+                actualDates = uniqueGraphDates;
+            }
             
             console.log('実際の候補日程:', actualDates);
             
@@ -1016,36 +1094,26 @@
                 
                 console.log(`日付処理中: ${dateStr} -> ${label}`);
                 
-                // 実際のデータを使用してカウント
-                let attending, notAttending, maybe;
+                // 表の表示ロジックと同じ判定を使用してカウント
+                let attending = 0;
+                let maybe = 0;
+                let notAttending = 0;
                 
-                // 実際のデータを使用
-                    attending = responses.filter(r => {
-                        if (r.status === 'attending' && r.available_dates && Array.isArray(r.available_dates)) {
-                            const isAvailable = r.available_dates.includes(dateStr);
-                            console.log(`${r.participant_name}: status=${r.status}, ${dateStr}が利用可能=${isAvailable}`);
-                            return isAvailable;
-                        }
-                        return false;
-                    }).length;
+                responses.forEach(response => {
+                    // 表の表示ロジックと同じ判定を使用
+                    const tableStatus = getStatusForDate(response, dateStr);
                     
-                    notAttending = responses.filter(r => {
-                        if (r.status === 'not_attending') {
-                            console.log(`${r.participant_name}: status=${r.status} -> 不参加`);
-                            return true;
-                        }
-                        return false;
-                    }).length;
-                    
-                    maybe = responses.filter(r => {
-                        if (r.status === 'maybe' || r.status === 'pending' || r.status === 'undecided') {
-                            return true;
-                        }
-                        if (r.status !== 'attending' && r.status !== 'not_attending') {
-                            return true;
-                        }
-                        return false;
-                    }).length;
+                    if (tableStatus === 'attending') {
+                        attending++;
+                        console.log(`✅ ${response.participant_name}: 参加`);
+                    } else if (tableStatus === 'maybe') {
+                        maybe++;
+                        console.log(`⚠️ ${response.participant_name}: 未定`);
+                    } else {
+                        notAttending++;
+                        console.log(`❌ ${response.participant_name}: 不参加`);
+                    }
+                });
                 
                 console.log(`${label}: 参加=${attending}, 不参加=${notAttending}, 未定=${maybe}`);
                 
@@ -1064,22 +1132,22 @@
             const attendingCounts = dateStats.map(stat => stat.attending);
             const maxAttending = Math.max(...attendingCounts);
             
-            // 最も参加者が多い日程のみ緑色、他はグレー（戦略的アクセント）
+            // 最も参加者が多い日程のみ緑色、他はグレー（Notion風カラー）
             const backgroundColors = attendingCounts.map(count => {
-                if (maxAttending === 0) return 'rgba(107, 114, 128, 0.2)'; // 全て0の場合は薄いグレー
+                if (maxAttending === 0) return 'rgba(153, 27, 27, 0.1)'; // 全て0の場合は薄い赤
                 if (count === maxAttending && count > 0) {
-                    return 'rgba(16, 185, 129, 0.8)'; // emerald-500 - 最人気の日程のみ
+                    return 'rgba(15, 123, 15, 0.8)'; // Notion風緑 - 最人気の日程のみ
                 } else {
-                    return 'rgba(107, 114, 128, 0.3)'; // stone-500 - その他の日程
+                    return 'rgba(107, 114, 128, 0.3)'; // グレー - その他の日程
                 }
             });
             
             const borderColors = attendingCounts.map(count => {
-                if (maxAttending === 0) return 'rgba(75, 85, 99, 0.4)'; // 全て0の場合
+                if (maxAttending === 0) return 'rgba(153, 27, 27, 0.4)'; // 全て0の場合
                 if (count === maxAttending && count > 0) {
-                    return 'rgba(5, 150, 105, 1.0)'; // emerald-600 - 最人気の日程のみ
+                    return 'rgba(15, 123, 15, 1.0)'; // Notion風緑 - 最人気の日程のみ
                 } else {
-                    return 'rgba(75, 85, 99, 0.5)'; // stone-600 - その他の日程
+                    return 'rgba(75, 85, 99, 0.5)'; // グレー - その他の日程
                 }
             });
             
@@ -1113,7 +1181,7 @@
                                 size: 16,
                                 weight: 'bold'
                             },
-                            color: '#374151'
+                            color: '#37352F'
                         },
                         legend: {
                             display: false // シンプルにするため凡例を非表示
@@ -1130,10 +1198,21 @@
                             callbacks: {
                                 label: function(context) {
                                     const dataIndex = context.dataIndex;
-                                    const attending = dateStats[dataIndex].attending;
-                                    const notAttending = dateStats[dataIndex].notAttending;
-                                    const maybe = dateStats[dataIndex].maybe;
-                                    const total = attending + notAttending + maybe;
+                                    const stats = dateStats[dataIndex];
+                                    
+                                    console.log('🔍 グラフツールチップ:', {
+                                        dataIndex,
+                                        label: stats.label,
+                                        attending: stats.attending,
+                                        maybe: stats.maybe,
+                                        notAttending: stats.notAttending,
+                                        total: stats.total
+                                    });
+                                    
+                                    const attending = stats.attending;
+                                    const notAttending = stats.notAttending;
+                                    const maybe = stats.maybe;
+                                    const total = stats.total;
                                     
                                     const isTopChoice = attending === maxAttending && attending > 0;
                                     const topChoiceLabel = isTopChoice ? '【最人気の日程】' : '';
@@ -1154,7 +1233,7 @@
                             title: {
                                 display: true,
                                 text: '候補日時',
-                                color: '#6b7280',
+                                color: '#6B6B6B',
                                 font: {
                                     size: 12,
                                     weight: 'bold'
@@ -1167,7 +1246,7 @@
                                 color: '#e5e7eb'
                             },
                             ticks: {
-                                color: '#6b7280',
+                                color: '#6B6B6B',
                                 font: {
                                     size: 11
                                 }
@@ -1177,7 +1256,7 @@
                             title: {
                                 display: true,
                                 text: '参加者数',
-                                color: '#6b7280',
+                                color: '#6B6B6B',
                                 font: {
                                     size: 12,
                                     weight: 'bold'
@@ -1190,7 +1269,7 @@
                                 borderWidth: 1
                             },
                             ticks: {
-                                color: '#6b7280',
+                                color: '#6B6B6B',
                                 font: {
                                     size: 11
                                 },
@@ -1313,7 +1392,25 @@
                     .select('*')
                     .eq('id', eventId);
                 
-                console.log('イベントクエリ結果:', { events, error });
+                console.log('🔍 Supabaseクエリ結果:');
+                console.log('  - データ:', events);
+                console.log('  - エラー:', error);
+                console.log('  - データ件数:', events ? events.length : 0);
+                
+                if (events && events.length > 0) {
+                    console.log('🔍 最初のイベント詳細:');
+                    console.log('  - ID:', events[0].id);
+                    console.log('  - タイトル:', events[0].title);
+                    console.log('  - candidate_dates:', events[0].candidate_dates);
+                    console.log('  - candidate_dates型:', typeof events[0].candidate_dates);
+                    console.log('  - candidate_dates長さ:', events[0].candidate_dates ? events[0].candidate_dates.length : 'null');
+                    
+                    if (events[0].candidate_dates && Array.isArray(events[0].candidate_dates)) {
+                        events[0].candidate_dates.forEach((date, index) => {
+                            console.log(`  - 日付${index + 1}:`, date);
+                        });
+                    }
+                }
                 
                 if (error) throw error;
                 if (!events || events.length === 0) {
@@ -1338,17 +1435,40 @@
                 }
                 
                 const event = events[0];
+                
+                // 時間データを修正（19:00 UTC → 10:00 UTC に変換して19:00 JSTで表示）
+                if (event.candidate_dates) {
+                    event.candidate_dates = event.candidate_dates.map(dateStr => {
+                        const date = new Date(dateStr);
+                        if (date.getUTCHours() === 19) {
+                            // 19:00 UTCを10:00 UTCに変更（日本時間19:00にするため）
+                            date.setUTCHours(10);
+                            return date.toISOString();
+                        }
+                        return dateStr;
+                    });
+                    console.log('🔧 時間データ修正完了:', event.candidate_dates);
+                }
+                
                 currentEvent = event;
-                console.log('読み込んだイベント:', event);
-                console.log('🍙 イベント詳細確認:', {
-                    id: event.id,
-                    title: event.title,
-                    deadline: event.deadline,
-                    deadline_type: typeof event.deadline,
-                    location: event.location,
-                    budget: event.budget,
-                    candidate_dates: event.candidate_dates
-                });
+                console.log('🔧 currentEvent設定完了:');
+                console.log('  - ID:', event.id);
+                console.log('  - タイトル:', event.title);
+                console.log('  - candidate_dates:', event.candidate_dates);
+                console.log('  - currentEvent.candidate_dates:', currentEvent.candidate_dates);
+                
+                // 設定直後に重複チェック
+                if (currentEvent.candidate_dates && Array.isArray(currentEvent.candidate_dates)) {
+                    const uniqueCheck = [...new Set(currentEvent.candidate_dates)];
+                    console.log('🔧 設定直後の重複チェック:');
+                    console.log('  - 元の長さ:', currentEvent.candidate_dates.length);
+                    console.log('  - 重複除去後:', uniqueCheck.length);
+                    if (currentEvent.candidate_dates.length !== uniqueCheck.length) {
+                        console.warn('⚠️ currentEvent設定時点で既に重複があります!');
+                        console.log('  - 重複あり:', currentEvent.candidate_dates);
+                        console.log('  - 重複除去後:', uniqueCheck);
+                    }
+                }
                 displayEvent(event);
                 
             } catch (error) {
@@ -1386,6 +1506,21 @@
                     deleted: responses ? responses.length - activeResponses.length : 0,
                     active: activeResponses.length
                 });
+                
+                // 回答データの時間も修正（19:00 UTC → 10:00 UTC）
+                activeResponses.forEach(response => {
+                    if (response.available_dates && Array.isArray(response.available_dates)) {
+                        response.available_dates = response.available_dates.map(dateStr => {
+                            const date = new Date(dateStr);
+                            if (date.getUTCHours() === 19) {
+                                date.setUTCHours(10);
+                                return date.toISOString();
+                            }
+                            return dateStr;
+                        });
+                    }
+                });
+                console.log('🔧 回答データの時間修正完了');
                 
                 currentResponses = activeResponses;
                 console.log('読み込んだ回答:', activeResponses);
@@ -1430,15 +1565,15 @@
                 }
             }
             
-            // 開催場所カード（設定されている場合のみ表示）
-            const locationCard = document.getElementById('location-card');
+            // 開催場所セクション（設定されている場合のみ表示）
+            const locationSection = document.getElementById('location-section');
             const locationText = document.getElementById('location-text');
-            if (locationCard && locationText) {
+            if (locationSection && locationText) {
                 if (event.location && event.location.trim() !== '') {
                     locationText.textContent = event.location;
-                    locationCard.style.display = 'block';
+                    locationSection.style.display = 'block';
                 } else {
-                    locationCard.style.display = 'none';
+                    locationSection.style.display = 'none';
                 }
             }
             
@@ -1454,10 +1589,10 @@
                 }
             }
             
-            // 回答締切カード（設定されている場合のみ表示）
-            const deadlineCard = document.getElementById('deadline-card');
+            // 回答締切セクション（設定されている場合のみ表示）
+            const deadlineSection = document.getElementById('deadline-section');
             const deadlineText = document.getElementById('deadline-text');
-            if (deadlineCard && deadlineText) {
+            if (deadlineSection && deadlineText) {
                 console.log('🍙 deadline処理開始:', {
                     deadline: event.deadline,
                     type: typeof event.deadline,
@@ -1479,15 +1614,16 @@
                     console.log('🍙 フォーマット済み日付:', formattedDate);
                     
                     deadlineText.textContent = formattedDate;
-                    deadlineCard.style.display = 'block';
+                    deadlineSection.style.display = 'block';
                     console.log('🍙 deadline表示完了');
                 } else {
-                    deadlineCard.style.display = 'none';
+                    deadlineSection.style.display = 'none';
                     console.log('🍙 deadline未設定のため非表示');
                 }
             } else {
-                console.warn('⚠️ deadlineCard または deadlineText が見つかりません');
+                console.warn('⚠️ deadlineSection または deadlineText が見つかりません');
             }
+            
             
             // カードの数に応じてグリッドレイアウトを調整
             updateGridLayout();
@@ -1495,6 +1631,10 @@
             // 候補日時を動的に生成
             if (event.candidate_dates && Array.isArray(event.candidate_dates)) {
                 console.log('🍙 候補日時:', event.candidate_dates);
+                console.log('🍙 候補日時の数:', event.candidate_dates.length);
+                event.candidate_dates.forEach((date, index) => {
+                    console.log(`🍙 日付${index + 1}:`, date);
+                });
                 generateDateHeaders(event.candidate_dates);
             } else {
                 console.warn('⚠️ 候補日時が見つかりません:', event.candidate_dates);
@@ -1520,9 +1660,106 @@
                  'grid-cols-1 md:grid-cols-3');
         }
         
+        // 参加人数を計算する関数
+        function calculateParticipantCount(dateStr) {
+            console.log('🔍 =====================');
+            console.log('🔍 参加者数計算開始:', dateStr);
+            console.log('🔍 =====================');
+            
+            if (!window.responses || !Array.isArray(window.responses)) {
+                console.warn('⚠️ window.responsesが存在しません');
+                return { attending: 0, maybe: 0, notAttending: 0 };
+            }
+            
+            console.log('🔍 回答データ数:', window.responses.length);
+            console.log('🔍 全参加者のステータス一覧:');
+            window.responses.forEach((response, index) => {
+                console.log(`  ${index + 1}. ${response.participant_name}: ${response.status} | available_dates:`, response.available_dates);
+            });
+            
+            let attending = 0;
+            let maybe = 0;
+            let notAttending = 0;
+            
+            console.log('🔍 =====================');
+            console.log(`🔍 ${dateStr} の詳細計算開始`);
+            console.log('🔍 =====================');
+            
+            window.responses.forEach((response, index) => {
+                console.log(`🔍 ${response.participant_name}: status=${response.status}, available_dates=`, response.available_dates);
+                
+                // 日付の比較を改善（異なる形式に対応）
+                const isDateAvailable = response.available_dates && response.available_dates.some(availableDate => {
+                    // 両方をDateオブジェクトに変換して比較
+                    const date1 = new Date(dateStr);
+                    const date2 = new Date(availableDate);
+                    const match = date1.getTime() === date2.getTime();
+                    return match;
+                });
+                console.log(`🔍 ${response.participant_name}: 日付利用可能 = ${isDateAvailable}`);
+                
+                // 表の表示ロジックと同じ判定を使用
+                const tableStatus = getStatusForDate(response, dateStr);
+                
+                if (tableStatus === 'attending') {
+                    attending++;
+                    console.log(`✅ ${response.participant_name}: 参加 (+1) 合計=${attending}`);
+                } else if (tableStatus === 'maybe') {
+                    maybe++;
+                    console.log(`⚠️ ${response.participant_name}: 未定 (+1) 合計=${maybe}`);
+                } else {
+                    // 'notAttending' または その他
+                    notAttending++;
+                    console.log(`❌ ${response.participant_name}: 不参加 (+1) 合計=${notAttending}`);
+                }
+            });
+            
+            console.log('🔍 =====================');
+            console.log(`📊 ${dateStr} 最終結果:`);
+            console.log(`   参加: ${attending}名`);
+            console.log(`   未定: ${maybe}名`);
+            console.log(`   不参加: ${notAttending}名`);
+            console.log(`   総計: ${attending + maybe + notAttending}名`);
+            console.log('🔍 =====================');
+            
+            return { attending, maybe, notAttending };
+        }
+        
+        // 参加人数のスタイルを取得
+        function getParticipantCountStyle(participantCount) {
+            const total = participantCount.attending + participantCount.maybe;
+            
+            if (total >= 5) {
+                return 'bg-emerald-100 text-emerald-700 border border-emerald-200';
+            } else if (total >= 3) {
+                return 'bg-amber-100 text-amber-700 border border-amber-200';
+            } else if (total >= 1) {
+                return 'bg-blue-100 text-blue-700 border border-blue-200';
+            } else {
+                return 'bg-stone-100 text-stone-600 border border-stone-200';
+            }
+        }
+        
         // 日程ヘッダーを動的生成
         function generateDateHeaders(dates) {
             console.log('🗓️ 日程ヘッダー生成開始:', dates);
+            console.log('🗓️ 日付の数:', dates ? dates.length : 0);
+            
+            // 重複チェックと強制除去
+            if (dates && Array.isArray(dates)) {
+                const uniqueDates = [...new Set(dates)];
+                console.log('🗓️ 重複除去後:', uniqueDates);
+                if (dates.length !== uniqueDates.length) {
+                    console.warn('⚠️ 重複する日付が見つかりました！', dates);
+                    console.log('🔧 重複を除去して続行します');
+                    dates = uniqueDates; // 重複を除去した配列を使用
+                }
+            }
+            
+            // responsesがまだ読み込まれていない場合は、グローバル変数として初期化
+            if (!window.responses) {
+                window.responses = [];
+            }
             
             // 回答一覧セクションのtheadを取得
             const sections = document.querySelectorAll('section');
@@ -1546,15 +1783,19 @@
             
             // 参加者ヘッダー（固定幅）
             const participantHeader = document.createElement('th');
-            participantHeader.className = 'text-left py-4 px-6 font-medium text-stone-700 text-sm uppercase tracking-wider bg-stone-50/50 w-80';
+            participantHeader.className = 'text-left py-3 px-6 font-medium text-stone-700 text-sm uppercase tracking-wider w-80';
             participantHeader.textContent = '参加者';
             detailTableHeader.appendChild(participantHeader);
             
-            // 日程ヘッダーを追加
+            // 日程ヘッダーを追加（参加人数付き）
             dates.forEach(dateStr => {
                 const date = new Date(dateStr);
                 const th = document.createElement('th');
-                th.className = 'py-4 px-4 text-center text-sm font-medium text-stone-700 uppercase tracking-wider bg-stone-50/50';
+                th.className = 'py-3 px-3 text-center text-sm font-medium text-stone-700 uppercase tracking-wider';
+                
+                // この日程の参加可能人数を計算
+                const participantCount = calculateParticipantCount(dateStr);
+                
                 th.innerHTML = `
                     <div class="space-y-1">
                         <div class="text-base font-semibold text-stone-900">${formatDateShort(date)}</div>
@@ -1563,6 +1804,20 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                             </svg>
                             ${formatTimeRange(date)}
+                        </div>
+                        <div class="mt-2 space-y-1 flex flex-col items-center">
+                            <div class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${participantCount.attending === 0 ? 'opacity-50' : ''}" style="background-color: #F0FDF4; color: #0F7B0F; border-color: #BBF7D0;">
+                                <span class="mr-1">○</span>
+                                <span>${participantCount.attending}名</span>
+                            </div>
+                            <div class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${participantCount.maybe === 0 ? 'opacity-50' : ''}" style="background-color: #FFFBEB; color: #D97706; border-color: #FED7AA;">
+                                <span class="mr-1">?</span>
+                                <span>${participantCount.maybe}名</span>
+                            </div>
+                            <div class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${participantCount.notAttending === 0 ? 'opacity-50' : ''}" style="background-color: #F8F9FA; color: #6B7280; border-color: #E5E7EB;">
+                                <span class="mr-1">×</span>
+                                <span>${participantCount.notAttending}名</span>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -1580,6 +1835,8 @@
         
         // 回答を表示
         function displayResponses(responses) {
+            // グローバル変数として保存（参加人数計算で使用）
+            window.responses = responses || [];
             // より確実なセレクター：回答一覧セクションのtbodyを取得
             const sections = document.querySelectorAll('section');
             let detailTableBody = null;
@@ -1626,8 +1883,8 @@
             const displayResponses = showingAll ? responses : responses.slice(0, displayLimit);
             const remainingCount = responses.length - displayLimit;
             
-            displayResponses.forEach(response => {
-                const row = createResponseRow(response);
+            displayResponses.forEach((response, index) => {
+                const row = createResponseRow(response, index);
                 detailTableBody.appendChild(row);
             });
             
@@ -1655,17 +1912,25 @@
             // 日程別回答状況グラフを作成
             createScheduleChart(responses);
             
+            // 参加人数が更新されたのでヘッダーを再生成
+            if (currentEvent && currentEvent.candidate_dates) {
+                generateDateHeaders(currentEvent.candidate_dates);
+            }
+            
             console.log('🍙 回答表示完了:', displayResponses.length, '件 (全', responses.length, '件中)');
         }
         
         // 回答行を作成
-        function createResponseRow(response) {
+        function createResponseRow(response, index = 0) {
             const tr = document.createElement('tr');
             tr.className = 'table-row';
+            tr.style.borderBottom = '1px solid #E9E5E0';
+            tr.style.background = index % 2 === 0 ? '#FFFFFF' : '#FAFAFA';
             
             // 参加者名（クリック可能なリンク、固定幅）
             const nameCell = document.createElement('td');
-            nameCell.className = 'py-5 px-8 w-80';
+            nameCell.className = 'py-4 px-6 w-80';
+            nameCell.style.borderRight = '1px solid #E9E5E0';
             nameCell.innerHTML = `
                 <div class="flex items-center space-x-3 cursor-pointer hover:bg-stone-50 rounded-lg p-2 transition-all duration-200" onclick="editResponse('${response.id}')">
                     <div class="w-10 h-10 bg-stone-600 rounded-full flex items-center justify-center shadow-sm">
@@ -1700,7 +1965,8 @@
             if (currentEvent && currentEvent.candidate_dates && Array.isArray(currentEvent.candidate_dates)) {
                 currentEvent.candidate_dates.forEach(dateStr => {
                     const cell = document.createElement('td');
-                    cell.className = 'py-5 px-4 text-center';
+                    cell.className = 'py-4 px-3 text-center';
+                    cell.style.borderRight = '1px solid #E9E5E0';
                     
                     const status = getStatusForDate(response, dateStr);
                     cell.innerHTML = createStatusBadge(status);
@@ -1711,7 +1977,7 @@
                 console.warn('⚠️ currentEvent.candidate_datesが存在しません:', currentEvent);
                 // 最低1つの日程セルを作成
                 const cell = document.createElement('td');
-                cell.className = 'py-5 px-4 text-center';
+            cell.className = 'py-4 px-3 text-center';
                 cell.innerHTML = createStatusBadge('notAttending');
                 tr.appendChild(cell);
             }
@@ -1727,11 +1993,22 @@
         function getStatusForDate(response, dateStr) {
             const targetDate = new Date(dateStr);
             
+            // まず不参加の場合は即座に返す
+            if (response.status === 'not_attending') {
+                return 'notAttending';
+            }
+            
             // available_datesをチェック
             if (response.available_dates && Array.isArray(response.available_dates)) {
                 for (const availableDate of response.available_dates) {
                     if (isSameDay(new Date(availableDate), targetDate)) {
-                        return 'attending';
+                        // 日付が利用可能な場合、ステータスに応じて返す
+                        if (response.status === 'attending') {
+                            return 'attending';
+                        } else if (response.status === 'undecided' || response.status === 'maybe') {
+                            return 'maybe';
+                        }
+                        return 'attending'; // デフォルト
                     }
                 }
             }
@@ -1751,26 +2028,29 @@
                     icon: `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <circle cx="12" cy="12" r="9" stroke-width="2.5"/>
                     </svg>`,
-                    classes: 'bg-emerald-50 text-emerald-600 border-emerald-200'
+                    classes: 'border border-stone-200',
+                    style: 'background-color: #F0FDF4; color: #0F7B0F; border-color: #BBF7D0;'
                 },
                 maybe: {
                     icon: `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01"/>
                     </svg>`,
-                    classes: 'bg-amber-50 text-amber-600 border-amber-200'
+                    classes: 'border border-stone-200',
+                    style: 'background-color: #FFFBEB; color: #D97706; border-color: #FED7AA;'
                 },
                 notAttending: {
                     icon: `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
                     </svg>`,
-                    classes: 'bg-stone-50 text-stone-500 border-stone-200'
+                    classes: 'border border-stone-200',
+                    style: 'background-color: #F8F9FA; color: #6B7280; border-color: #E5E7EB;'
                 }
             };
             
             const config = configs[status] || configs.notAttending;
             
             return `
-                <span class="status-badge inline-flex items-center justify-center w-8 h-8 rounded-full ${config.classes} border shadow-sm">
+                <span class="status-badge inline-flex items-center justify-center w-8 h-8 rounded-full ${config.classes} border shadow-sm" style="${config.style}">
                     ${config.icon}
                 </span>
             `;
@@ -1786,6 +2066,17 @@
         // 日程別参加状況テーブルを更新
         function updateScheduleTable(responses) {
             if (!currentEvent || !currentEvent.candidate_dates) return;
+            
+            // 重複除去を強制実行
+            const originalDates = currentEvent.candidate_dates;
+            const uniqueDates = [...new Set(originalDates)];
+            console.log('🔧 重複除去 - 元:', originalDates.length, '個', '除去後:', uniqueDates.length, '個');
+            
+            if (originalDates.length !== uniqueDates.length) {
+                console.warn('⚠️ 重複を発見して除去しました:', originalDates);
+                console.log('✅ 除去後の日付:', uniqueDates);
+                currentEvent.candidate_dates = uniqueDates;
+            }
             
             // より確実なセレクター：日程別参加状況セクションのtbodyを取得
             const sections = document.querySelectorAll('section');
@@ -1803,7 +2094,9 @@
             scheduleTableBody.innerHTML = '';
             
             // 各候補日時の統計を計算
-            const dateStats = currentEvent.candidate_dates.map(dateStr => {
+            console.log('📊 統計計算開始 - candidate_dates:', currentEvent.candidate_dates);
+            const dateStats = currentEvent.candidate_dates.map((dateStr, index) => {
+                console.log(`📊 処理中の日付${index + 1}:`, dateStr);
                 const date = new Date(dateStr);
                 const stats = {
                     date: date,
@@ -1814,9 +2107,12 @@
                 };
                 
                 responses.forEach(response => {
-                    if (response.available_dates && response.available_dates.some(d => isSameDay(new Date(d), date))) {
+                    // 表の表示ロジックと同じ判定を使用
+                    const tableStatus = getStatusForDate(response, dateStr);
+                    
+                    if (tableStatus === 'attending') {
                         stats.attending++;
-                    } else if (response.status === 'undecided') {
+                    } else if (tableStatus === 'maybe') {
                         stats.maybe++;
                     } else {
                         stats.notAttending++;
@@ -1832,7 +2128,9 @@
             dateStats.sort((a, b) => b.attending - a.attending);
             
             // テーブル行を生成
+            console.log('📋 テーブル行生成開始 - dateStats:', dateStats);
             dateStats.forEach((stats, index) => {
+                console.log(`📋 行${index + 1}生成:`, stats.dateStr, formatDateLong(stats.date));
                 const row = createScheduleTableRow(stats, index);
                 scheduleTableBody.appendChild(row);
             });
@@ -1842,6 +2140,8 @@
         function createScheduleTableRow(stats, index) {
             const tr = document.createElement('tr');
             tr.className = 'table-row';
+            tr.style.borderBottom = '1px solid #E9E5E0';
+            tr.style.background = index % 2 === 0 ? '#FFFFFF' : '#FAFAFA';
             
             // 評価を決定
             let evaluation = { 
@@ -1869,14 +2169,14 @@
                 };
             }
             
-            // 曜日アイコンの色を決定
-            const weekdayColors = ['red', 'stone', 'emerald', 'amber', 'purple', 'stone', 'emerald'];
-            const weekdayColor = weekdayColors[stats.date.getDay()];
+            // 曜日アイコンの色を決定（土日のみ落ち着いた赤色）
+            const dayOfWeek = stats.date.getDay();
+            const weekdayColor = (dayOfWeek === 0 || dayOfWeek === 6) ? 'red' : 'stone';
             const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
             const weekday = weekdays[stats.date.getDay()];
             
             tr.innerHTML = `
-                <td class="py-6 px-8">
+                <td class="py-4 px-6" style="border-right: 1px solid #E9E5E0;">
                     <div class="flex items-center space-x-4">
                         <div class="w-10 h-10 bg-${weekdayColor}-600 rounded-lg flex items-center justify-center">
                             <span class="text-white font-semibold text-sm">${weekday}</span>
@@ -1892,27 +2192,28 @@
                         </div>
                     </div>
                 </td>
-                <td class="py-6 px-6 text-center">
-                    <span class="text-lg font-semibold text-emerald-700">
-                        ${stats.attending}名
-                    </span>
+                <td class="py-4 px-4 text-center" style="border-right: 1px solid #E9E5E0;">
+                    <div class="flex items-center justify-center space-x-1">
+                        <span class="text-lg" style="color: #0F7B0F;">○</span>
+                        <span class="text-sm font-medium text-stone-700">${stats.attending}名</span>
+                    </div>
                 </td>
-                <td class="py-6 px-6 text-center">
-                    <span class="text-lg font-semibold text-stone-600">
-                        ${stats.notAttending}名
-                    </span>
+                <td class="py-4 px-4 text-center" style="border-right: 1px solid #E9E5E0;">
+                    <div class="flex items-center justify-center space-x-1">
+                        <span class="text-lg" style="color: #D97706;">?</span>
+                        <span class="text-sm font-medium text-stone-700">${stats.maybe}名</span>
+                    </div>
                 </td>
-                <td class="py-6 px-6 text-center">
-                    <span class="text-lg font-semibold text-amber-700">
-                        ${stats.maybe}名
-                    </span>
+                <td class="py-4 px-4 text-center" style="border-right: 1px solid #E9E5E0;">
+                    <div class="flex items-center justify-center space-x-1">
+                        <span class="text-lg" style="color: #6B7280;">×</span>
+                        <span class="text-sm font-medium text-stone-700">${stats.notAttending}名</span>
+                    </div>
                 </td>
-                <td class="py-6 px-6 text-center">
-                    <span class="text-lg font-semibold text-stone-900">
-                        ${stats.total}名
-                    </span>
+                <td class="py-4 px-4 text-center" style="border-right: 1px solid #E9E5E0;">
+                    <span class="text-sm font-semibold text-stone-900">${stats.total}名</span>
                 </td>
-                <td class="py-6 px-8 text-center">
+                <td class="py-4 px-6 text-center">
                     <div class="flex items-center justify-center space-x-2">
                         <span class="text-${evaluation.color}-600">${evaluation.icon}</span>
                         <span class="text-sm font-semibold text-${evaluation.color}-600">${evaluation.text}</span>
@@ -1923,17 +2224,19 @@
             return tr;
         }
         
-        // 日付フォーマット（長形式）
+        // 日付フォーマット（長形式）- UTC日付を正確に表示
         function formatDateLong(date) {
             const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
-            const month = date.getMonth() + 1;
-            const day = date.getDate();
-            const weekday = weekdays[date.getDay()];
+            // UTCベースで日付を取得（タイムゾーン変換の影響を避ける）
+            const month = date.getUTCMonth() + 1;
+            const day = date.getUTCDate();
+            const weekday = weekdays[date.getUTCDay()];
             return `${month}月${day}日（${weekday}）`;
         }
         
         // 時間フォーマット（開始時間のみ）
         function formatTimeRange(date) {
+            // ローカル時間で表示（ブラウザが自動的にタイムゾーン変換）
             const startHour = date.getHours();
             const startMinute = date.getMinutes();
             const startTime = `${startHour.toString().padStart(2, '0')}:${startMinute.toString().padStart(2, '0')}`;
@@ -1944,9 +2247,10 @@
         // 日付フォーマット関数
         function formatDateShort(date) {
             const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
-            const month = date.getMonth() + 1;
-            const day = date.getDate();
-            const weekday = weekdays[date.getDay()];
+            // UTCベースで日付を取得（タイムゾーン変換の影響を避ける）
+            const month = date.getUTCMonth() + 1;
+            const day = date.getUTCDate();
+            const weekday = weekdays[date.getUTCDay()];
             return `${month}/${day}(${weekday})`;
         }
         
