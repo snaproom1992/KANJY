@@ -118,7 +118,6 @@
     </script>
     
     <style>
-        /* CSS変数 */
         :root {
             --bg-primary: #ffffff;
             --bg-secondary: #f8fafc;
@@ -128,134 +127,207 @@
             --text-tertiary: #64748b;
             --border-primary: #e2e8f0;
             --border-secondary: #cbd5e1;
-            --shadow-color: rgba(0, 0, 0, 0.1);
-            --glass-bg: rgba(255, 255, 255, 0.25);
-            --glass-border: rgba(255, 255, 255, 0.18);
+            --card-background: #ffffff;
+            --card-border: #E9E5E0;
+            --card-shadow-soft: 0 1px 3px rgba(15, 23, 42, 0.08);
+            --card-shadow-hover: 0 12px 35px rgba(15, 23, 42, 0.14);
+            --card-shadow-strong: 0 20px 45px rgba(15, 23, 42, 0.2);
+            --section-divider: #E9E5E0;
         }
-        
-        /* メインページと同じアニメーション付きグラデーション */
-        @keyframes gradient-shift {
-            0%, 100% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
+
+        body {
+            background: var(--bg-tertiary);
         }
-        
-        .gradient-animated {
-            background: linear-gradient(-45deg, #007AFF, #00C7BE, #007AFF, #5856D6);
-            background-size: 400% 400%;
-            animation: gradient-shift 8s ease infinite;
+
+        .notion-heading-1 {
+            font-size: 2.5rem;
+            line-height: 1.2;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: #111827;
         }
-        
-        .glassmorphism {
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
+
+        .notion-heading-2 {
+            font-size: 2rem;
+            line-height: 1.3;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            color: #111827;
         }
-        
-        .floating-element {
+
+        .notion-heading-3 {
+            font-size: 1.5rem;
+            line-height: 1.4;
+            font-weight: 600;
+            letter-spacing: -0.005em;
+            color: #111827;
+        }
+
+        .notion-heading-4 {
+            font-size: 1.25rem;
+            line-height: 1.5;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .notion-body {
+            font-size: 1rem;
+            line-height: 1.6;
+            font-weight: 400;
+            color: #4B5563;
+        }
+
+        .notion-body-medium {
+            font-size: 1rem;
+            line-height: 1.6;
+            font-weight: 500;
+            color: #374151;
+        }
+
+        .notion-caption {
+            font-size: 0.875rem;
+            line-height: 1.5;
+            font-weight: 400;
+            color: #6B7280;
+        }
+
+        .notion-small {
+            font-size: 0.75rem;
+            line-height: 1.4;
+            font-weight: 500;
+            color: #9CA3AF;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .notion-mono {
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+            font-size: 0.875rem;
+            line-height: 1.6;
+            font-weight: 400;
+            color: #374151;
+        }
+
+        .micro-transition {
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        
-        .floating-element:hover {
-            transform: translateY(-4px) scale(1.02);
-            box-shadow: 0 20px 40px var(--shadow-color);
+
+        .notion-section {
+            background: var(--card-background);
+            border-top: 1px solid var(--section-divider);
+            border-bottom: 1px solid var(--section-divider);
         }
-        
-        .status-pill {
-            position: relative;
-            overflow: hidden;
-            transition: all 0.3s ease;
+
+        .card-divider {
+            border-bottom: 1px solid var(--section-divider);
         }
-        
-        .status-pill::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-            transition: left 0.5s;
+
+        .enhanced-card {
+            background: var(--card-background);
+            border: 1px solid var(--card-border);
+            border-radius: 1rem;
+            box-shadow: var(--card-shadow-soft);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
-        
-        .status-pill:hover::before {
-            left: 100%;
+
+        .card-hover:hover {
+            box-shadow: var(--card-shadow-hover);
+            transform: translateY(-4px);
         }
-        
-        .status-pill:hover {
-            transform: scale(1.05);
+
+        .card-section + .card-section {
+            border-top: 1px solid var(--section-divider);
+            padding-top: 2rem;
+            margin-top: 2rem;
         }
-        
-        /* カスタムスクロールバー */
+
+        .form-input {
+            border-radius: 0.75rem;
+            border: 1px solid var(--border-primary);
+            background: #fff;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #007AFF;
+            box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.15);
+        }
+
+        .choice-cell {
+            cursor: pointer;
+            border-radius: 0.75rem;
+            transition: background 0.2s ease, transform 0.2s ease;
+        }
+
+        .choice-cell:hover {
+            transform: translateY(-1px);
+        }
+
+        .choice-cell .choice-button {
+            border-radius: 0.5rem;
+            padding: 0.75rem 0.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            color: #4B5563;
+        }
+
+        .choice-cell.selected[data-status="attending"] {
+            background: #F0FDF4;
+        }
+
+        .choice-cell.selected[data-status="maybe"] {
+            background: #FFF7ED;
+        }
+
+        .choice-cell.selected[data-status="not_attending"] {
+            background: #F8F9FA;
+        }
+
+        .choice-cell.selected .choice-button {
+            color: #111827;
+        }
+
+        .stat-icon--attending {
+            color: #0F7B0F;
+        }
+
+        .stat-icon--maybe {
+            color: #D97706;
+        }
+
+        .stat-icon--decline {
+            color: #6B7280;
+        }
+
+        .section-helper {
+            color: var(--text-tertiary);
+        }
+
         ::-webkit-scrollbar {
             width: 8px;
         }
-        
+
         ::-webkit-scrollbar-track {
             background: #f1f5f9;
             border-radius: 4px;
         }
-        
+
         ::-webkit-scrollbar-thumb {
             background: linear-gradient(135deg, #007AFF, #5856D6);
             border-radius: 4px;
         }
-        
+
         ::-webkit-scrollbar-thumb:hover {
             background: linear-gradient(135deg, #0056cc, #4c46a6);
         }
-        
-        /* スムーズなアニメーション */
-        * {
-            transition: all 0.3s ease;
-        }
-        
-        /* フォームスタイル */
-        .form-input {
-            transition: all 0.3s ease;
-        }
-        
-        .form-input:focus {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0, 122, 255, 0.15);
-        }
-        
-        .choice-button {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        
-        .choice-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-        }
-        
-        .choice-button.selected {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.15);
-        }
-        
-        /* アニメーション */
-        .animate-fade-in {
-            animation: fadeIn 0.6s ease-out;
-        }
-        
-        .animate-slide-up {
-            animation: slideUp 0.8s ease-out;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
+
         .animate-scale-in {
             animation: scaleIn 0.3s ease-out;
         }
-        
+
         @keyframes scaleIn {
             from {
                 opacity: 0;
@@ -269,161 +341,108 @@
     </style>
 </head>
 
-<body class="font-sans antialiased text-gray-900 min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-    <!-- メインページと同じアニメーション付きグラデーション背景 -->
-    <div class="fixed inset-0 gradient-animated opacity-90 -z-10"></div>
-    
-    <!-- Navigation - スクロール時に固定しないように改善 -->
-    <nav class="glassmorphism w-full z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16">
-                <!-- 左側：ロゴ -->
-                <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 bg-white/10 backdrop-blur-sm rounded-xl flex items-center justify-center shadow-soft border border-white/20">
-                        <img src="assets/App icon.png" alt="KANJY" class="w-8 h-8 object-contain rounded-lg">
-                    </div>
-                    <span class="text-white font-semibold text-lg">KANJY</span>
+<body class="font-sans antialiased text-gray-900 min-h-screen bg-stone-50">
+    <nav class="bg-white shadow-sm backdrop-blur-xl">
+        <div class="max-w-4xl mx-auto px-6 sm:px-8 lg:px-12">
+            <div class="flex justify-between items-center h-20">
+                <div class="flex items-center">
+                    <span class="text-gray-900 font-light text-xl tracking-[0.2em] uppercase">K A N J Y</span>
                 </div>
-                
-                <!-- 右側：アプリダウンロードリンク -->
                 <div class="flex items-center">
                     <a href="https://apps.apple.com/jp/app/kanjy/id6746665673" target="_blank" 
-                       class="bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg px-3 py-1.5 text-white text-sm font-semibold transition-all duration-200 border border-white/30 hover:border-white/50 shadow-soft flex items-center space-x-2" 
-                       style="text-shadow: 0 1px 2px rgba(0,0,0,0.5);">
+                       class="inline-flex items-center space-x-2 bg-gray-100 hover:bg-gray-200 transition-colors duration-200 px-4 py-2 rounded-lg text-sm font-medium text-gray-700">
                         <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
                         </svg>
-                        <span>アプリをダウンロード</span>
+                        <span>App Storeでダウンロード</span>
                     </a>
                 </div>
             </div>
         </div>
     </nav>
 
-    <!-- Decorative Elements - メインページと同じ -->
-    <div class="fixed top-20 left-10 w-20 h-20 bg-white/10 rounded-full animate-float pointer-events-none"></div>
-    <div class="fixed top-40 right-20 w-12 h-12 bg-white/5 rounded-full animate-float pointer-events-none" style="animation-delay: 1s;"></div>
-    <div class="fixed bottom-20 left-1/2 transform -translate-x-1/2 w-16 h-16 bg-white/5 rounded-full animate-float pointer-events-none" style="animation-delay: 2s;"></div>
-
-    <!-- Main Content - ヘッダーが固定でないのでpadding-top調整 -->
-    <div class="container mx-auto px-4 py-8 max-w-2xl">
-        <div class="space-y-8">
-            <!-- Hero Section -->
-            <div class="text-center space-y-4 animate-fade-in">
-                <h1 id="event-title" class="text-3xl md:text-4xl font-bold text-white mb-2" style="text-shadow: 0 2px 4px rgba(0,0,0,0.3);">
-                    参加回答フォーム
-                </h1>
-                <p id="event-description" class="text-white/90 text-lg leading-relaxed" style="text-shadow: 0 1px 2px rgba(0,0,0,0.3);">
-                    みんなで楽しい時間を過ごしましょう！<br>
-                    あなたの都合をお聞かせください。
-                </p>
+    <main class="pb-24">
+        <section class="notion-section py-8">
+            <div class="max-w-4xl mx-auto px-6 sm:px-8 lg:px-12">
+                <div class="mb-8">
+                    <h1 id="event-title" class="notion-heading-2 mb-3">参加回答フォーム</h1>
+                    <p id="event-description" class="notion-body text-stone-500">みんなで楽しい時間を過ごしましょう。あなたの都合をお聞かせください。</p>
+                </div>
             </div>
+        </section>
 
-            <!-- Response Form - メインページと統一されたカードデザイン -->
-            <div class="floating-element bg-white rounded-3xl shadow-floating p-8 animate-slide-up border border-gray-100">
-                <form id="response-form" class="space-y-8">
-                    <!-- Personal Information -->
-                    <div class="space-y-6">
-                        <div class="flex items-center space-x-3 mb-4">
-                            <div class="w-1 h-6 bg-gradient-to-b from-kanjy-500 to-kanjy-600 rounded-full"></div>
-                            <h2 class="text-2xl font-bold text-gray-900 tracking-tight flex items-center">
-                                <span class="w-8 h-8 bg-gradient-to-br from-kanjy-400 to-kanjy-600 rounded-lg flex items-center justify-center mr-3">
-                                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                                    </svg>
-                                </span>
-                                基本情報
-                            </h2>
-                        </div>
-                        
-                        <div class="space-y-4">
+        <div class="max-w-4xl mx-auto px-6 sm:px-8 lg:px-12 space-y-12 mt-12">
+            <section>
+                <div class="enhanced-card card-hover p-8">
+                    <form id="response-form" class="space-y-10">
+                        <div class="space-y-6">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-1 h-6 bg-gradient-to-b from-stone-600 to-stone-700 rounded-full"></div>
+                                <h2 class="notion-heading-4">参加者情報</h2>
+                            </div>
+                            <p class="notion-caption section-helper">お名前は他の参加者と共有されます。後から編集も可能です。</p>
                             <div>
-                                <label for="name" class="block text-sm font-semibold text-gray-700 mb-2">お名前 *</label>
+                                <label for="name" class="notion-small block text-stone-500 mb-2">お名前 *</label>
                                 <input type="text" id="name" name="name" required 
-                                       class="form-input w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-kanjy-500 focus:ring-2 focus:ring-kanjy-500/20 outline-none bg-white/80 backdrop-blur-sm"
+                                       class="form-input w-full px-4 py-3 notion-body"
                                        placeholder="例：山田太郎">
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Schedule Selection -->
-                    <div class="space-y-6">
-                        <div class="flex items-center space-x-3 mb-4">
-                            <div class="w-1 h-6 bg-gradient-to-b from-emerald-500 to-emerald-600 rounded-full"></div>
-                            <h2 class="text-2xl font-bold text-gray-900 tracking-tight flex items-center">
-                                <span class="w-8 h-8 bg-gradient-to-br from-kanjy-400 to-kanjy-600 rounded-lg flex items-center justify-center mr-3">
-                                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                                    </svg>
-                                </span>
-                                日程ごとに回答
-                            </h2>
+                        <div class="card-section space-y-6">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-1 h-6 bg-gradient-to-b from-stone-700 to-stone-900 rounded-full"></div>
+                                <h2 class="notion-heading-4">日程ごとの回答</h2>
+                            </div>
+                            <p class="notion-caption section-helper">各候補日時について、参加可否を選択してください。</p>
+                            <div id="schedule-options" class="overflow-x-auto">
+                                <!-- 動的に生成される日程テーブルがここに入ります -->
+                            </div>
                         </div>
-                        <p class="text-gray-600">各日程について、参加可否をお選びください。</p>
-                        
-                        <div id="schedule-options" class="space-y-6">
-                            <!-- 動的に生成される日程選択肢がここに入ります -->
-                        </div>
-                    </div>
 
-                    <!-- Comment -->
-                    <div class="space-y-6">
-                        <div class="flex items-center space-x-3 mb-4">
-                            <div class="w-1 h-6 bg-gradient-to-b from-gray-500 to-gray-600 rounded-full"></div>
-                            <h2 class="text-2xl font-bold text-gray-900 tracking-tight flex items-center">
-                                <span class="w-8 h-8 bg-gradient-to-br from-gray-500 to-gray-700 rounded-lg flex items-center justify-center mr-3">
-                                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/>
-                                    </svg>
-                                </span>
-                                コメント
-                            </h2>
+                        <div class="card-section space-y-6">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-1 h-6 bg-gradient-to-b from-stone-500 to-stone-600 rounded-full"></div>
+                                <h2 class="notion-heading-4">コメント</h2>
+                            </div>
+                            <div>
+                                <label for="comment" class="notion-small block text-stone-500 mb-2">コメント（任意）</label>
+                                <textarea id="comment" name="comment" rows="4" 
+                                          class="form-input w-full px-4 py-3 notion-body resize-none"
+                                          placeholder="例：楽しみにしています！"></textarea>
+                            </div>
                         </div>
-                        <p class="text-gray-600">何かご質問やメッセージがあれば、お気軽にお書きください。</p>
-                        
-                        <div>
-                            <textarea id="comment" name="comment" rows="4" 
-                                      class="form-input w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-kanjy-500 focus:ring-2 focus:ring-kanjy-500/20 outline-none bg-white/80 backdrop-blur-sm resize-none"
-                                      placeholder="例：楽しみにしています！"></textarea>
-                        </div>
-                    </div>
 
-                    <!-- Submit Buttons -->
-                    <div class="flex flex-col space-y-4 pt-6">
-                        <button type="submit" 
-                                class="w-full bg-gradient-to-r from-kanjy-500 to-kanjy-600 hover:from-kanjy-600 hover:to-kanjy-700 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none">
-                            <span class="flex items-center justify-center">
+                        <div class="card-section space-y-4">
+                            <button type="submit" 
+                                    class="w-full micro-transition inline-flex items-center justify-center px-6 py-4 bg-stone-900 hover:bg-stone-800 text-white font-semibold rounded-xl shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed">
                                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
                                 </svg>
                                 回答を送信
-                            </span>
-                        </button>
-                        
-                        <button type="button" onclick="cancelForm()" 
-                                class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-4 px-6 rounded-xl transition-all duration-200 border border-gray-200 hover:border-gray-300">
-                            <span class="flex items-center justify-center">
+                            </button>
+                            
+                            <button type="button" onclick="cancelForm()" 
+                                    class="w-full micro-transition inline-flex items-center justify-center px-6 py-4 bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold rounded-xl border border-stone-200">
                                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                                 </svg>
                                 キャンセル
-                            </span>
-                        </button>
-                        
-                        <button type="button" id="delete-response-btn" onclick="deleteResponse()" 
-                                class="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 hidden">
-                            <span class="flex items-center justify-center">
+                            </button>
+                            
+                            <button type="button" id="delete-response-btn" onclick="deleteResponse()" 
+                                    class="w-full micro-transition inline-flex items-center justify-center px-6 py-4 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-xl shadow-sm hover:shadow-md hidden">
                                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                                 </svg>
                                 この回答を削除
-                            </span>
-                        </button>
-                    </div>
-                </form>
-            </div>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </section>
         </div>
-    </div>
+    </main>
 
     <!-- 通知システム -->
     <div id="notification-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
@@ -666,87 +685,92 @@
         // 日程選択肢を生成
         function generateScheduleOptions(dates) {
             const container = document.getElementById('schedule-options');
-            container.innerHTML = '';
-            
-            dates.forEach((dateStr, index) => {
+            if (!container) return;
+
+            const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+
+            const rowsHtml = dates.map((dateStr, index) => {
                 const date = new Date(dateStr);
-                const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
                 const weekday = weekdays[date.getDay()];
                 const month = date.getMonth() + 1;
                 const day = date.getDate();
                 const hours = date.getHours().toString().padStart(2, '0');
                 const minutes = date.getMinutes().toString().padStart(2, '0');
-                
-                const optionDiv = document.createElement('div');
-                optionDiv.className = 'bg-gray-50 rounded-2xl p-6';
-                optionDiv.id = `schedule-${index}`;
-                optionDiv.innerHTML = `
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="flex items-center space-x-4">
-                            <div class="w-12 h-12 bg-gradient-to-br from-kanjy-400 to-kanjy-600 rounded-xl flex items-center justify-center">
-                                <span class="text-white font-bold">${weekday}</span>
+                const weekdayColorClass = (date.getDay() === 0 || date.getDay() === 6) ? 'bg-red-600' : 'bg-stone-600';
+
+                return `
+                    <tr data-date="${dateStr}">
+                        <td class="py-4 px-6">
+                            <div class="flex items-center space-x-4">
+                                <div class="w-10 h-10 ${weekdayColorClass} rounded-lg flex items-center justify-center">
+                                    <span class="text-white font-semibold text-sm">${weekday}</span>
+                                </div>
+                                <div>
+                                    <div class="notion-body-medium text-stone-900">${month}月${day}日（${weekday}）</div>
+                                    <div class="flex items-center space-x-1 notion-caption text-stone-500 mt-1">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                        </svg>
+                                        <span>${hours}:${minutes} 開始</span>
+                                    </div>
+                                </div>
                             </div>
-                            <div>
-                                <div class="text-lg font-bold text-gray-900">${month}月${day}日（${weekday}）</div>
-                                <div class="text-gray-600">${hours}:${minutes}開始</div>
+                        </td>
+                        <td class="py-4 px-4 text-center choice-cell" data-date="${dateStr}" data-status="attending">
+                            <div class="choice-button micro-transition text-stone-600">
+                                <span class="text-2xl font-bold stat-icon--attending">○</span>
+                                <span class="notion-body-medium">参加</span>
                             </div>
-                        </div>
-                    </div>
-                    
-                    <div class="grid grid-cols-3 gap-3">
-                        <button type="button" class="choice-button p-3 rounded-xl border-2 border-attending-200 text-attending-700 hover:bg-attending-50 transition-all duration-300" data-date="${dateStr}" data-status="attending">
-                            <div class="flex items-center justify-center space-x-2">
-                                <span class="text-2xl font-bold">○</span>
-                                <span class="font-semibold">参加</span>
+                        </td>
+                        <td class="py-4 px-4 text-center choice-cell" data-date="${dateStr}" data-status="maybe">
+                            <div class="choice-button micro-transition text-stone-600">
+                                <span class="text-2xl font-bold stat-icon--maybe">?</span>
+                                <span class="notion-body-medium">未定</span>
                             </div>
-                        </button>
-                        
-                        <button type="button" class="choice-button p-3 rounded-xl border-2 border-notAttending-200 text-notAttending-700 hover:bg-notAttending-50 transition-all duration-300" data-date="${dateStr}" data-status="not_attending">
-                            <div class="flex items-center justify-center space-x-2">
-                                <span class="text-2xl font-bold">×</span>
-                                <span class="font-semibold">不参加</span>
+                        </td>
+                        <td class="py-4 px-4 text-center choice-cell" data-date="${dateStr}" data-status="not_attending">
+                            <div class="choice-button micro-transition text-stone-600">
+                                <span class="text-2xl font-bold stat-icon--decline">×</span>
+                                <span class="notion-body-medium">不参加</span>
                             </div>
-                        </button>
-                        
-                        <button type="button" class="choice-button p-3 rounded-xl border-2 border-maybe-200 text-maybe-700 hover:bg-maybe-50 transition-all duration-300" data-date="${dateStr}" data-status="maybe">
-                            <div class="flex items-center justify-center space-x-2">
-                                <span class="text-2xl font-bold">△</span>
-                                <span class="font-semibold">未定</span>
-                            </div>
-                        </button>
-                    </div>
+                        </td>
+                    </tr>
                 `;
-                
-                container.appendChild(optionDiv);
-            });
-            
-            // 選択ボタンのイベントリスナーを設定
+            }).join('');
+
+            container.innerHTML = `
+                <table class="w-full notion-table">
+                    <thead>
+                        <tr>
+                            <th class="text-left py-3 px-6 notion-small text-stone-500">候補日時</th>
+                            <th class="text-center py-3 px-4 notion-small text-stone-500">参加</th>
+                            <th class="text-center py-3 px-4 notion-small text-stone-500">未定</th>
+                            <th class="text-center py-3 px-4 notion-small text-stone-500">不参加</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rowsHtml}
+                    </tbody>
+                </table>
+            `;
+
             setupChoiceButtons();
+
+            if (!editMode) {
+                dates.forEach(dateStr => {
+                    const defaultCell = container.querySelector(`[data-date="${dateStr}"][data-status="maybe"]`);
+                    if (defaultCell) {
+                        selectChoice(defaultCell);
+                    }
+                });
+            }
         }
 
         // 選択ボタンのイベントリスナーを設定
         function setupChoiceButtons() {
-            document.querySelectorAll('.choice-button').forEach(button => {
-                button.addEventListener('click', function() {
-                    const dateStr = this.dataset.date;
-                    const status = this.dataset.status;
-                    
-                    // 同じ日程の他のボタンから選択状態を解除
-                    document.querySelectorAll(`[data-date="${dateStr}"]`).forEach(btn => {
-                        btn.classList.remove('selected');
-                        btn.classList.remove('bg-attending-100', 'border-attending-500', 'bg-notAttending-100', 'border-notAttending-500', 'bg-maybe-100', 'border-maybe-500');
-                    });
-                    
-                    // このボタンを選択状態にする
-                    this.classList.add('selected');
-                    
-                    if (status === 'attending') {
-                        this.classList.add('bg-attending-100', 'border-attending-500');
-                    } else if (status === 'not_attending') {
-                        this.classList.add('bg-notAttending-100', 'border-notAttending-500');
-                    } else if (status === 'maybe') {
-                        this.classList.add('bg-maybe-100', 'border-maybe-500');
-                    }
+            document.querySelectorAll('.choice-cell').forEach(cell => {
+                cell.addEventListener('click', function() {
+                    selectChoice(this);
                 });
             });
         }
@@ -783,9 +807,9 @@
                         status = 'maybe';
                     }
                     
-                    const button = document.querySelector(`[data-date="${dateStr}"][data-status="${status}"]`);
-                    if (button) {
-                        selectChoice(button);
+                    const targetCell = document.querySelector(`[data-date="${dateStr}"][data-status="${status}"]`);
+                    if (targetCell) {
+                        selectChoice(targetCell);
                         console.log(`✅ 日程選択復元: ${dateStr} -> ${status}`);
                     } else {
                         console.warn(`⚠️ 選択ボタンが見つかりません: ${dateStr}, ${status}`);
@@ -806,16 +830,11 @@
 
         // 選択肢を選択状態にする
         function selectChoice(button) {
-            const status = button.dataset.status;
+            const dateStr = button.dataset.date;
+            document.querySelectorAll(`[data-date="${dateStr}"]`).forEach(btn => {
+                btn.classList.remove('selected');
+            });
             button.classList.add('selected');
-            
-            if (status === 'attending') {
-                button.classList.add('bg-attending-100', 'border-attending-500');
-            } else if (status === 'maybe') {
-                button.classList.add('bg-maybe-100', 'border-maybe-500');
-            } else if (status === 'not_attending') {
-                button.classList.add('bg-notAttending-100', 'border-notAttending-500');
-            }
         }
 
         // フォーム送信処理
@@ -882,9 +901,9 @@
             const availableDates = [];
             const dateStatuses = {};
             
-            document.querySelectorAll('.choice-button.selected').forEach(button => {
-                const dateStr = button.dataset.date;
-                const status = button.dataset.status;
+            document.querySelectorAll('.choice-cell.selected').forEach(cell => {
+                const dateStr = cell.dataset.date;
+                const status = cell.dataset.status;
                 
                 dateStatuses[dateStr] = status;
                 

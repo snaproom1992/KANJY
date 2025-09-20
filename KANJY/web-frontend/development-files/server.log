@@ -1,6 +1,0 @@
-::1 - - [12/Jul/2025 02:31:40] "HEAD /index.html HTTP/1.1" 200 -
-::1 - - [12/Jul/2025 02:31:56] "GET /index.html?id=eaf6d567-c41d-43df-9da0-d92a76289d21&t=1234567890 HTTP/1.1" 200 -
-::1 - - [12/Jul/2025 02:32:12] "GET /response-form.html?id=eaf6d567-c41d-43df-9da0-d92a76289d21&edit=16287bec-5e91-4796-aff9-55988cd0e2c1 HTTP/1.1" 200 -
-::1 - - [12/Jul/2025 02:32:18] "GET /index.html?id=eaf6d567-c41d-43df-9da0-d92a76289d21&t=1752255138227&v=beautiful HTTP/1.1" 200 -
-::1 - - [12/Jul/2025 02:32:25] "GET /index.html?id=eaf6d567-c41d-43df-9da0-d92a76289d21&t=1752255138227&v=beautiful HTTP/1.1" 304 -
-::1 - - [12/Jul/2025 02:32:28] "GET /index.html?id=eaf6d567-c41d-43df-9da0-d92a76289d21&t=1752255138227&v=beautiful HTTP/1.1" 304 -
