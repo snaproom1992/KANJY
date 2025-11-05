@@ -30,6 +30,20 @@ struct CreateScheduleEventView: View {
         self.onEventCreated = onEventCreated
     }
     
+    // 飲み会計画（Plan）からスケジュール調整を作成するための初期化子
+    init(viewModel: ScheduleManagementViewModel, plan: Plan, onEventCreated: ((ScheduleEvent) -> Void)? = nil) {
+        self.viewModel = viewModel
+        self.onEventCreated = onEventCreated
+        
+        // Planから情報を引き継ぐ
+        _title = State(initialValue: plan.name)
+        _candidateDates = State(initialValue: [plan.date])
+        if let totalAmountString = plan.totalAmount.filter({ $0.isNumber }).isEmpty ? nil : plan.totalAmount.filter({ $0.isNumber }),
+           let totalAmountInt = Int(totalAmountString) {
+            _budget = State(initialValue: String(totalAmountInt))
+        }
+    }
+    
     var body: some View {
         NavigationStack {
             Form {

@@ -14,7 +14,7 @@ public struct AmountItem: Identifiable, Codable {
     }
 }
 
-// プランを表す構造体
+// 飲み会を表す構造体（中心オブジェクト）
 public struct Plan: Identifiable, Codable {
     public let id: UUID
     public var name: String
@@ -25,8 +25,10 @@ public struct Plan: Identifiable, Codable {
     public var roleNames: [String: String]
     public var amountItems: [AmountItem]?
     public var emoji: String?
+    // スケジュール調整との関係（オプショナル）
+    public var scheduleEventId: UUID?
     
-    public init(id: UUID = UUID(), name: String, date: Date, participants: [Participant], totalAmount: String, roleMultipliers: [String: Double], roleNames: [String: String], amountItems: [AmountItem]? = nil, emoji: String? = nil) {
+    public init(id: UUID = UUID(), name: String, date: Date, participants: [Participant], totalAmount: String, roleMultipliers: [String: Double], roleNames: [String: String], amountItems: [AmountItem]? = nil, emoji: String? = nil, scheduleEventId: UUID? = nil) {
         self.id = id
         self.name = name
         self.date = date
@@ -36,6 +38,7 @@ public struct Plan: Identifiable, Codable {
         self.roleNames = roleNames
         self.amountItems = amountItems
         self.emoji = emoji
+        self.scheduleEventId = scheduleEventId
     }
 }
 
@@ -65,6 +68,15 @@ public class PrePlanViewModel: ObservableObject {
     
     private var roleMultipliers: [String: Double] = [:]
     private var roleNames: [String: String] = [:]
+    
+    // 外部からアクセス可能なプロパティ
+    public var currentRoleMultipliers: [String: Double] {
+        return roleMultipliers
+    }
+    
+    public var currentRoleNames: [String: String] {
+        return roleNames
+    }
     
     // 合計金額
     @Published public var totalAmount: String = "" {
@@ -414,11 +426,12 @@ public class PrePlanViewModel: ObservableObject {
         let emoji = selectedEmoji.isEmpty ? getRandomEmoji() : selectedEmoji
         
         if let id = editingPlanId, let idx = savedPlans.firstIndex(where: { $0.id == id }) {
-            // 既存プランを上書き
-            savedPlans[idx] = Plan(id: id, name: name, date: date, participants: participants, totalAmount: totalAmount, roleMultipliers: roleMultipliers, roleNames: roleNames, amountItems: amountItems, emoji: emoji)
+            // 既存プランを上書き（scheduleEventIdを保持）
+            let existingScheduleEventId = savedPlans[idx].scheduleEventId
+            savedPlans[idx] = Plan(id: id, name: name, date: date, participants: participants, totalAmount: totalAmount, roleMultipliers: roleMultipliers, roleNames: roleNames, amountItems: amountItems, emoji: emoji, scheduleEventId: existingScheduleEventId)
         } else {
             // 新規プランとして追加
-            let plan = Plan(name: name, date: date, participants: participants, totalAmount: totalAmount, roleMultipliers: roleMultipliers, roleNames: roleNames, amountItems: amountItems, emoji: emoji)
+            let plan = Plan(name: name, date: date, participants: participants, totalAmount: totalAmount, roleMultipliers: roleMultipliers, roleNames: roleNames, amountItems: amountItems, emoji: emoji, scheduleEventId: nil)
             savedPlans.append(plan)
             editingPlanId = plan.id
         }
@@ -476,7 +489,8 @@ public class PrePlanViewModel: ObservableObject {
             roleMultipliers: [:],
             roleNames: [:],
             amountItems: nil,
-            emoji: emoji ?? selectedEmoji
+            emoji: emoji ?? selectedEmoji,
+            scheduleEventId: nil
         )
 
         savedPlans.append(plan)

@@ -3,10 +3,37 @@ import SwiftUI
 struct SettingsView: View {
     @StateObject private var viewModel = PrePlanViewModel()
     @State private var selectedRole: Role? = nil
+    @State private var showingHelpGuide = false
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
+    @State private var showingOnboarding = false
     
     var body: some View {
         NavigationStack {
             List {
+                Section("使い方") {
+                    Button {
+                        showingHelpGuide = true
+                    } label: {
+                        HStack {
+                            Image(systemName: "questionmark.circle.fill")
+                                .foregroundColor(.blue)
+                            Text("使い方ガイド")
+                        }
+                    }
+                    
+                    if hasCompletedOnboarding {
+                        Button {
+                            showingOnboarding = true
+                        } label: {
+                            HStack {
+                                Image(systemName: "book.fill")
+                                    .foregroundColor(.blue)
+                                Text("チュートリアルを再表示")
+                            }
+                        }
+                    }
+                }
+                
                 Section("集金設定") {
                     NavigationLink(destination: PaymentSettings()) {
                         HStack {
@@ -41,6 +68,14 @@ struct SettingsView: View {
                 }
             }
             .navigationTitle("設定")
+            .sheet(isPresented: $showingHelpGuide) {
+                HelpGuideView()
+            }
+            .fullScreenCover(isPresented: $showingOnboarding) {
+                OnboardingGuideView(isPresented: $showingOnboarding) {
+                    hasCompletedOnboarding = true
+                }
+            }
         }
     }
 }

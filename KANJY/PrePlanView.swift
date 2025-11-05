@@ -201,6 +201,28 @@ struct PrePlanView: View {
     @State private var scheduleEvent: ScheduleEvent?
     @State private var showingScheduleUrlSheet = false
     @State private var hasScheduleEvent = false // スケジュール調整済みかどうか
+    @State private var showingHelpGuide = false
+    
+    // タスク選択（セグメントコントロール用）
+    enum TaskSection: String, CaseIterable {
+        case basicInfo = "基本情報"
+        case participants = "参加者"
+        case amount = "金額"
+        case schedule = "スケジュール"
+        case collection = "集金"
+        
+        var icon: String {
+            switch self {
+            case .basicInfo: return "info.circle.fill"
+            case .participants: return "person.2.fill"
+            case .amount: return "yensign.circle.fill"
+            case .schedule: return "calendar"
+            case .collection: return "creditcard.fill"
+            }
+        }
+    }
+    
+    @State private var selectedTask: TaskSection = .basicInfo
     
     enum Field {
         case totalAmount, newParticipant, editParticipant, additionalAmount
@@ -373,18 +395,23 @@ struct PrePlanView: View {
             Form {
                 Section {
                     TextField("参加者名", text: $editingText)
+                        .font(DesignSystem.Typography.body)
+                        .foregroundColor(DesignSystem.Colors.black)
                     // 役職選択用のビュー
                     rolePickerView
                     
                     // 集金確認用のトグル
                     Toggle("集金済み", isOn: $editingHasCollected)
-                        .toggleStyle(SwitchToggleStyle(tint: .green))
+                        .toggleStyle(SwitchToggleStyle(tint: DesignSystem.Colors.success))
+                } header: {
+                    Text("参加者情報")
+                        .font(DesignSystem.Typography.headline)
                 }
                 
-                Section(header: Text("支払金額")) {
+                Section(header: Text("支払金額").font(DesignSystem.Typography.headline)) {
                     // 金額固定トグル
                     Toggle("金額を固定する", isOn: $editingHasFixedAmount)
-                        .toggleStyle(SwitchToggleStyle(tint: .blue))
+                        .toggleStyle(SwitchToggleStyle(tint: DesignSystem.Colors.primary))
                         .onChange(of: editingHasFixedAmount) { _, newValue in
                             if newValue && editingFixedAmount == 0 {
                                 // 固定する場合で金額が0なら現在の計算金額をセット
@@ -406,6 +433,8 @@ struct PrePlanView: View {
                     if editingHasFixedAmount {
                         HStack {
                             Text("固定金額")
+                                .font(DesignSystem.Typography.body)
+                                .foregroundColor(DesignSystem.Colors.black)
                             Spacer()
                             TextField("金額", text: Binding(
                                 get: { viewModel.formatAmount(String(editingFixedAmount)) },
@@ -415,6 +444,8 @@ struct PrePlanView: View {
                                     }
                                 }
                             ))
+                            .font(DesignSystem.Typography.body)
+                            .foregroundColor(DesignSystem.Colors.black)
                             .keyboardType(.numberPad)
                             .multilineTextAlignment(.trailing)
                             .foregroundColor(.blue)
@@ -548,11 +579,23 @@ struct PrePlanView: View {
             }
             .navigationTitle("")
             .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button {
+                        showingHelpGuide = true
+                    } label: {
+                        Image(systemName: "questionmark.circle")
+                            .foregroundColor(.accentColor)
+                    }
+                }
+                
                 ToolbarItem(placement: .navigationBarTrailing) {
                     NavigationLink(destination: RoleSettingsView(viewModel: viewModel, selectedRole: .constant(nil))) {
                         Image(systemName: "gearshape")
                     }
                 }
+            }
+            .sheet(isPresented: $showingHelpGuide) {
+                HelpGuideView()
             }
             .sheet(item: $editingParticipant) { participant in
                 editSheet(participant: participant)
@@ -575,7 +618,20 @@ struct PrePlanView: View {
             }
             .sheet(isPresented: $showScheduleCreation) {
                 NavigationStack {
-                    CreateScheduleEventView(viewModel: scheduleViewModel) { event in
+                    // 現在の飲み会計画から情報を引き継いでスケジュール調整を作成
+                    CreateScheduleEventView(
+                        viewModel: scheduleViewModel,
+                        plan: Plan(
+                            name: localPlanName.isEmpty ? (planName.isEmpty ? "無題の飲み会" : planName) : localPlanName,
+                            date: localPlanDate ?? planDate ?? Date(),
+                            participants: viewModel.participants,
+                            totalAmount: viewModel.totalAmount,
+                            roleMultipliers: viewModel.currentRoleMultipliers,
+                            roleNames: viewModel.currentRoleNames,
+                            amountItems: viewModel.amountItems,
+                            emoji: viewModel.selectedEmoji
+                        )
+                    ) { event in
                         // イベント作成完了時の処理
                         scheduleEvent = event
                         hasScheduleEvent = true
@@ -729,22 +785,58 @@ struct PrePlanView: View {
     
     // メインコンテンツビュー
     @ViewBuilder
+    // 現在のステップを計算
+    private var currentStep: PartySetupStep {
+        if !localPlanName.isEmpty && localPlanDate != nil {
+            if !viewModel.participants.isEmpty {
+                if !viewModel.totalAmount.isEmpty {
+                    return .amount
+                }
+                return .participants
+            }
+        }
+        return .basicInfo
+    }
+    
+    // 完了状況を計算
+    private var completionStatus: [PartySetupStep: Bool] {
+        [
+            .basicInfo: !localPlanName.isEmpty && localPlanDate != nil,
+            .participants: !viewModel.participants.isEmpty,
+            .amount: !viewModel.totalAmount.isEmpty,
+            .schedule: hasScheduleEvent,
+            .collection: viewModel.participants.filter { $0.hasCollected }.count > 0
+        ]
+    }
+    
     private func MainContentView() -> some View {
-        VStack(spacing: 0) {
-            VStack(spacing: 16) {  // 縦方向の間隔を統一
+        ScrollView {
+            VStack(spacing: DesignSystem.Spacing.lg) {
                 // 絵文字と飲み会名の行
-                HStack(spacing: 8) {
+                HStack(spacing: DesignSystem.Spacing.md) {
                     EmojiButton()
                     PlanNameView()
                 }
-                .padding(.horizontal)
+                .padding(.horizontal, DesignSystem.Spacing.lg)
+                .padding(.top, DesignSystem.Spacing.md)
                 
-                PlanContentList()
+                // サマリーカード（重要情報を集約）
+                SummaryCard()
+                    .padding(.horizontal, DesignSystem.Spacing.lg)
+                
+                // タスクセグメントコントロール
+                TaskSegmentControl(selectedTask: $selectedTask)
+                    .padding(.horizontal, DesignSystem.Spacing.lg)
+                
+                // 選択されたタスクのコンテンツを表示
+                TaskContentView(selectedTask: selectedTask)
+                    .padding(.horizontal, DesignSystem.Spacing.lg)
+                    .padding(.bottom, 100) // 下部ボタン用のスペース
             }
-            .padding(.horizontal)
-            .padding(.top, 24)
-            .padding(.bottom, 8)
-            
+            .padding(.top, DesignSystem.Spacing.xxl)
+            .padding(.bottom, DesignSystem.Spacing.xl)
+        }
+        .safeAreaInset(edge: .bottom) {
             SaveButton()
         }
     }
@@ -776,10 +868,21 @@ struct PrePlanView: View {
     @ViewBuilder
     private func PlanNameView() -> some View {
         if isEditingTitle {
-            TextField("", text: $localPlanName)
-                .font(.system(size: 32, weight: .bold))
+            TextField("飲み会名を入力", text: $localPlanName)
+                .font(DesignSystem.Typography.title1)
+                .foregroundColor(DesignSystem.Colors.black)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity)
+                .padding(DesignSystem.TextField.Padding.horizontal)
+                .frame(height: DesignSystem.TextField.Height.large)
+                .background(
+                    RoundedRectangle(cornerRadius: DesignSystem.TextField.cornerRadius, style: .continuous)
+                        .fill(DesignSystem.TextField.backgroundColor)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: DesignSystem.TextField.cornerRadius, style: .continuous)
+                        .stroke(isTitleFocused ? DesignSystem.TextField.focusedBorderColor : DesignSystem.TextField.borderColor, lineWidth: DesignSystem.TextField.borderWidth)
+                )
                 .focused($isTitleFocused)
                 .onSubmit { isEditingTitle = false }
                 .onChange(of: isTitleFocused) { _, focused in
@@ -815,29 +918,347 @@ struct PrePlanView: View {
         }
     }
     
-    // プラン内容リスト
+    // サマリーカード（重要情報を集約）
+    @ViewBuilder
+    private func SummaryCard() -> some View {
+        VStack(spacing: DesignSystem.Spacing.md) {
+            // タイトル（控えめに）
+            HStack {
+                Text("サマリー")
+                    .font(DesignSystem.Typography.emphasizedSubheadline)
+                    .foregroundColor(DesignSystem.Colors.secondary)
+                Spacer()
+            }
+            
+            // グリッドレイアウトで重要情報を表示
+            LazyVGrid(columns: [
+                GridItem(.flexible()),
+                GridItem(.flexible())
+            ], spacing: DesignSystem.Spacing.sm) {
+                // 開催日
+                SummaryItem(
+                    icon: "calendar",
+                    label: "開催日",
+                    value: localPlanDate != nil ? viewModel.formatDate(localPlanDate!) : "未設定"
+                )
+                
+                // 参加者数
+                SummaryItem(
+                    icon: "person.2.fill",
+                    label: "参加者",
+                    value: "\(viewModel.participants.count)人"
+                )
+                
+                // 合計金額
+                SummaryItem(
+                    icon: "yensign.circle.fill",
+                    label: "合計金額",
+                    value: viewModel.totalAmount.isEmpty ? "未設定" : "¥\(viewModel.formatAmount(viewModel.totalAmount))"
+                )
+                
+                // 集金状況
+                SummaryItem(
+                    icon: "creditcard.fill",
+                    label: "集金状況",
+                    value: {
+                        let collectedCount = viewModel.participants.filter { $0.hasCollected }.count
+                        let totalCount = viewModel.participants.count
+                        if totalCount == 0 {
+                            return "未設定"
+                        } else if collectedCount == totalCount {
+                            return "完了"
+                        } else {
+                            return "\(collectedCount)/\(totalCount)"
+                        }
+                    }()
+                )
+            }
+        }
+        .padding(DesignSystem.Card.Padding.medium)
+        .background(
+            RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadius, style: .continuous)
+                .fill(DesignSystem.Colors.secondaryBackground)
+                .shadow(
+                    color: Color.black.opacity(DesignSystem.Card.Shadow.opacity),
+                    radius: DesignSystem.Card.Shadow.radius,
+                    x: DesignSystem.Card.Shadow.offset.width,
+                    y: DesignSystem.Card.Shadow.offset.height
+                )
+        )
+    }
+    
+    // サマリー項目（情報に強弱をつける）
+    @ViewBuilder
+    private func SummaryItem(icon: String, label: String, value: String) -> some View {
+        VStack(alignment: .leading, spacing: DesignSystem.Spacing.sm) {
+            // ラベル（小さく、控えめに）
+            HStack(spacing: DesignSystem.Spacing.xs) {
+                Image(systemName: icon)
+                    .font(.system(size: DesignSystem.Icon.Size.small, weight: DesignSystem.Typography.FontWeight.medium))
+                    .foregroundColor(DesignSystem.Colors.secondary)
+                Text(label)
+                    .font(DesignSystem.Typography.caption2)
+                    .foregroundColor(DesignSystem.Colors.secondary)
+            }
+            
+            // 値（大きく、強調）
+            Text(value)
+                .font(DesignSystem.Typography.emphasizedTitle)
+                .foregroundColor(value.contains("未設定") ? DesignSystem.Colors.secondary : DesignSystem.Colors.black)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(DesignSystem.Spacing.sm)
+        .background(
+            RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadiusSmall, style: .continuous)
+                .fill(DesignSystem.Colors.background)
+        )
+    }
+    
+    // タスクセグメントコントロール
+    @ViewBuilder
+    private func TaskSegmentControl(selectedTask: Binding<TaskSection>) -> some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: DesignSystem.Spacing.sm) {
+                ForEach(TaskSection.allCases, id: \.self) { task in
+                    // 集金タスクは参加者がいる場合のみ表示
+                    if task == .collection && viewModel.participants.isEmpty {
+                        EmptyView()
+                    } else {
+                        Button {
+                            withAnimation(.spring(response: 0.3)) {
+                                selectedTask.wrappedValue = task
+                            }
+                        } label: {
+                            HStack(spacing: DesignSystem.Spacing.xs) {
+                                Image(systemName: task.icon)
+                                    .font(.system(size: DesignSystem.Icon.Size.small))
+                                Text(task.rawValue)
+                                    .font(DesignSystem.Typography.caption)
+                            }
+                            .padding(.horizontal, DesignSystem.Spacing.md)
+                            .padding(.vertical, DesignSystem.Spacing.sm)
+                            .background(
+                                RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadiusSmall, style: .continuous)
+                                    .fill(selectedTask.wrappedValue == task ? DesignSystem.Colors.primary : DesignSystem.Colors.gray1)
+                            )
+                            .foregroundColor(selectedTask.wrappedValue == task ? DesignSystem.Colors.white : DesignSystem.Colors.black)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+            .padding(.vertical, DesignSystem.Spacing.sm)
+        }
+    }
+    
+    // タスクコンテンツビュー
+    @ViewBuilder
+    private func TaskContentView(selectedTask: TaskSection) -> some View {
+        VStack(spacing: DesignSystem.Spacing.md) {
+            switch selectedTask {
+            case .basicInfo:
+                InfoCard(
+                    title: "基本情報",
+                    icon: "info.circle.fill"
+                ) {
+                    DateSectionContent()
+                }
+                
+            case .participants:
+                InfoCard(
+                    title: "参加者",
+                    icon: "person.2.fill"
+                ) {
+                    ParticipantSectionContent()
+                }
+                
+            case .amount:
+                InfoCard(
+                    title: "金額",
+                    icon: "yensign.circle.fill"
+                ) {
+                    VStack(spacing: DesignSystem.Spacing.md) {
+                        AmountSectionContent()
+                        
+                        // 内訳セクション（内訳がある場合のみ表示）
+                        if !viewModel.amountItems.isEmpty {
+                            BreakdownSectionContent()
+                        }
+                    }
+                }
+                
+            case .schedule:
+                InfoCard(
+                    title: "スケジュール調整",
+                    icon: "calendar",
+                    isOptional: true
+                ) {
+                    ScheduleSectionContent()
+                }
+                
+            case .collection:
+                if !viewModel.participants.isEmpty {
+                    InfoCard(
+                        title: "集金管理",
+                        icon: "creditcard.fill",
+                        isOptional: true
+                    ) {
+                        CollectionManagementContent()
+                    }
+                }
+            }
+        }
+    }
+    
+    // 情報カード（シンプルで見やすい）
+    @ViewBuilder
+    private func InfoCard<Content: View>(
+        title: String,
+        icon: String,
+        isOptional: Bool = false,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: DesignSystem.Spacing.md) {
+            // ヘッダー（シンプルに）
+            HStack {
+                Image(systemName: icon)
+                    .font(.system(size: DesignSystem.Icon.Size.medium, weight: DesignSystem.Typography.FontWeight.medium))
+                    .foregroundColor(DesignSystem.Colors.primary)
+                
+                Text(title)
+                    .font(DesignSystem.Typography.headline)
+                    .foregroundColor(DesignSystem.Colors.black)
+                
+                if isOptional {
+                    Text("（任意）")
+                        .font(DesignSystem.Typography.caption)
+                        .foregroundColor(DesignSystem.Colors.secondary)
+                }
+                
+                Spacer()
+            }
+            
+            // コンテンツ
+            content()
+        }
+        .padding(DesignSystem.Card.Padding.medium)
+        .background(
+            RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadius, style: .continuous)
+                .fill(DesignSystem.Colors.secondaryBackground)
+                .shadow(
+                    color: Color.black.opacity(DesignSystem.Card.Shadow.opacity),
+                    radius: DesignSystem.Card.Shadow.radius,
+                    x: DesignSystem.Card.Shadow.offset.width,
+                    y: DesignSystem.Card.Shadow.offset.height
+                )
+        )
+    }
+    
+    // 集金管理コンテンツ
+    @ViewBuilder
+    private func CollectionManagementContent() -> some View {
+        VStack(spacing: DesignSystem.Spacing.lg) {
+            // 集金状況サマリー
+            let collectedCount = viewModel.participants.filter { $0.hasCollected }.count
+            let totalCount = viewModel.participants.count
+            
+            HStack {
+                VStack(alignment: .leading, spacing: DesignSystem.Spacing.xs) {
+                    Text("集金状況")
+                        .font(DesignSystem.Typography.emphasizedSubheadline)
+                        .foregroundColor(DesignSystem.Colors.black)
+                    Text("\(collectedCount)/\(totalCount)人 集金済み")
+                        .font(DesignSystem.Typography.caption)
+                        .foregroundColor(DesignSystem.Colors.secondary)
+                }
+                
+                Spacer()
+                
+                if collectedCount == totalCount && totalCount > 0 {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: DesignSystem.Icon.Size.xlarge))
+                        .foregroundColor(DesignSystem.Colors.success)
+                }
+            }
+            
+            // 集金案内作成ボタン
+            Button(action: {
+                showPaymentGenerator = true
+            }) {
+                HStack {
+                    Image(systemName: "list.bullet.rectangle")
+                        .font(.system(size: DesignSystem.Icon.Size.large, weight: DesignSystem.Typography.FontWeight.medium))
+                        .foregroundColor(DesignSystem.Colors.white)
+                    Text("集金案内を作成")
+                        .font(DesignSystem.Typography.headline)
+                        .foregroundColor(DesignSystem.Colors.white)
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(DesignSystem.Typography.caption)
+                        .foregroundColor(DesignSystem.Colors.white.opacity(0.8))
+                }
+                .padding(.vertical, DesignSystem.Button.Padding.vertical)
+                .padding(.horizontal, DesignSystem.Button.Padding.horizontal)
+                .background(
+                    LinearGradient(
+                        colors: [DesignSystem.Colors.primary, DesignSystem.Colors.primary.opacity(0.8)],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .clipShape(RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadiusSmall, style: .continuous))
+            }
+            .plainButtonStyle()
+        }
+    }
+    
+    // プラン内容リスト（旧実装、削除予定）
     @ViewBuilder
     private func PlanContentList() -> some View {
         List {
-            // スケジュール調整セクション（一番上）
-            Section {
-                ScheduleSectionContent()
-            } header: {
-                Text("スケジュール調整").font(.headline)
-            }
-            
-            // 日付入力セクション
+            // ステップ1: 基本情報セクション（飲み会名と絵文字は上部に表示済み）
             Section {
                 DateSectionContent()
             } header: {
-                Text("開催日").font(.headline)
+                HStack {
+                    StepHeaderView(
+                        step: .basicInfo,
+                        isCompleted: completionStatus[.basicInfo] ?? false,
+                        isCurrent: currentStep == .basicInfo
+                    )
+                }
+            } footer: {
+                Text("飲み会名と絵文字は上部で設定できます")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
             }
             
-            // 合計金額セクション
+            // ステップ2: 参加者セクション
+            Section {
+                ParticipantSection()
+            } header: {
+                HStack {
+                    StepHeaderView(
+                        step: .participants,
+                        isCompleted: completionStatus[.participants] ?? false,
+                        isCurrent: currentStep == .participants
+                    )
+                }
+            }
+            
+            // ステップ3: 金額セクション
             Section {
                 AmountSectionContent()
             } header: {
-                Text("合計金額").font(.headline)
+                HStack {
+                    StepHeaderView(
+                        step: .amount,
+                        isCompleted: completionStatus[.amount] ?? false,
+                        isCurrent: currentStep == .amount
+                    )
+                }
             }
             .listSectionSpacing(.compact) // セクション間の余白を狭く
             
@@ -846,12 +1267,46 @@ struct PrePlanView: View {
                 BreakdownSection()
             }
             
-            // 参加者一覧セクション
-            ParticipantSection()
+            // ステップ4: スケジュール調整セクション（オプション）
+            Section {
+                ScheduleSectionContent()
+            } header: {
+                HStack {
+                    StepHeaderView(
+                        step: .schedule,
+                        isCompleted: completionStatus[.schedule] ?? false,
+                        isCurrent: currentStep == .schedule
+                    )
+                }
+            }
             
-            // 支払い案内ボタンセクション（参加者がいる場合のみ表示）
+            // ステップ5: 集金管理セクション（オプション）
             if !viewModel.participants.isEmpty {
                 Section {
+                    // 集金状況サマリー
+                    HStack {
+                        let collectedCount = viewModel.participants.filter { $0.hasCollected }.count
+                        let totalCount = viewModel.participants.count
+                        
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("集金状況")
+                                .font(.headline)
+                            Text("\(collectedCount)/\(totalCount)人 集金済み")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                        }
+                        
+                        Spacer()
+                        
+                        if collectedCount == totalCount && totalCount > 0 {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.title2)
+                                .foregroundColor(.green)
+                        }
+                    }
+                    .padding(.vertical, 8)
+                    
+                    // 支払い案内ボタン
                     Button(action: {
                         showPaymentGenerator = true
                     }) {
@@ -877,6 +1332,14 @@ struct PrePlanView: View {
                         .padding(.vertical, 10)
                     }
                     .buttonStyle(.plain)
+                } header: {
+                    HStack {
+                        StepHeaderView(
+                            step: .collection,
+                            isCompleted: completionStatus[.collection] ?? false,
+                            isCurrent: false
+                        )
+                    }
                 } footer: {
                     Text("参加者全員の支払い金額をまとめた集金案内を作成できます")
                         .font(.caption)
@@ -1005,11 +1468,11 @@ struct PrePlanView: View {
         } label: {
             Label("完了", systemImage: "checkmark")
         }
-        .buttonStyle(.borderedProminent)
-        .controlSize(.large)
+        .primaryButtonStyle()
+        .controlSize(DesignSystem.Button.Control.large)
         .frame(maxWidth: .infinity)
-        .padding(.horizontal)
-        .padding(.bottom, 20)
+        .padding(.horizontal, DesignSystem.Spacing.lg)
+        .padding(.bottom, DesignSystem.Spacing.xl)
     }
     
     // 金額追加ダイアログビュー
@@ -1019,11 +1482,17 @@ struct PrePlanView: View {
             Form {
                 Section {
                     TextField("項目名（例：二次会、カラオケ代）空欄可", text: $additionalItemName)
+                        .font(DesignSystem.Typography.body)
+                        .foregroundColor(DesignSystem.Colors.black)
                     
                     HStack {
                         Text("金額")
+                            .font(DesignSystem.Typography.body)
+                            .foregroundColor(DesignSystem.Colors.black)
                         Spacer()
                         TextField("金額を入力（例：1000）", text: $additionalAmount)
+                            .font(DesignSystem.Typography.body)
+                            .foregroundColor(DesignSystem.Colors.black)
                             .keyboardType(.numberPad)
                             .multilineTextAlignment(.trailing)
                             .focused($focusedField, equals: .additionalAmount)
@@ -1036,6 +1505,7 @@ struct PrePlanView: View {
                     }
                 } header: {
                     Text("内訳項目の追加")
+                        .font(DesignSystem.Typography.headline)
                 }
             }
             .navigationTitle("金額の追加")
@@ -1068,11 +1538,17 @@ struct PrePlanView: View {
             Form {
                 Section {
                     TextField("項目名（例：二次会、カラオケ代）空欄可", text: $editingItemName)
+                        .font(DesignSystem.Typography.body)
+                        .foregroundColor(DesignSystem.Colors.black)
                     
                     HStack {
                         Text("金額")
+                            .font(DesignSystem.Typography.body)
+                            .foregroundColor(DesignSystem.Colors.black)
                         Spacer()
                         TextField("金額を入力（例：1000）", text: $editingAmount)
+                            .font(DesignSystem.Typography.body)
+                            .foregroundColor(DesignSystem.Colors.black)
                             .keyboardType(.numberPad)
                             .multilineTextAlignment(.trailing)
                             .onChange(of: editingAmount) { _, newValue in
@@ -1084,6 +1560,7 @@ struct PrePlanView: View {
                     }
                 } header: {
                     Text("内訳項目の編集")
+                        .font(DesignSystem.Typography.headline)
                 }
             }
             .navigationTitle("金額の編集")
@@ -1231,10 +1708,13 @@ struct PrePlanView: View {
     // サブビュー：日付セクションの内容
     @ViewBuilder
     private func DateSectionContent() -> some View {
-        HStack {
+        HStack(spacing: DesignSystem.Spacing.md) {
             Image(systemName: "calendar")
-                .foregroundColor(.blue)
+                .font(.system(size: DesignSystem.Icon.Size.medium))
+                .foregroundColor(DesignSystem.Colors.primary)
+            
             Spacer()
+            
             if let date = localPlanDate {
                 DatePicker("日付", selection: Binding(
                     get: { date },
@@ -1242,27 +1722,42 @@ struct PrePlanView: View {
                 ), displayedComponents: .date)
                 .labelsHidden()
                 .datePickerStyle(.compact)
+                .font(DesignSystem.Typography.body)
+                .foregroundColor(DesignSystem.Colors.black)
             } else {
                 Button(action: {
                     localPlanDate = Date()
                 }) {
                     Text("日付を選択")
-                        .foregroundColor(.blue)
+                        .font(DesignSystem.Typography.body)
+                        .foregroundColor(DesignSystem.Colors.primary)
+                        .frame(maxWidth: .infinity, alignment: .trailing)
                 }
             }
         }
-        .frame(height: 44)
+        .padding(DesignSystem.TextField.Padding.horizontal)
+        .frame(height: DesignSystem.TextField.Height.medium)
+        .background(
+            RoundedRectangle(cornerRadius: DesignSystem.TextField.cornerRadius, style: .continuous)
+                .fill(DesignSystem.TextField.backgroundColor)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: DesignSystem.TextField.cornerRadius, style: .continuous)
+                .stroke(DesignSystem.TextField.borderColor, lineWidth: DesignSystem.TextField.borderWidth)
+        )
     }
     
     // サブビュー：金額セクションの内容
     @ViewBuilder
     private func AmountSectionContent() -> some View {
-        HStack {
+        HStack(spacing: DesignSystem.Spacing.sm) {
             Text("¥")
-                .font(.title2)
-                .foregroundColor(.gray)
-            TextField("", text: $viewModel.totalAmount)
-                .font(.title2)
+                .font(DesignSystem.Typography.title2)
+                .foregroundColor(DesignSystem.Colors.secondary)
+            
+            TextField("0", text: $viewModel.totalAmount)
+                .font(DesignSystem.Typography.title2)
+                .foregroundColor(DesignSystem.Colors.black)
                 .keyboardType(.numberPad)
                 .multilineTextAlignment(.trailing)
                 .focused($focusedField, equals: .totalAmount)
@@ -1272,16 +1767,25 @@ struct PrePlanView: View {
                         viewModel.totalAmount = formatted
                     }
                 }
+                .padding(DesignSystem.TextField.Padding.horizontal)
+                .frame(height: DesignSystem.TextField.Height.medium)
+                .background(
+                    RoundedRectangle(cornerRadius: DesignSystem.TextField.cornerRadius, style: .continuous)
+                        .fill(focusedField == .totalAmount ? DesignSystem.TextField.focusedBackgroundColor : DesignSystem.TextField.backgroundColor)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: DesignSystem.TextField.cornerRadius, style: .continuous)
+                        .stroke(focusedField == .totalAmount ? DesignSystem.TextField.focusedBorderColor : DesignSystem.TextField.borderColor, lineWidth: DesignSystem.TextField.borderWidth)
+                )
             
             Button(action: {
                 showAddAmountDialog = true
             }) {
                 Image(systemName: "plus.circle.fill")
-                    .foregroundColor(.blue)
-                    .imageScale(.large)
+                    .font(.system(size: DesignSystem.Icon.Size.large))
+                    .foregroundColor(DesignSystem.Colors.primary)
             }
         }
-        .frame(height: 44)
     }
     
     // サブビュー：内訳セクションの内容
@@ -1350,8 +1854,10 @@ struct PrePlanView: View {
     @ViewBuilder
     private func ParticipantSectionContent() -> some View {
         // 新規参加者追加フォーム
-        HStack {
+        HStack(spacing: DesignSystem.Spacing.sm) {
             TextField("参加者名を入力", text: $newParticipant)
+                .font(DesignSystem.Typography.body)
+                .foregroundColor(DesignSystem.Colors.black)
                 .focused($focusedField, equals: .newParticipant)
                 .submitLabel(.done)
                 .onSubmit {
@@ -1361,7 +1867,16 @@ struct PrePlanView: View {
                         focusedField = nil
                     }
                 }
-                .frame(height: 44)
+                .padding(DesignSystem.TextField.Padding.horizontal)
+                .frame(height: DesignSystem.TextField.Height.medium)
+                .background(
+                    RoundedRectangle(cornerRadius: DesignSystem.TextField.cornerRadius, style: .continuous)
+                        .fill(focusedField == .newParticipant ? DesignSystem.TextField.focusedBackgroundColor : DesignSystem.TextField.backgroundColor)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: DesignSystem.TextField.cornerRadius, style: .continuous)
+                        .stroke(focusedField == .newParticipant ? DesignSystem.TextField.focusedBorderColor : DesignSystem.TextField.borderColor, lineWidth: DesignSystem.TextField.borderWidth)
+                )
             
             RolePickerMenu()
             

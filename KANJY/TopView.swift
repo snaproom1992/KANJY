@@ -2,11 +2,19 @@ import SwiftUI
 
 struct TopView: View {
     @StateObject private var viewModel = PrePlanViewModel()
+    @StateObject private var scheduleViewModel = ScheduleManagementViewModel()
+    @Binding var selectedTab: Int
     @State private var showingPrePlan = false
     @State private var showingDeleteAlert = false
     @State private var planToDelete: Plan? = nil
     @State private var showingCalendarSheet = false
-    @State private var showingQuickCreate = false
+    @State private var showingScheduleCreation = false
+    @State private var planForSchedule: Plan? = nil
+    @State private var showingHelpGuide = false
+    
+    init(selectedTab: Binding<Int> = .constant(0)) {
+        self._selectedTab = selectedTab
+    }
     
     // テスト用のサンプルイベント
     private var sampleEvent: ScheduleEvent {
@@ -34,6 +42,7 @@ struct TopView: View {
             ScrollView {
                 VStack(spacing: 24) {
                     headerSection
+                    quickActionsSection
                     dashboardCard
                 }
                 .padding(.top, 16)
@@ -41,7 +50,25 @@ struct TopView: View {
                 .padding(.horizontal, 20)
             }
             .background(Color(.systemGroupedBackground))
-            .navigationTitle("")
+            .navigationTitle("ホーム")
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        showingHelpGuide = true
+                    } label: {
+                        Image(systemName: "questionmark.circle")
+                            .foregroundColor(.accentColor)
+                    }
+                }
+            }
+            .onAppear {
+                Task {
+                    await scheduleViewModel.fetchEventsFromSupabase()
+                }
+            }
+            .sheet(isPresented: $showingHelpGuide) {
+                HelpGuideView()
+            }
             .sheet(isPresented: $showingPrePlan, onDismiss: {
                 if !viewModel.editingPlanName.isEmpty {
                     print("シートが閉じられる際に自動保存を実行: \(viewModel.editingPlanName)")
@@ -77,18 +104,22 @@ struct TopView: View {
             .sheet(isPresented: $showingCalendarSheet) {
                 CalendarSheetView(viewModel: viewModel)
             }
-            .navigationDestination(isPresented: $showingQuickCreate) {
-                QuickCreateView(
-                    availableEmojis: viewModel.partyEmojis,
-                    defaultEmoji: viewModel.selectedEmoji,
-                    onCancel: {
-                        showingQuickCreate = false
-                    },
-                    onSave: { name, date, emoji in
-                        viewModel.quickCreatePlan(name: name, date: date, emoji: emoji)
-                        showingQuickCreate = false
+            .sheet(isPresented: $showingScheduleCreation) {
+                if let plan = planForSchedule {
+                    NavigationStack {
+                        CreateScheduleEventView(viewModel: scheduleViewModel, plan: plan) { event in
+                            // 飲み会にスケジュール調整を紐づける
+                            if let planIndex = viewModel.savedPlans.firstIndex(where: { $0.id == plan.id }) {
+                                viewModel.savedPlans[planIndex].scheduleEventId = event.id
+                                viewModel.saveData()
+                            }
+                            showingScheduleCreation = false
+                            planForSchedule = nil
+                        }
                     }
-                )
+                    .presentationDetents([.large])
+                    .presentationDragIndicator(.visible)
+                }
             }
         }
     }
@@ -98,23 +129,65 @@ struct TopView: View {
 
 private extension TopView {
     var headerSection: some View {
-        HStack(spacing: 12) {
-            Text("今後のイベント")
+        VStack(alignment: .leading, spacing: 8) {
+            Text("飲み会管理")
                 .font(.largeTitle.bold())
                 .foregroundColor(.primary)
-
-            Spacer()
-
-            Button {
-                showingQuickCreate = true
-            } label: {
-                Image(systemName: "plus.circle.fill")
-                    .font(.system(size: 26, weight: .medium))
-                    .foregroundColor(.accentColor)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("イベントを作成")
+            
+            Text("飲み会の計画を作成し、参加者や集金を管理できます")
+                .font(.subheadline)
+                .foregroundColor(.secondary)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+    
+    var quickActionsSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("クイックアクション")
+                .font(.headline.weight(.semibold))
+                .foregroundColor(.primary)
+            
+            HStack(spacing: 12) {
+                // 新しいイベント作成
+                Button {
+                    // 新規作成の場合は空の状態でPrePlanViewを開く
+                    viewModel.resetForm()
+                    viewModel.editingPlanId = nil
+                    viewModel.editingPlanName = ""
+                    viewModel.editingPlanDate = nil
+                    viewModel.selectedEmoji = "🍻"
+                    showingPrePlan = true
+                } label: {
+                    VStack(spacing: 10) {
+                        Image(systemName: "plus.circle.fill")
+                            .font(.system(size: 36, weight: .medium))
+                            .foregroundColor(.white)
+                        Text("新規作成")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundColor(.white)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 20)
+                    .background(
+                        LinearGradient(
+                            colors: [Color.accentColor, Color.accentColor.opacity(0.8)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    .shadow(color: Color.accentColor.opacity(0.3), radius: 8, x: 0, y: 4)
+                }
+                .buttonStyle(.plain)
+                
+            }
+        }
+        .padding(20)
+        .background(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(Color(.secondarySystemGroupedBackground))
+                .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 2)
+        )
     }
 
     var dashboardCard: some View {
@@ -122,11 +195,15 @@ private extension TopView {
             VStack(alignment: .leading, spacing: 16) {
                 HStack(spacing: 12) {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("保存したイベント")
+                        Text("保存した飲み会")
                             .font(.headline)
                             .foregroundColor(.primary)
                         if !filteredPlans.isEmpty {
                             Text("\(filteredPlans.count)件 登録済み")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        } else {
+                            Text("タップして参加者や金額を設定できます")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         }
@@ -135,26 +212,40 @@ private extension TopView {
                     Button {
                         showingCalendarSheet = true
                     } label: {
-                        Label("カレンダー", systemImage: "calendar")
-                            .labelStyle(.iconOnly)
-                            .frame(width: 36, height: 36)
-                            .background(Color(.systemGray5))
+                        Image(systemName: "calendar")
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundColor(.white)
+                            .frame(width: 40, height: 40)
+                            .background(
+                                LinearGradient(
+                                    colors: [Color.accentColor.opacity(0.8), Color.accentColor],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
                             .clipShape(Circle())
-                            .foregroundColor(.primary)
+                            .shadow(color: Color.accentColor.opacity(0.3), radius: 4, x: 0, y: 2)
                     }
                     .buttonStyle(.plain)
                 }
 
                 if filteredPlans.isEmpty {
                     EmptyStateView {
-                        showingQuickCreate = true
+                        // 新規作成の場合は空の状態でPrePlanViewを開く
+                        viewModel.resetForm()
+                        viewModel.editingPlanId = nil
+                        viewModel.editingPlanName = ""
+                        viewModel.editingPlanDate = nil
+                        viewModel.selectedEmoji = "🍻"
+                        showingPrePlan = true
                     }
                 } else {
-                    VStack(spacing: 12) {
+                    VStack(spacing: 10) {
                         ForEach(filteredPlans) { plan in
                             PlanListCell(
                                 plan: plan,
                                 viewModel: viewModel,
+                                scheduleViewModel: scheduleViewModel,
                                 onTap: {
                                     viewModel.loadPlan(plan)
                                     showingPrePlan = true
@@ -162,9 +253,12 @@ private extension TopView {
                                 onDelete: {
                                     planToDelete = plan
                                     showingDeleteAlert = true
+                                },
+                                onCreateSchedule: {
+                                    planForSchedule = plan
+                                    showingScheduleCreation = true
                                 }
                             )
-                            .padding(.vertical, 6)
                         }
                     }
                 }
@@ -178,12 +272,9 @@ private extension TopView {
             .padding(24)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
-                RoundedRectangle(cornerRadius: 26, style: .continuous)
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
                     .fill(Color(.secondarySystemGroupedBackground))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 26, style: .continuous)
-                            .stroke(Color.black.opacity(0.04))
-                    )
+                    .shadow(color: Color.black.opacity(0.06), radius: 12, x: 0, y: 4)
             )
     }
 }
@@ -193,31 +284,64 @@ struct EmptyStateView: View {
     let onCreate: () -> Void
 
     var body: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "calendar.badge.plus")
-                .font(.system(size: 44))
-                .foregroundColor(.accentColor)
+        VStack(spacing: 24) {
+            ZStack {
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            colors: [Color.accentColor.opacity(0.1), Color.accentColor.opacity(0.05)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 100, height: 100)
+                
+                Image(systemName: "calendar.badge.plus")
+                    .font(.system(size: 48, weight: .medium))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [Color.accentColor, Color.accentColor.opacity(0.7)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+            }
 
-            Text("今後のイベントなし")
-                .font(.headline)
-                .foregroundColor(.primary)
+            VStack(spacing: 8) {
+                Text("今後のイベントなし")
+                    .font(.headline.weight(.semibold))
+                    .foregroundColor(.primary)
 
-            Text("あなたが主催または参加するイベントがここに表示されます。今すぐ作成して予定を共有しましょう。")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 12)
+                Text("飲み会の計画を作成して、参加者や集金を管理しましょう。\nタップして詳細を編集できます。")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 12)
+            }
 
             Button(action: onCreate) {
-                Text("イベントを作成")
-                    .font(.body.weight(.semibold))
-                    .padding(.horizontal, 36)
-                    .padding(.vertical, 12)
+                HStack(spacing: 8) {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.system(size: 18, weight: .semibold))
+                    Text("イベントを作成")
+                        .font(.body.weight(.semibold))
+                }
+                .foregroundColor(.white)
+                .padding(.horizontal, 32)
+                .padding(.vertical, 14)
+                .background(
+                    LinearGradient(
+                        colors: [Color.accentColor, Color.accentColor.opacity(0.8)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .shadow(color: Color.accentColor.opacity(0.3), radius: 8, x: 0, y: 4)
             }
-            .buttonStyle(.borderedProminent)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 40)
+        .padding(.vertical, 48)
     }
 }
 
@@ -235,8 +359,10 @@ extension TopView {
 private struct PlanListCell: View {
     let plan: Plan
     let viewModel: PrePlanViewModel
+    let scheduleViewModel: ScheduleManagementViewModel
     let onTap: () -> Void
     let onDelete: () -> Void
+    let onCreateSchedule: () -> Void
 
     // 集金ステータスを計算
     private var collectionStatus: (isComplete: Bool, count: Int, total: Int) {
@@ -245,338 +371,112 @@ private struct PlanListCell: View {
         return (collectedCount == totalCount && totalCount > 0, collectedCount, totalCount)
     }
     
+    // スケジュール調整の状態を取得
+    private var scheduleEvent: ScheduleEvent? {
+        guard let scheduleEventId = plan.scheduleEventId else { return nil }
+        return scheduleViewModel.events.first { $0.id == scheduleEventId }
+    }
+    
+    private var hasSchedule: Bool {
+        return plan.scheduleEventId != nil
+    }
+    
     var body: some View {
-        HStack(alignment: .center, spacing: 12) {
-            Button(action: onTap) {
-                HStack(spacing: 12) {
-                    // 絵文字表示
-                    Text(plan.emoji ?? "🍻")
-                        .font(.system(size: 32))
-                        .frame(width: 52, height: 52)
-                        .background(
-                            Circle()
-                                .fill(Color(.systemGray5))
-                        )
-
-                    VStack(alignment: .leading, spacing: 4) {
-                        HStack {
-                            Text(plan.name)
-                                .font(.headline)
-                                .foregroundColor(.primary)
-
-                            // ステータスバッジ
-                            if plan.totalAmount.isEmpty || plan.participants.isEmpty {
-                                Text("下書き")
-                                    .font(.caption)
-                                    .foregroundColor(.orange)
-                                    .padding(.horizontal, 6)
-                                    .padding(.vertical, 2)
-                                    .background(RoundedRectangle(cornerRadius: 6).fill(Color.orange.opacity(0.15)))
-                            } else if collectionStatus.isComplete {
-                                Text("集金済み")
-                                    .font(.caption)
-                                    .foregroundColor(.green)
-                                    .padding(.horizontal, 6)
-                                    .padding(.vertical, 2)
-                                    .background(RoundedRectangle(cornerRadius: 6).fill(Color.green.opacity(0.15)))
-                            } else {
-                                Text("未集金")
-                                    .font(.caption)
-                                    .foregroundColor(.blue)
-                                    .padding(.horizontal, 6)
-                                    .padding(.vertical, 2)
-                                    .background(RoundedRectangle(cornerRadius: 6).fill(Color.blue.opacity(0.15)))
-                            }
-
-                            Spacer()
-                            Text(viewModel.formatDate(plan.date))
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
+        Button(action: onTap) {
+            HStack(spacing: 16) {
+                // 絵文字表示
+                Text(plan.emoji ?? "🍻")
+                    .font(.system(size: 40))
+                    .frame(width: 64, height: 64)
+                    .background(
+                        Circle()
+                            .fill(Color(.systemGray6))
+                    )
+                
+                // メイン情報
+                VStack(alignment: .leading, spacing: 8) {
+                    // タイトルと日付
+                    HStack {
+                        Text(plan.name)
+                            .font(DesignSystem.Typography.headline)
+                            .foregroundColor(DesignSystem.Colors.black)
+                        
+                        Spacer()
+                        
+                        Text(viewModel.formatDate(plan.date))
+                            .font(DesignSystem.Typography.subheadline)
+                            .foregroundColor(DesignSystem.Colors.secondary)
+                    }
+                    
+                    // サブ情報
+                    HStack(spacing: 12) {
+                        // 参加者数
+                        if !plan.participants.isEmpty {
+                            Label("\(plan.participants.count)人", systemImage: "person.2.fill")
+                                .font(DesignSystem.Typography.caption)
+                                .foregroundColor(DesignSystem.Colors.secondary)
                         }
-
-                        HStack {
-                            // 参加者数と集金ステータスを表示
-                            if !plan.participants.isEmpty && (collectionStatus.count > 0 || collectionStatus.total > 0) {
-                                Text("参加者: \(plan.participants.count)人 (\(collectionStatus.count)/\(collectionStatus.total))")
-                                    .font(.subheadline)
-                                    .foregroundColor(.secondary)
-                            } else {
-                                Text("参加者: \(plan.participants.count)人")
-                                    .font(.subheadline)
-                                    .foregroundColor(.secondary)
-                            }
-                            Spacer()
+                        
+                        // 金額
+                        if !plan.totalAmount.isEmpty {
                             Text("¥\(viewModel.formatAmount(plan.totalAmount))")
-                                .font(.subheadline)
-                                .foregroundColor(.accentColor)
+                                .font(DesignSystem.Typography.emphasizedSubheadline)
+                                .foregroundColor(DesignSystem.Colors.primary)
                         }
-                    }
-                }
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-
-            Button(role: .destructive, action: onDelete) {
-                Image(systemName: "trash")
-                    .font(.title3)
-            }
-            .buttonStyle(.borderless)
-            .foregroundColor(.red)
-        }
-    }
-}
-
-private struct QuickCreateView: View {
-    @Environment(\.dismiss) private var dismiss
-    let availableEmojis: [String]
-    let defaultEmoji: String
-    let onCancel: () -> Void
-    let onSave: (String, Date, String?) -> Void
-
-    @State private var title: String = ""
-    @State private var eventDate: Date = Date()
-    @State private var selectedEmoji: String
-    @State private var showError: Bool = false
-    @State private var showingEmojiPicker: Bool = false
-
-    init(availableEmojis: [String], defaultEmoji: String, onCancel: @escaping () -> Void, onSave: @escaping (String, Date, String?) -> Void) {
-        self.availableEmojis = availableEmojis
-        self.defaultEmoji = defaultEmoji
-        self.onCancel = onCancel
-        self.onSave = onSave
-        _selectedEmoji = State(initialValue: defaultEmoji.isEmpty ? (availableEmojis.first ?? "🍻") : defaultEmoji)
-    }
-
-    var body: some View {
-        VStack(spacing: 0) {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 28) {
-                    VStack(alignment: .leading, spacing: 12) {
-                        HStack(spacing: 16) {
-                            Text(selectedEmoji)
-                                .font(.system(size: 44))
-                                .frame(width: 72, height: 72)
-                                .background(Color(.secondarySystemBackground))
-                                .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-
-                            TextField("イベントタイトル", text: $title)
-                                .font(.system(size: 28, weight: .semibold))
-                                .textFieldStyle(.plain)
-                                .padding(12)
-                                .background(Color(.secondarySystemBackground))
-                                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        
+                        Spacer()
+                        
+                        // ステータスインジケーター（簡素化）
+                        if plan.totalAmount.isEmpty || plan.participants.isEmpty {
+                            Circle()
+                                .fill(DesignSystem.Colors.warning)
+                                .frame(width: 8, height: 8)
+                        } else if collectionStatus.isComplete {
+                            Circle()
+                                .fill(DesignSystem.Colors.success)
+                                .frame(width: 8, height: 8)
+                        } else if collectionStatus.total > 0 {
+                            Circle()
+                                .fill(DesignSystem.Colors.primary)
+                                .frame(width: 8, height: 8)
                         }
-
-                        if showError {
-                            Text("タイトルを入力してください")
+                        
+                        // スケジュール調整アイコン（簡素化）
+                        if hasSchedule {
+                            Image(systemName: "calendar")
                                 .font(.caption)
-                                .foregroundColor(.red)
+                                .foregroundColor(DesignSystem.Colors.primary)
                         }
-                    }
-
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("開催日")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                        DatePicker("日時を選択", selection: $eventDate, displayedComponents: [.date, .hourAndMinute])
-                            .datePickerStyle(.compact)
-                    }
-
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("テーマ絵文字")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                        Button {
-                            showingEmojiPicker = true
-                        } label: {
-                            HStack {
-                                Text("選択中: \(selectedEmoji)")
-                                    .font(.headline)
-                                Spacer()
-                                Image(systemName: "chevron.down")
-                                    .foregroundColor(.secondary)
-                            }
-                            .padding(.vertical, 10)
-                            .padding(.horizontal, 16)
-                            .background(Color(.secondarySystemBackground))
-                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                        }
-                        .buttonStyle(.plain)
                     }
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, 28)
-                .padding(.bottom, 20)
+                
+                Spacer()
             }
-
-            VStack(spacing: 12) {
-                Button(action: save) {
-                    Text("保存")
-                        .font(.headline)
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.borderedProminent)
-
-                Button("キャンセル", role: .cancel) {
-                    onCancel()
-                    dismiss()
-                }
-                .frame(maxWidth: .infinity)
-                .buttonStyle(.borderless)
+            .padding(DesignSystem.Card.Padding.medium)
+            .background(
+                RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadiusLarge, style: .continuous)
+                    .fill(DesignSystem.Colors.secondaryBackground)
+            )
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .contextMenu {
+            // 削除アクション
+            Button(role: .destructive, action: onDelete) {
+                Label("削除", systemImage: "trash")
             }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 20)
-            .background(Color(.secondarySystemGroupedBackground))
-        }
-        .background(Color(.systemBackground).ignoresSafeArea())
-        .navigationTitle("イベント作成")
-        .navigationBarTitleDisplayMode(.inline)
-        .sheet(isPresented: $showingEmojiPicker) {
-            EmojiPickerSheetView(selectedEmoji: $selectedEmoji)
-        }
-    }
-
-    private func save() {
-        let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else {
-            withAnimation { showError = true }
-            return
-        }
-        showError = false
-        onSave(trimmed, eventDate, selectedEmoji)
-        dismiss()
-    }
-}
-
-// MARK: - 絵文字ピッカーシート
-
-struct EmojiPickerSheetView: View {
-    @Environment(\.dismiss) private var dismiss
-    @Binding var selectedEmoji: String
-    
-    var body: some View {
-        NavigationStack {
-            Form {
-                Section {
-                    // ランダム絵文字ボタン
-                    Button(action: {
-                        let emojis = ["🍻", "🍺", "🥂", "🍷", "🍸", "🍹", "🍾", "🥃", "🍴", "🍖", "🍗", "🍣", "🍕", "🍔", "🥩", "🍙", "🤮", "🤢", "🥴", "🤪", "😵‍💫", "💸", "🎊"]
-                        selectedEmoji = emojis.randomElement() ?? "🍻"
-                        dismiss()
-                    }) {
-                        HStack {
-                            Image(systemName: "dice")
-                                .font(.system(size: 20))
-                                .foregroundColor(.blue)
-                            Text("ランダムな絵文字を使用")
-                                .foregroundColor(.blue)
-                        }
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .padding(.vertical, 8)
-                    }
-                } header: {
-                    Text("ランダム")
+            
+            // スケジュール作成アクション（必要な場合のみ）
+            if !hasSchedule {
+                Button(action: onCreateSchedule) {
+                    Label("スケジュール調整を作成", systemImage: "calendar.badge.plus")
                 }
-                
-                // 絵文字キーボードからの入力セクション
-                Section {
-                    TextField("タップして絵文字を入力", text: $selectedEmoji)
-                        .font(.system(size: 36))
-                        .multilineTextAlignment(.center)
-                        .keyboardType(.default)
-                        .submitLabel(.done)
-                        .onChange(of: selectedEmoji) { _, newValue in
-                            if newValue.count > 1 {
-                                if let firstChar = newValue.first {
-                                    selectedEmoji = String(firstChar)
-                                }
-                            }
-                        }
-                        .onSubmit {
-                            if !selectedEmoji.isEmpty {
-                                dismiss()
-                            }
-                        }
-                        .padding(.vertical, 8)
-                } header: {
-                    Text("絵文字キーボードから入力")
-                } footer: {
-                    Text("キーボードの🌐または😀ボタンをタップして絵文字キーボードに切り替えてください")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-                
-                Section {
-                    QuickCreateEmojiGridRow(emojis: ["🍻", "🍺", "🥂", "🍷"], selectedEmoji: $selectedEmoji, dismiss: dismiss)
-                    QuickCreateEmojiGridRow(emojis: ["🍸", "🍹", "🍾", "🥃"], selectedEmoji: $selectedEmoji, dismiss: dismiss)
-                } header: {
-                    Text("飲み物")
-                }
-                
-                Section {
-                    QuickCreateEmojiGridRow(emojis: ["🍴", "🍖", "🍗", "🍣"], selectedEmoji: $selectedEmoji, dismiss: dismiss)
-                    QuickCreateEmojiGridRow(emojis: ["🍕", "🍔", "🍙", "🍱"], selectedEmoji: $selectedEmoji, dismiss: dismiss)
-                } header: {
-                    Text("食べ物")
-                }
-                
-                Section {
-                    QuickCreateEmojiGridRow(emojis: ["🤮", "🤢", "🥴", "🤪"], selectedEmoji: $selectedEmoji, dismiss: dismiss)
-                    QuickCreateEmojiGridRow(emojis: ["😵‍💫", "💸", "💰", "💯"], selectedEmoji: $selectedEmoji, dismiss: dismiss)
-                    QuickCreateEmojiGridRow(emojis: ["😂", "😆", "😅", "😬"], selectedEmoji: $selectedEmoji, dismiss: dismiss)
-                    QuickCreateEmojiGridRow(emojis: ["😇", "😍", "😎", "😤"], selectedEmoji: $selectedEmoji, dismiss: dismiss)
-                    QuickCreateEmojiGridRow(emojis: ["😳", "🤭", "😈", "🙈"], selectedEmoji: $selectedEmoji, dismiss: dismiss)
-                    QuickCreateEmojiGridRow(emojis: ["💀", "🤡", "🐒", "🦛"], selectedEmoji: $selectedEmoji, dismiss: dismiss)
-                    QuickCreateEmojiGridRow(emojis: ["😹", "😵", "🥳", "😶‍🌫️"], selectedEmoji: $selectedEmoji, dismiss: dismiss)
-                } header: {
-                    Text("エモーション")
-                }
-                
-                Section {
-                    QuickCreateEmojiGridRow(emojis: ["🎉", "🎊", "✨", "🎵"], selectedEmoji: $selectedEmoji, dismiss: dismiss)
-                    QuickCreateEmojiGridRow(emojis: ["🎤", "🕺", "💃", "👯‍♂️"], selectedEmoji: $selectedEmoji, dismiss: dismiss)
-                } header: {
-                    Text("パーティー")
-                }
-            }
-            .navigationTitle("絵文字を選択")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("キャンセル") {
-                        dismiss()
-                    }
-                }
-            }
-        }
-        .presentationDetents([.large])
-        .presentationDragIndicator(.visible)
-    }
-}
-
-struct QuickCreateEmojiGridRow: View {
-    let emojis: [String]
-    @Binding var selectedEmoji: String
-    let dismiss: DismissAction
-    
-    var body: some View {
-        HStack(spacing: 0) {
-            ForEach(emojis, id: \.self) { emoji in
-                Button(action: {
-                    selectedEmoji = emoji
-                    dismiss()
-                }) {
-                    Text(emoji)
-                        .font(.system(size: 30))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 10)
-                }
-                .buttonStyle(PlainButtonStyle())
             }
         }
     }
 }
+
 
 #Preview {
-    TopView()
+    TopView(selectedTab: .constant(0))
 }

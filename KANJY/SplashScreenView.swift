@@ -350,29 +350,35 @@ class SplashPlayerViewController: UIViewController {
 
 struct ContentView: View {
     @State private var selectedTab = 0
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
+    @State private var showingOnboarding = false
     
     var body: some View {
         TabView(selection: $selectedTab) {
-            // ホームタブ（イベント一覧）
-            TopView()
+            // ホームタブ（飲み会とスケジュール調整を統合）
+            TopView(selectedTab: $selectedTab)
                 .tabItem {
                     Label("ホーム", systemImage: "house.fill")
                 }
                 .tag(0)
-            
-            // スケジュール調整タブ
-            ScheduleManagementView()
-                .tabItem {
-                    Label("スケジュール", systemImage: "calendar")
-                }
-                .tag(1)
             
             // 設定タブ
             SettingsView()
                 .tabItem {
                     Label("設定", systemImage: "gearshape.fill")
                 }
-                .tag(2)
+                .tag(1)
+        }
+        .accentColor(Color(red: 0.2, green: 0.37, blue: 0.81))
+        .onAppear {
+            if !hasCompletedOnboarding {
+                showingOnboarding = true
+            }
+        }
+        .fullScreenCover(isPresented: $showingOnboarding) {
+            OnboardingGuideView(isPresented: $showingOnboarding) {
+                hasCompletedOnboarding = true
+            }
         }
     }
 }
