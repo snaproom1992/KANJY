@@ -349,8 +349,31 @@ class SplashPlayerViewController: UIViewController {
 }
 
 struct ContentView: View {
+    @State private var selectedTab = 0
+    
     var body: some View {
-        TopView()
+        TabView(selection: $selectedTab) {
+            // ホームタブ（イベント一覧）
+            TopView()
+                .tabItem {
+                    Label("ホーム", systemImage: "house.fill")
+                }
+                .tag(0)
+            
+            // スケジュール調整タブ
+            ScheduleManagementView()
+                .tabItem {
+                    Label("スケジュール", systemImage: "calendar")
+                }
+                .tag(1)
+            
+            // 設定タブ
+            SettingsView()
+                .tabItem {
+                    Label("設定", systemImage: "gearshape.fill")
+                }
+                .tag(2)
+        }
     }
 }
 
