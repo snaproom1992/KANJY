@@ -463,7 +463,27 @@ public class PrePlanViewModel: ObservableObject {
         savedPlans.removeAll { $0.id == id }
         saveData()
     }
-    
+
+    public func quickCreatePlan(name: String, date: Date, emoji: String? = nil) {
+        let normalizedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !normalizedName.isEmpty else { return }
+
+        let plan = Plan(
+            name: normalizedName,
+            date: date,
+            participants: [],
+            totalAmount: "",
+            roleMultipliers: [:],
+            roleNames: [:],
+            amountItems: nil,
+            emoji: emoji ?? selectedEmoji
+        )
+
+        savedPlans.append(plan)
+        savedPlans.sort(by: { $0.date > $1.date })
+        saveData()
+    }
+
     // フォームのリセット
     public func resetForm() {
         participants = []

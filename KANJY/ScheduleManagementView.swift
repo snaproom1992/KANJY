@@ -23,7 +23,9 @@ struct ScheduleManagementView: View {
                 // イベント一覧セクション
                 Section {
                     if viewModel.events.isEmpty {
-                        EmptyStateView(isAnimating: .constant(false))
+                        ScheduleEmptyStateView {
+                            showingCreateEvent = true
+                        }
                     } else {
                         ForEach(viewModel.events.sorted(by: { $0.createdAt > $1.createdAt })) { event in
                             EventListRow(event: event, viewModel: viewModel) {
@@ -93,6 +95,30 @@ struct ScheduleManagementView: View {
                 }
             }
         }
+    }
+}
+
+struct ScheduleEmptyStateView: View {
+    let onCreate: () -> Void
+
+    var body: some View {
+        VStack(spacing: 16) {
+            Text("スケジュール調整はまだありません")
+                .font(.headline)
+
+            Text("イベントを作成して候補日程を参加者と共有しましょう。")
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+
+            Button(action: onCreate) {
+                Label("スケジュールを作成", systemImage: "plus.circle")
+                    .font(.subheadline.weight(.semibold))
+            }
+            .buttonStyle(.bordered)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 32)
     }
 }
 
