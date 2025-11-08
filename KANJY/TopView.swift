@@ -8,9 +8,8 @@ struct TopView: View {
     @State private var showingDeleteAlert = false
     @State private var planToDelete: Plan? = nil
     @State private var showingCalendarSheet = false
-    @State private var showingScheduleCreation = false
-    @State private var planForSchedule: Plan? = nil
     @State private var showingHelpGuide = false
+    @State private var shouldOpenScheduleTab = false // スケジュールタブを開くかどうか
     
     init(selectedTab: Binding<Int> = .constant(0)) {
         self._selectedTab = selectedTab
@@ -45,11 +44,11 @@ struct TopView: View {
                     quickActionsSection
                     dashboardCard
                 }
-                .padding(.top, 16)
-                .padding(.bottom, 32)
-                .padding(.horizontal, 20)
+                .padding(.top, DesignSystem.Spacing.lg)
+                .padding(.bottom, DesignSystem.Spacing.xxxl)
+                .padding(.horizontal, DesignSystem.Spacing.xl)
             }
-            .background(Color(.systemGroupedBackground))
+            .background(DesignSystem.Colors.groupedBackground)
             .navigationTitle("ホーム")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -77,12 +76,14 @@ struct TopView: View {
                         date: viewModel.editingPlanDate ?? Date()
                     )
                 }
+                shouldOpenScheduleTab = false // リセット
             }) {
                 NavigationStack {
                     PrePlanView(
                         viewModel: viewModel,
                         planName: viewModel.editingPlanName.isEmpty ? "" : viewModel.editingPlanName,
                         planDate: viewModel.editingPlanDate,
+                        initialTask: shouldOpenScheduleTab ? .schedule : nil,
                         onFinish: {
                             showingPrePlan = false
                         }
@@ -104,23 +105,6 @@ struct TopView: View {
             .sheet(isPresented: $showingCalendarSheet) {
                 CalendarSheetView(viewModel: viewModel)
             }
-            .sheet(isPresented: $showingScheduleCreation) {
-                if let plan = planForSchedule {
-                    NavigationStack {
-                        CreateScheduleEventView(viewModel: scheduleViewModel, plan: plan) { event in
-                            // 飲み会にスケジュール調整を紐づける
-                            if let planIndex = viewModel.savedPlans.firstIndex(where: { $0.id == plan.id }) {
-                                viewModel.savedPlans[planIndex].scheduleEventId = event.id
-                                viewModel.saveData()
-                            }
-                            showingScheduleCreation = false
-                            planForSchedule = nil
-                        }
-                    }
-                    .presentationDetents([.large])
-                    .presentationDragIndicator(.visible)
-                }
-            }
         }
     }
 }
@@ -129,25 +113,25 @@ struct TopView: View {
 
 private extension TopView {
     var headerSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: DesignSystem.Spacing.sm) {
             Text("飲み会管理")
-                .font(.largeTitle.bold())
-                .foregroundColor(.primary)
+                .font(DesignSystem.Typography.largeTitle)
+                .foregroundColor(DesignSystem.Colors.black)
             
             Text("飲み会の計画を作成し、参加者や集金を管理できます")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
+                .font(DesignSystem.Typography.subheadline)
+                .foregroundColor(DesignSystem.Colors.secondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
     
     var quickActionsSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: DesignSystem.Spacing.lg) {
             Text("クイックアクション")
-                .font(.headline.weight(.semibold))
-                .foregroundColor(.primary)
+                .font(DesignSystem.Typography.headline)
+                .foregroundColor(DesignSystem.Colors.black)
             
-            HStack(spacing: 12) {
+            HStack(spacing: DesignSystem.Spacing.md) {
                 // 新しいイベント作成
                 Button {
                     // 新規作成の場合は空の状態でPrePlanViewを開く
@@ -158,54 +142,59 @@ private extension TopView {
                     viewModel.selectedEmoji = "🍻"
                     showingPrePlan = true
                 } label: {
-                    VStack(spacing: 10) {
+                    VStack(spacing: DesignSystem.Spacing.sm) {
                         Image(systemName: "plus.circle.fill")
-                            .font(.system(size: 36, weight: .medium))
-                            .foregroundColor(.white)
+                            .font(.system(size: DesignSystem.Icon.Size.xxlarge, weight: DesignSystem.Typography.FontWeight.medium))
+                            .foregroundColor(DesignSystem.Colors.white)
                         Text("新規作成")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundColor(.white)
+                            .font(DesignSystem.Typography.emphasizedSubheadline)
+                            .foregroundColor(DesignSystem.Colors.white)
                     }
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 20)
+                    .padding(.vertical, DesignSystem.Spacing.xl)
                     .background(
                         LinearGradient(
-                            colors: [Color.accentColor, Color.accentColor.opacity(0.8)],
+                            colors: [DesignSystem.Colors.primary, DesignSystem.Colors.primary.opacity(0.8)],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
                     )
-                    .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-                    .shadow(color: Color.accentColor.opacity(0.3), radius: 8, x: 0, y: 4)
+                    .clipShape(RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadiusLarge, style: .continuous))
+                    .shadow(color: DesignSystem.Colors.primary.opacity(0.3), radius: DesignSystem.Card.Shadow.largeRadius, x: 0, y: 4)
                 }
                 .buttonStyle(.plain)
                 
             }
         }
-        .padding(20)
+        .padding(DesignSystem.Card.Padding.large)
         .background(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(Color(.secondarySystemGroupedBackground))
-                .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 2)
+            RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadiusLarge, style: .continuous)
+                .fill(DesignSystem.Colors.secondaryBackground)
+                .shadow(
+                    color: Color.black.opacity(DesignSystem.Card.Shadow.opacity),
+                    radius: DesignSystem.Card.Shadow.radius,
+                    x: DesignSystem.Card.Shadow.offset.width,
+                    y: DesignSystem.Card.Shadow.offset.height
+                )
         )
     }
 
     var dashboardCard: some View {
         materialCard {
-            VStack(alignment: .leading, spacing: 16) {
-                HStack(spacing: 12) {
-                    VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: DesignSystem.Spacing.lg) {
+                HStack(spacing: DesignSystem.Spacing.md) {
+                    VStack(alignment: .leading, spacing: DesignSystem.Spacing.xs) {
                         Text("保存した飲み会")
-                            .font(.headline)
-                            .foregroundColor(.primary)
+                            .font(DesignSystem.Typography.headline)
+                            .foregroundColor(DesignSystem.Colors.black)
                         if !filteredPlans.isEmpty {
                             Text("\(filteredPlans.count)件 登録済み")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                                .font(DesignSystem.Typography.caption)
+                                .foregroundColor(DesignSystem.Colors.secondary)
                         } else {
                             Text("タップして参加者や金額を設定できます")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                                .font(DesignSystem.Typography.caption)
+                                .foregroundColor(DesignSystem.Colors.secondary)
                         }
                     }
                     Spacer()
@@ -213,18 +202,18 @@ private extension TopView {
                         showingCalendarSheet = true
                     } label: {
                         Image(systemName: "calendar")
-                            .font(.system(size: 16, weight: .medium))
-                            .foregroundColor(.white)
-                            .frame(width: 40, height: 40)
+                            .font(.system(size: DesignSystem.Icon.Size.medium, weight: DesignSystem.Typography.FontWeight.medium))
+                            .foregroundColor(DesignSystem.Colors.white)
+                            .frame(width: DesignSystem.Button.Size.medium, height: DesignSystem.Button.Size.medium)
                             .background(
                                 LinearGradient(
-                                    colors: [Color.accentColor.opacity(0.8), Color.accentColor],
+                                    colors: [DesignSystem.Colors.primary.opacity(0.8), DesignSystem.Colors.primary],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 )
                             )
                             .clipShape(Circle())
-                            .shadow(color: Color.accentColor.opacity(0.3), radius: 4, x: 0, y: 2)
+                            .shadow(color: DesignSystem.Colors.primary.opacity(0.3), radius: DesignSystem.Card.Shadow.radius, x: 0, y: 2)
                     }
                     .buttonStyle(.plain)
                 }
@@ -240,7 +229,7 @@ private extension TopView {
                         showingPrePlan = true
                     }
                 } else {
-                    VStack(spacing: 10) {
+                    VStack(spacing: DesignSystem.Spacing.sm) {
                         ForEach(filteredPlans) { plan in
                             PlanListCell(
                                 plan: plan,
@@ -255,8 +244,10 @@ private extension TopView {
                                     showingDeleteAlert = true
                                 },
                                 onCreateSchedule: {
-                                    planForSchedule = plan
-                                    showingScheduleCreation = true
+                                    // PrePlanViewを開いてスケジュールタブに移動
+                                    viewModel.loadPlan(plan)
+                                    shouldOpenScheduleTab = true
+                                    showingPrePlan = true
                                 }
                             )
                         }
@@ -269,12 +260,17 @@ private extension TopView {
     @ViewBuilder
     func materialCard<Content: View>(@ViewBuilder content: () -> Content) -> some View {
         content()
-            .padding(24)
+            .padding(DesignSystem.Card.Padding.large)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .fill(Color(.secondarySystemGroupedBackground))
-                    .shadow(color: Color.black.opacity(0.06), radius: 12, x: 0, y: 4)
+                RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadiusLarge, style: .continuous)
+                    .fill(DesignSystem.Colors.secondaryBackground)
+                    .shadow(
+                        color: Color.black.opacity(DesignSystem.Card.Shadow.largeOpacity),
+                        radius: DesignSystem.Card.Shadow.largeRadius,
+                        x: DesignSystem.Card.Shadow.largeOffset.width,
+                        y: DesignSystem.Card.Shadow.largeOffset.height
+                    )
             )
     }
 }
@@ -284,64 +280,64 @@ struct EmptyStateView: View {
     let onCreate: () -> Void
 
     var body: some View {
-        VStack(spacing: 24) {
-            ZStack {
-                Circle()
-                    .fill(
-                        LinearGradient(
-                            colors: [Color.accentColor.opacity(0.1), Color.accentColor.opacity(0.05)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
+            VStack(spacing: DesignSystem.Spacing.xxl) {
+                ZStack {
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                colors: [DesignSystem.Colors.primary.opacity(0.1), DesignSystem.Colors.primary.opacity(0.05)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
                         )
-                    )
-                    .frame(width: 100, height: 100)
-                
-                Image(systemName: "calendar.badge.plus")
-                    .font(.system(size: 48, weight: .medium))
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [Color.accentColor, Color.accentColor.opacity(0.7)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
+                        .frame(width: 100, height: 100)
+                    
+                    Image(systemName: "calendar.badge.plus")
+                        .font(.system(size: DesignSystem.Icon.Size.xxlarge * 1.5, weight: DesignSystem.Typography.FontWeight.medium))
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [DesignSystem.Colors.primary, DesignSystem.Colors.primary.opacity(0.7)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
                         )
-                    )
-            }
+                }
 
-            VStack(spacing: 8) {
+            VStack(spacing: DesignSystem.Spacing.sm) {
                 Text("今後のイベントなし")
-                    .font(.headline.weight(.semibold))
-                    .foregroundColor(.primary)
+                    .font(DesignSystem.Typography.headline)
+                    .foregroundColor(DesignSystem.Colors.black)
 
                 Text("飲み会の計画を作成して、参加者や集金を管理しましょう。\nタップして詳細を編集できます。")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
+                    .font(DesignSystem.Typography.subheadline)
+                    .foregroundColor(DesignSystem.Colors.secondary)
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, 12)
+                    .padding(.horizontal, DesignSystem.Spacing.md)
             }
 
             Button(action: onCreate) {
-                HStack(spacing: 8) {
+                HStack(spacing: DesignSystem.Spacing.sm) {
                     Image(systemName: "plus.circle.fill")
-                        .font(.system(size: 18, weight: .semibold))
+                        .font(.system(size: DesignSystem.Icon.Size.large, weight: DesignSystem.Typography.FontWeight.semibold))
                     Text("イベントを作成")
-                        .font(.body.weight(.semibold))
+                        .font(DesignSystem.Typography.emphasizedBody)
                 }
-                .foregroundColor(.white)
-                .padding(.horizontal, 32)
-                .padding(.vertical, 14)
+                .foregroundColor(DesignSystem.Colors.white)
+                .padding(.horizontal, DesignSystem.Button.Padding.largeHorizontal)
+                .padding(.vertical, DesignSystem.Button.Padding.largeVertical)
                 .background(
                     LinearGradient(
-                        colors: [Color.accentColor, Color.accentColor.opacity(0.8)],
+                        colors: [DesignSystem.Colors.primary, DesignSystem.Colors.primary.opacity(0.8)],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
                 )
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                .shadow(color: Color.accentColor.opacity(0.3), radius: 8, x: 0, y: 4)
+                .clipShape(RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadiusSmall, style: .continuous))
+                .shadow(color: DesignSystem.Colors.primary.opacity(0.3), radius: DesignSystem.Card.Shadow.largeRadius, x: 0, y: 4)
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 48)
+        .padding(.vertical, DesignSystem.Spacing.xxxl)
     }
 }
 

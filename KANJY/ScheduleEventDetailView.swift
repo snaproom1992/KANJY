@@ -40,7 +40,7 @@ struct ScheduleEventDetailView: View {
                 }
                 .padding()
             }
-            .navigationTitle("イベント詳細")
+            .navigationTitle("スケジュール調整詳細")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -61,20 +61,20 @@ struct ScheduleEventDetailView: View {
             .fullScreenCover(isPresented: $showingWebView) {
                 ScheduleWebView(event: event, viewModel: viewModel)
             }
-            .alert("イベントの削除", isPresented: $showingDeleteAlert) {
+            .alert("スケジュール調整の削除", isPresented: $showingDeleteAlert) {
                 Button("キャンセル", role: .cancel) {}
                 Button("削除", role: .destructive) {
                     viewModel.deleteEvent(id: event.id)
                     dismiss()
                 }
             } message: {
-                Text("このスケジュール調整イベントを削除してもよろしいですか？")
+                Text("このスケジュール調整を削除してもよろしいですか？")
             }
         }
     }
 }
 
-// MARK: - イベント情報カード
+// MARK: - スケジュール調整情報カード
 
 struct EventInfoCard: View {
     let event: ScheduleEvent
@@ -744,7 +744,7 @@ struct EditScheduleEventView: View {
         NavigationStack {
             Form {
                 Section(header: Text("基本情報")) {
-                    TextField("イベントタイトル", text: $title)
+                    TextField("スケジュール調整タイトル", text: $title)
                         .focused($focusedField, equals: .title)
                     TextField("説明（任意）", text: $description, axis: .vertical)
                         .focused($focusedField, equals: .description)
@@ -805,7 +805,7 @@ struct EditScheduleEventView: View {
                     }
                 }
             }
-            .navigationTitle("イベント編集")
+            .navigationTitle("スケジュール調整編集")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {

@@ -25,10 +25,17 @@ public struct Plan: Identifiable, Codable {
     public var roleNames: [String: String]
     public var amountItems: [AmountItem]?
     public var emoji: String?
+    // 基本情報
+    public var description: String? // 説明
+    public var location: String? // 場所
     // スケジュール調整との関係（オプショナル）
     public var scheduleEventId: UUID?
+    // 開催確定情報
+    public var confirmedDate: Date?
+    public var confirmedLocation: String?
+    public var confirmedParticipants: [UUID]? // 確定参加者のIDリスト
     
-    public init(id: UUID = UUID(), name: String, date: Date, participants: [Participant], totalAmount: String, roleMultipliers: [String: Double], roleNames: [String: String], amountItems: [AmountItem]? = nil, emoji: String? = nil, scheduleEventId: UUID? = nil) {
+    public init(id: UUID = UUID(), name: String, date: Date, participants: [Participant], totalAmount: String, roleMultipliers: [String: Double], roleNames: [String: String], amountItems: [AmountItem]? = nil, emoji: String? = nil, description: String? = nil, location: String? = nil, scheduleEventId: UUID? = nil, confirmedDate: Date? = nil, confirmedLocation: String? = nil, confirmedParticipants: [UUID]? = nil) {
         self.id = id
         self.name = name
         self.date = date
@@ -38,7 +45,12 @@ public struct Plan: Identifiable, Codable {
         self.roleNames = roleNames
         self.amountItems = amountItems
         self.emoji = emoji
+        self.description = description
+        self.location = location
         self.scheduleEventId = scheduleEventId
+        self.confirmedDate = confirmedDate
+        self.confirmedLocation = confirmedLocation
+        self.confirmedParticipants = confirmedParticipants
     }
 }
 
@@ -90,6 +102,8 @@ public class PrePlanViewModel: ObservableObject {
     @Published public var editingPlanName: String = ""
     @Published public var editingPlanDate: Date? = nil
     @Published public var editingPlanEmoji: String = ""
+    @Published public var editingPlanDescription: String = ""
+    @Published public var editingPlanLocation: String = ""
     
     // 飲み会関連の絵文字リスト
     public let partyEmojis = ["🍻", "🍺", "🥂", "🍷", "🍸", "🍹", "🍾", "🥃", 
@@ -422,22 +436,72 @@ public class PrePlanViewModel: ObservableObject {
     }
     
     // プランの保存
-    public func savePlan(name: String, date: Date) {
+    public func savePlan(name: String, date: Date, description: String? = nil, location: String? = nil, confirmedDate: Date? = nil, confirmedLocation: String? = nil, confirmedParticipants: [UUID]? = nil) {
         let emoji = selectedEmoji.isEmpty ? getRandomEmoji() : selectedEmoji
         
         if let id = editingPlanId, let idx = savedPlans.firstIndex(where: { $0.id == id }) {
-            // 既存プランを上書き（scheduleEventIdを保持）
+            // 既存プランを上書き（既存の確定情報を保持、新しい値があれば更新）
             let existingScheduleEventId = savedPlans[idx].scheduleEventId
-            savedPlans[idx] = Plan(id: id, name: name, date: date, participants: participants, totalAmount: totalAmount, roleMultipliers: roleMultipliers, roleNames: roleNames, amountItems: amountItems, emoji: emoji, scheduleEventId: existingScheduleEventId)
+            let existingConfirmedDate = confirmedDate ?? savedPlans[idx].confirmedDate
+            let existingConfirmedLocation = confirmedLocation ?? savedPlans[idx].confirmedLocation
+            let existingConfirmedParticipants = confirmedParticipants ?? savedPlans[idx].confirmedParticipants
+            savedPlans[idx] = Plan(
+                id: id,
+                name: name,
+                date: date,
+                participants: participants,
+                totalAmount: totalAmount,
+                roleMultipliers: roleMultipliers,
+                roleNames: roleNames,
+                amountItems: amountItems,
+                emoji: emoji,
+                description: description ?? savedPlans[idx].description,
+                location: location ?? savedPlans[idx].location,
+                scheduleEventId: existingScheduleEventId,
+                confirmedDate: existingConfirmedDate,
+                confirmedLocation: existingConfirmedLocation,
+                confirmedParticipants: existingConfirmedParticipants
+            )
         } else {
             // 新規プランとして追加
-            let plan = Plan(name: name, date: date, participants: participants, totalAmount: totalAmount, roleMultipliers: roleMultipliers, roleNames: roleNames, amountItems: amountItems, emoji: emoji, scheduleEventId: nil)
+            let plan = Plan(
+                name: name,
+                date: date,
+                participants: participants,
+                totalAmount: totalAmount,
+                roleMultipliers: roleMultipliers,
+                roleNames: roleNames,
+                amountItems: amountItems,
+                emoji: emoji,
+                description: description,
+                location: location,
+                scheduleEventId: nil,
+                confirmedDate: confirmedDate,
+                confirmedLocation: confirmedLocation,
+                confirmedParticipants: confirmedParticipants
+            )
             savedPlans.append(plan)
             editingPlanId = plan.id
         }
         editingPlanName = name
         editingPlanDate = date
         editingPlanEmoji = emoji
+        if let description = description {
+            editingPlanDescription = description
+        }
+        if let location = location {
+            editingPlanLocation = location
+        }
+        saveData()
+    }
+    
+    // 確定情報を保存
+    public func saveConfirmedInfo(confirmedDate: Date?, confirmedLocation: String?, confirmedParticipants: [UUID]?) {
+        guard let id = editingPlanId, let idx = savedPlans.firstIndex(where: { $0.id == id }) else { return }
+        
+        savedPlans[idx].confirmedDate = confirmedDate
+        savedPlans[idx].confirmedLocation = confirmedLocation
+        savedPlans[idx].confirmedParticipants = confirmedParticipants
         saveData()
     }
     
@@ -450,6 +514,8 @@ public class PrePlanViewModel: ObservableObject {
         editingPlanId = plan.id
         editingPlanName = plan.name
         editingPlanDate = plan.date
+        editingPlanDescription = plan.description ?? ""
+        editingPlanLocation = plan.location ?? ""
         
         // 絵文字の読み込みを改良
         if let emoji = plan.emoji, !emoji.isEmpty {

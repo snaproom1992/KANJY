@@ -48,26 +48,41 @@ struct CreateScheduleEventView: View {
         NavigationStack {
             Form {
                 // 基本情報セクション
-                Section(header: Text("基本情報")) {
-                    TextField("イベントタイトル", text: $title)
+                Section(header: Text("基本情報").font(DesignSystem.Typography.headline)) {
+                    TextField("スケジュール調整タイトル", text: $title)
+                        .standardTextFieldStyle()
                         .focused($focusedField, equals: .title)
                     
                     TextField("説明（任意）", text: $description, axis: .vertical)
+                        .font(DesignSystem.Typography.body)
+                        .foregroundColor(DesignSystem.Colors.black)
+                        .padding(DesignSystem.TextField.Padding.horizontal)
+                        .frame(minHeight: DesignSystem.TextField.Height.medium)
+                        .background(
+                            RoundedRectangle(cornerRadius: DesignSystem.TextField.cornerRadius, style: .continuous)
+                                .fill(focusedField == .description ? DesignSystem.TextField.focusedBackgroundColor : DesignSystem.TextField.backgroundColor)
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: DesignSystem.TextField.cornerRadius, style: .continuous)
+                                .stroke(focusedField == .description ? DesignSystem.TextField.focusedBorderColor : DesignSystem.TextField.borderColor, lineWidth: DesignSystem.TextField.borderWidth)
+                        )
                         .focused($focusedField, equals: .description)
                         .lineLimit(3...6)
                 }
                 
                 // 候補日時セクション
-                Section(header: Text("候補日時")) {
+                Section(header: Text("候補日時").font(DesignSystem.Typography.headline)) {
                     if candidateDates.isEmpty {
                         Text("候補日時が設定されていません")
-                            .foregroundColor(.secondary)
+                            .font(DesignSystem.Typography.subheadline)
+                            .foregroundColor(DesignSystem.Colors.secondary)
                             .italic()
                     } else {
                         ForEach(candidateDates.sorted(), id: \.self) { date in
                             HStack {
                                 Text(viewModel.formatDateTime(date))
-                                    .font(.subheadline)
+                                    .font(DesignSystem.Typography.subheadline)
+                                    .foregroundColor(DesignSystem.Colors.black)
                                 
                                 Spacer()
                                 
@@ -75,7 +90,7 @@ struct CreateScheduleEventView: View {
                                     candidateDates.removeAll { $0 == date }
                                 }) {
                                     Image(systemName: "xmark.circle.fill")
-                                        .foregroundColor(.red)
+                                        .foregroundColor(DesignSystem.Colors.alert)
                                 }
                             }
                         }
@@ -85,39 +100,47 @@ struct CreateScheduleEventView: View {
                         selectedDate = Date()
                         showingDatePicker = true
                     }) {
-                        HStack {
+                        HStack(spacing: DesignSystem.Spacing.sm) {
                             Image(systemName: "plus.circle.fill")
-                                .foregroundColor(.blue)
+                                .foregroundColor(DesignSystem.Colors.primary)
                             Text("候補日時を追加")
+                                .font(DesignSystem.Typography.body)
+                                .foregroundColor(DesignSystem.Colors.primary)
                         }
                     }
                 }
                 
                 // 詳細情報セクション
-                Section(header: Text("詳細情報")) {
+                Section(header: Text("詳細情報").font(DesignSystem.Typography.headline)) {
                     TextField("場所（任意）", text: $location)
+                        .standardTextFieldStyle()
                         .focused($focusedField, equals: .location)
                     
                     TextField("予算（任意）", text: $budget)
+                        .standardTextFieldStyle()
                         .focused($focusedField, equals: .budget)
                         .keyboardType(.numberPad)
                 }
                 
                 // 期限設定セクション
-                Section(header: Text("回答期限")) {
+                Section(header: Text("回答期限").font(DesignSystem.Typography.headline)) {
                     Toggle("回答期限を設定", isOn: $hasDeadline)
+                        .font(DesignSystem.Typography.body)
+                        .foregroundColor(DesignSystem.Colors.black)
                     
                     if hasDeadline {
                         DatePicker("期限", selection: Binding(
                             get: { deadline ?? Date() },
                             set: { deadline = $0 }
                         ), displayedComponents: [.date, .hourAndMinute])
+                        .font(DesignSystem.Typography.body)
+                        .foregroundColor(DesignSystem.Colors.black)
                     }
                 }
                 
                 // プレビューセクション
                 if !title.isEmpty {
-                    Section(header: Text("プレビュー")) {
+                    Section(header: Text("プレビュー").font(DesignSystem.Typography.headline)) {
                         EventPreviewCard(
                             title: title,
                             description: description.isEmpty ? nil : description,
@@ -208,31 +231,34 @@ struct DatePickerSheet: View {
     
     var body: some View {
         NavigationStack {
-            VStack(spacing: 20) {
+            VStack(spacing: DesignSystem.Spacing.xl) {
                 Text("候補日時を選択")
-                    .font(.headline)
+                    .font(DesignSystem.Typography.headline)
+                    .foregroundColor(DesignSystem.Colors.black)
                     .padding(.top)
                 
                 DatePicker("日時", selection: $selectedDate, displayedComponents: [.date, .hourAndMinute])
                     .datePickerStyle(.wheel)
                     .labelsHidden()
                 
-                HStack(spacing: 16) {
+                HStack(spacing: DesignSystem.Spacing.lg) {
                     Button("キャンセル", action: onCancel)
-                        .padding()
+                        .font(DesignSystem.Typography.body)
+                        .foregroundColor(DesignSystem.Colors.white)
+                        .padding(DesignSystem.Button.Padding.vertical)
                         .frame(maxWidth: .infinity)
-                        .background(Color.gray)
-                        .foregroundColor(.white)
-                        .cornerRadius(12)
+                        .background(DesignSystem.Colors.gray4)
+                        .clipShape(RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadiusSmall, style: .continuous))
                     
                     Button("追加", action: onAdd)
-                        .padding()
+                        .font(DesignSystem.Typography.body)
+                        .foregroundColor(DesignSystem.Colors.white)
+                        .padding(DesignSystem.Button.Padding.vertical)
                         .frame(maxWidth: .infinity)
-                        .background(Color.blue)
-                        .foregroundColor(.white)
-                        .cornerRadius(12)
+                        .background(DesignSystem.Colors.primary)
+                        .clipShape(RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadiusSmall, style: .continuous))
                 }
-                .padding(.horizontal)
+                .padding(.horizontal, DesignSystem.Spacing.lg)
                 
                 Spacer()
             }
@@ -255,73 +281,77 @@ struct EventPreviewCard: View {
     @ObservedObject var viewModel: ScheduleManagementViewModel
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: DesignSystem.Spacing.md) {
             // タイトル
             Text(title)
-                .font(.headline)
-                .foregroundColor(.primary)
+                .font(DesignSystem.Typography.headline)
+                .foregroundColor(DesignSystem.Colors.black)
             
             // 説明
             if let description = description {
                 Text(description)
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
+                    .font(DesignSystem.Typography.subheadline)
+                    .foregroundColor(DesignSystem.Colors.secondary)
             }
             
             // 候補日時
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: DesignSystem.Spacing.sm) {
                 Text("候補日時（\(candidateDates.count)件）")
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
+                    .font(DesignSystem.Typography.emphasizedSubheadline)
+                    .foregroundColor(DesignSystem.Colors.black)
                 
                 ForEach(candidateDates.sorted(), id: \.self) { date in
-                    HStack {
+                    HStack(spacing: DesignSystem.Spacing.sm) {
                         Image(systemName: "calendar")
-                            .foregroundColor(.blue)
-                            .frame(width: 20)
+                            .foregroundColor(DesignSystem.Colors.primary)
+                            .frame(width: DesignSystem.Icon.Size.medium)
                         Text(viewModel.formatDateTime(date))
-                            .font(.subheadline)
+                            .font(DesignSystem.Typography.subheadline)
+                            .foregroundColor(DesignSystem.Colors.black)
                     }
                 }
             }
             
             // 基本情報
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: DesignSystem.Spacing.sm) {
                 if let location = location {
-                    HStack {
+                    HStack(spacing: DesignSystem.Spacing.sm) {
                         Image(systemName: "location")
-                            .foregroundColor(.green)
-                            .frame(width: 20)
+                            .foregroundColor(DesignSystem.Colors.success)
+                            .frame(width: DesignSystem.Icon.Size.medium)
                         Text(location)
-                            .font(.subheadline)
+                            .font(DesignSystem.Typography.subheadline)
+                            .foregroundColor(DesignSystem.Colors.black)
                     }
                 }
                 
                 if let budget = budget {
-                    HStack {
+                    HStack(spacing: DesignSystem.Spacing.sm) {
                         Image(systemName: "yensign.circle")
-                            .foregroundColor(.orange)
-                            .frame(width: 20)
+                            .foregroundColor(DesignSystem.Colors.warning)
+                            .frame(width: DesignSystem.Icon.Size.medium)
                         Text("予算: ¥\(viewModel.formatAmount(String(budget)))")
-                            .font(.subheadline)
+                            .font(DesignSystem.Typography.subheadline)
+                            .foregroundColor(DesignSystem.Colors.black)
                     }
                 }
                 
                 if let deadline = deadline {
-                    HStack {
+                    HStack(spacing: DesignSystem.Spacing.sm) {
                         Image(systemName: "clock")
-                            .foregroundColor(.red)
-                            .frame(width: 20)
+                            .foregroundColor(DesignSystem.Colors.alert)
+                            .frame(width: DesignSystem.Icon.Size.medium)
                         Text("回答期限: \(viewModel.formatDateTime(deadline))")
-                            .font(.subheadline)
+                            .font(DesignSystem.Typography.subheadline)
+                            .foregroundColor(DesignSystem.Colors.black)
                     }
                 }
             }
         }
-        .padding()
+        .padding(DesignSystem.Card.Padding.medium)
         .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Color(.systemGray6))
+            RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadiusSmall, style: .continuous)
+                .fill(DesignSystem.Colors.gray1)
         )
     }
 }

@@ -188,6 +188,17 @@ public class ScheduleManagementViewModel: ObservableObject {
         let updated_at: String
     }
     
+    // Supabase更新用の構造体
+    private struct SupabaseEventUpdate: Encodable {
+        let title: String
+        let description: String?
+        let candidate_dates: [String]
+        let location: String?
+        let budget: Int?
+        let deadline: String?
+        let updated_at: String
+    }
+    
     /// Supabaseにイベントを作成
     public func createEventInSupabase(title: String, description: String?, candidateDates: [Date], location: String?, budget: Int?, deadline: Date?, createdBy: String = "匿名") async throws -> ScheduleEvent {
         do {
@@ -264,6 +275,51 @@ public class ScheduleManagementViewModel: ObservableObject {
             updatedEvent.updatedAt = Date()
             events[index] = updatedEvent
             saveData()
+        }
+    }
+    
+    /// Supabaseでイベントを更新
+    public func updateEventInSupabase(eventId: UUID, title: String, description: String?, candidateDates: [Date], location: String?, budget: Int?, deadline: Date?) async throws {
+        do {
+            let now = Date()
+            let updateData = SupabaseEventUpdate(
+                title: title,
+                description: description,
+                candidate_dates: candidateDates.map { ISO8601DateFormatter().string(from: $0) },
+                location: location,
+                budget: budget,
+                deadline: deadline != nil ? ISO8601DateFormatter().string(from: deadline!) : nil,
+                updated_at: ISO8601DateFormatter().string(from: now)
+            )
+            
+            print("🍙 Supabase更新開始 - EventID: \(eventId)")
+            let response = try await supabase
+                .from("events")
+                .update(updateData)
+                .eq("id", value: eventId.uuidString.lowercased())
+                .select()
+                .execute()
+            
+            print("🍙 Supabase更新完了")
+            
+            // ローカルデータも更新
+            await MainActor.run {
+                if let index = self.events.firstIndex(where: { $0.id == eventId }) {
+                    var updatedEvent = self.events[index]
+                    updatedEvent.title = title
+                    updatedEvent.description = description
+                    updatedEvent.candidateDates = candidateDates
+                    updatedEvent.location = location
+                    updatedEvent.budget = budget
+                    updatedEvent.deadline = deadline
+                    updatedEvent.updatedAt = now
+                    self.events[index] = updatedEvent
+                    self.saveData()
+                }
+            }
+        } catch {
+            print("🍙 Supabase更新エラー: \(error)")
+            throw error
         }
     }
     
