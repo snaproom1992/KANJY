@@ -8,15 +8,27 @@ struct ScheduleWebView: View {
     @State private var isLoading = true
     @State private var webUrl: String = ""
     
+    private var webUrlOptional: URL? {
+        let urlString = webUrl.isEmpty ? viewModel.getWebUrl(for: event) : webUrl
+        return URL(string: urlString)
+    }
+    
     var body: some View {
         NavigationStack {
             ZStack {
-                WebView(
-                    url: URL(string: webUrl)!,
-                    isLoading: $isLoading
-                )
-                .onAppear {
-                    webUrl = viewModel.getWebUrl(for: event)
+                if let url = webUrlOptional {
+                    WebView(
+                        url: url,
+                        isLoading: $isLoading
+                    )
+                } else {
+                    VStack(spacing: 16) {
+                        ProgressView()
+                        Text("URLを読み込み中...")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
                 
                 if isLoading {
@@ -32,6 +44,11 @@ struct ScheduleWebView: View {
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(Color(.systemBackground))
+                }
+            }
+            .onAppear {
+                if webUrl.isEmpty {
+                    webUrl = viewModel.getWebUrl(for: event)
                 }
             }
             .navigationTitle("スケジュール調整")

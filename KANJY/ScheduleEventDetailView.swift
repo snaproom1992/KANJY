@@ -802,6 +802,7 @@ struct EditScheduleEventView: View {
                             get: { deadline ?? Date() },
                             set: { deadline = $0 }
                         ), displayedComponents: [.date, .hourAndMinute])
+                        .environment(\.locale, Locale(identifier: "ja_JP"))
                     }
                 }
             }

@@ -191,6 +191,7 @@ struct EventSummaryCard: View {
     private func formatDate(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "M/d HH:mm"
+        formatter.locale = Locale(identifier: "ja_JP")
         return formatter.string(from: date)
     }
 }

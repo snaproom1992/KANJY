@@ -398,6 +398,7 @@ public class ScheduleManagementViewModel: ObservableObject {
         let formatter = DateFormatter()
         formatter.dateStyle = .medium
         formatter.timeStyle = .none
+        formatter.locale = Locale(identifier: "ja_JP")
         return formatter.string(from: date)
     }
     
@@ -405,6 +406,7 @@ public class ScheduleManagementViewModel: ObservableObject {
         let formatter = DateFormatter()
         formatter.dateStyle = .medium
         formatter.timeStyle = .short
+        formatter.locale = Locale(identifier: "ja_JP")
         return formatter.string(from: date)
     }
     
@@ -508,6 +510,62 @@ public class AttendanceManager: ObservableObject {
             .from("responses")
             .insert(responseData)
             .execute()
+    }
+    
+    /// Supabaseから特定イベントの回答一覧を取得
+    public func fetchResponsesFromSupabase(eventId: UUID) async throws -> [ScheduleResponse] {
+        do {
+            let response = try await supabase
+                .from("responses")
+                .select()
+                .eq("event_id", value: eventId.uuidString.lowercased())
+                .order("created_at", ascending: false)
+                .execute()
+            
+            let items = response.value as? [[String: Any]] ?? []
+            let responses: [ScheduleResponse] = items.compactMap { dict in
+                // 削除済みレコードをスキップ
+                if let participantName = dict["participant_name"] as? String,
+                   participantName.hasPrefix("[削除済み]") {
+                    return nil
+                }
+                
+                let dateFormatter = ISO8601DateFormatter()
+                
+                // available_datesをDate配列に変換
+                let availableDates = (dict["available_dates"] as? [String])?.compactMap { dateFormatter.date(from: $0) } ?? []
+                
+                // statusをAttendanceStatusに変換
+                let statusString = dict["status"] as? String ?? "undecided"
+                let status: AttendanceStatus
+                switch statusString {
+                case "attending":
+                    status = .attending
+                case "not_attending":
+                    status = .notAttending
+                case "maybe":
+                    status = .maybe
+                default:
+                    status = .undecided
+                }
+                
+                return ScheduleResponse(
+                    id: UUID(uuidString: dict["id"] as? String ?? "") ?? UUID(),
+                    participantName: dict["participant_name"] as? String ?? "",
+                    availableDates: availableDates,
+                    maybeDates: [], // WebフォームではmaybeDatesは使用していない
+                    status: status,
+                    responseDate: (dict["response_date"] as? String).flatMap { dateFormatter.date(from: $0) } ?? Date(),
+                    comment: dict["comment"] as? String,
+                    department: dict["department"] as? String
+                )
+            }
+            
+            return responses
+        } catch {
+            print("🍙 回答取得エラー: \(error)")
+            throw error
+        }
     }
 }
 

@@ -133,6 +133,7 @@ struct CreateScheduleEventView: View {
                             get: { deadline ?? Date() },
                             set: { deadline = $0 }
                         ), displayedComponents: [.date, .hourAndMinute])
+                        .environment(\.locale, Locale(identifier: "ja_JP"))
                         .font(DesignSystem.Typography.body)
                         .foregroundColor(DesignSystem.Colors.black)
                     }
@@ -226,20 +227,50 @@ struct CreateScheduleEventView: View {
 
 struct DatePickerSheet: View {
     @Binding var selectedDate: Date
+    @Binding var hasTime: Bool
+    var isEditing: Bool = false
     let onAdd: () -> Void
     let onCancel: () -> Void
+    
+    init(selectedDate: Binding<Date>, hasTime: Binding<Bool> = .constant(true), isEditing: Bool = false, onAdd: @escaping () -> Void, onCancel: @escaping () -> Void) {
+        self._selectedDate = selectedDate
+        self._hasTime = hasTime
+        self.isEditing = isEditing
+        self.onAdd = onAdd
+        self.onCancel = onCancel
+    }
     
     var body: some View {
         NavigationStack {
             VStack(spacing: DesignSystem.Spacing.xl) {
-                Text("候補日時を選択")
+                Text(isEditing ? "候補日時を編集" : "候補日時を選択")
                     .font(DesignSystem.Typography.headline)
                     .foregroundColor(DesignSystem.Colors.black)
                     .padding(.top)
                 
-                DatePicker("日時", selection: $selectedDate, displayedComponents: [.date, .hourAndMinute])
-                    .datePickerStyle(.wheel)
-                    .labelsHidden()
+                if hasTime {
+                    // 時間ありの場合はカレンダーと時間選択を分けて表示
+                    DatePicker("日付", selection: $selectedDate, displayedComponents: [.date])
+                        .datePickerStyle(.graphical)
+                        .labelsHidden()
+                        .environment(\.locale, Locale(identifier: "ja_JP"))
+                    
+                    DatePicker("時間", selection: $selectedDate, displayedComponents: [.hourAndMinute])
+                        .datePickerStyle(.wheel)
+                        .labelsHidden()
+                        .environment(\.locale, Locale(identifier: "ja_JP"))
+                        .frame(height: 120)
+                } else {
+                    // 時間なしの場合はカレンダーのみ
+                    DatePicker("日付", selection: $selectedDate, displayedComponents: [.date])
+                        .datePickerStyle(.graphical)
+                        .labelsHidden()
+                        .environment(\.locale, Locale(identifier: "ja_JP"))
+                }
+                
+                Toggle("時間を設定", isOn: $hasTime)
+                    .font(DesignSystem.Typography.body)
+                    .padding(.horizontal, DesignSystem.Spacing.lg)
                 
                 HStack(spacing: DesignSystem.Spacing.lg) {
                     Button("キャンセル", action: onCancel)
@@ -250,7 +281,7 @@ struct DatePickerSheet: View {
                         .background(DesignSystem.Colors.gray4)
                         .clipShape(RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadiusSmall, style: .continuous))
                     
-                    Button("追加", action: onAdd)
+                    Button(isEditing ? "更新" : "追加", action: onAdd)
                         .font(DesignSystem.Typography.body)
                         .foregroundColor(DesignSystem.Colors.white)
                         .padding(DesignSystem.Button.Padding.vertical)
@@ -264,7 +295,7 @@ struct DatePickerSheet: View {
             }
             .navigationBarHidden(true)
         }
-        .presentationDetents([.medium])
+        .presentationDetents([.large])
         .presentationDragIndicator(.visible)
     }
 }
