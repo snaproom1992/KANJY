@@ -1,7 +1,6 @@
 [build]
-  base = "KANJY/web-frontend"
-  publish = "KANJY/web-frontend"
   command = "echo 'No build process needed'"
+  publish = "KANJY/web-frontend"
 
 [[redirects]]
   from = "/*"

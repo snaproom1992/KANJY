@@ -362,7 +362,7 @@ public class ScheduleManagementViewModel: ObservableObject {
     
     private func generateWebUrl(eventId: UUID? = nil) -> String {
         // 最新のデプロイURL（表形式表示・編集機能付き）
-        let baseUrl = "https://sweet-torte-775ec7.netlify.app/?id="
+        let baseUrl = "https://kanjy-web.netlify.app/?id="
         let uniqueId = eventId?.uuidString.lowercased() ?? UUID().uuidString.lowercased()
         return baseUrl + uniqueId
     }
