@@ -1,0 +1,13 @@
+[build]
+  base = "web-frontend"
+  publish = "web-frontend"
+  command = "echo 'No build process needed'"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[context.production.environment]
+  NODE_ENV = "production"
+
