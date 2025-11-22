@@ -20,7 +20,7 @@ struct CalendarSheetView: View {
                         .padding(.top, 24)
                         .padding(.horizontal, 20)
                 } else {
-                    Text("日付をタップするとイベントを確認できます")
+                    Text("日付をタップすると飲み会を確認できます")
                         .font(.callout)
                         .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -30,7 +30,7 @@ struct CalendarSheetView: View {
 
                 Spacer()
             }
-            .navigationTitle("イベントカレンダー")
+            .navigationTitle("飲み会カレンダー")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -51,7 +51,7 @@ struct CalendarSheetView: View {
                 .font(.headline)
 
             if events.isEmpty {
-                Text("この日のイベントはありません")
+                Text("この日の飲み会はありません")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             } else {

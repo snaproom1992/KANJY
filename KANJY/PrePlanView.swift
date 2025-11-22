@@ -1421,7 +1421,7 @@ struct PrePlanView: View {
                                     .stroke(DesignSystem.TextField.borderColor, lineWidth: DesignSystem.TextField.borderWidth)
                             )
                             .lineLimit(3...6)
-                            .onChange(of: viewModel.editingPlanDescription) { _ in
+                            .onChange(of: viewModel.editingPlanDescription) {
                                 autoSavePlan()
                             }
                     }
@@ -1433,7 +1433,7 @@ struct PrePlanView: View {
                             .foregroundColor(DesignSystem.Colors.black)
                         TextField("場所を入力", text: $viewModel.editingPlanLocation)
                             .standardTextFieldStyle()
-                            .onChange(of: viewModel.editingPlanLocation) { _ in
+                            .onChange(of: viewModel.editingPlanLocation) {
                                 autoSavePlan()
                             }
                     }
@@ -1446,7 +1446,7 @@ struct PrePlanView: View {
                         TextField("予算を入力", text: $viewModel.totalAmount)
                             .standardTextFieldStyle()
                             .keyboardType(.numberPad)
-                            .onChange(of: viewModel.totalAmount) { _ in
+                            .onChange(of: viewModel.totalAmount) {
                                 autoSavePlan()
                             }
                     }
@@ -2286,7 +2286,7 @@ struct PrePlanView: View {
         guard canPreviewSchedule else { return }
         
         // 既にイベントが作成されている場合はそのままプレビュー
-        if let event = scheduleEvent, hasScheduleEvent {
+        if scheduleEvent != nil, hasScheduleEvent {
             showingSchedulePreview = true
             return
         }

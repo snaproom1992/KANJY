@@ -141,6 +141,39 @@ public struct ScheduleEvent: Identifiable, Codable {
     }
 }
 
+// MARK: - Supabase DTO (Data Transfer Objects)
+
+// Supabaseから取得するイベントのDTO
+private struct EventDTO: Codable {
+    let id: String
+    let title: String
+    let description: String?
+    let candidate_dates: [String]
+    let location: String?
+    let budget: Int?
+    let deadline: String?
+    let is_active: Bool
+    let share_url: String?
+    let web_url: String?
+    let created_by: String
+    let created_at: String
+    let updated_at: String
+}
+
+// Supabaseから取得する回答のDTO
+private struct ResponseDTO: Codable {
+    let id: String
+    let event_id: String
+    let participant_name: String
+    let available_dates: [String]
+    let maybe_dates: [String]?
+    let status: String
+    let comment: String?
+    let department: String?
+    let response_date: String
+    let created_at: String
+}
+
 // MARK: - スケジュール調整ViewModel
 
 public class ScheduleManagementViewModel: ObservableObject {
@@ -227,32 +260,29 @@ public class ScheduleManagementViewModel: ObservableObject {
             updated_at: ISO8601DateFormatter().string(from: now)
         )
         print("🍙 Supabase insert実行中...")
-        let response = try await supabase
+        _ = try await supabase
             .from("events")
             .insert(eventData)
             .select()
             .execute()
         print("🍙 Supabase insert完了")
-        print("🍙 レスポンス: \(response)")
-        // Supabaseから返ってきたデータをScheduleEventに変換
-        let responseArray = response.value as? [[String: Any]] ?? []
-        let dict = responseArray.first
         
+        // 入力データをそのまま使用してScheduleEventを作成
         let event = ScheduleEvent(
             id: eventId,
-            title: dict?["title"] as? String ?? title,
-            description: dict?["description"] as? String,
-            candidateDates: (dict?["candidate_dates"] as? [String])?.compactMap { ISO8601DateFormatter().date(from: $0) } ?? candidateDates,
-            location: dict?["location"] as? String,
-            budget: dict?["budget"] as? Int,
+            title: title,
+            description: description,
+            candidateDates: candidateDates,
+            location: location,
+            budget: budget,
             responses: [],
-            deadline: (dict?["deadline"] as? String).flatMap { ISO8601DateFormatter().date(from: $0) },
-            isActive: dict?["is_active"] as? Bool ?? true,
-            shareUrl: dict?["share_url"] as? String,
-            webUrl: dict?["web_url"] as? String,
-            createdBy: dict?["created_by"] as? String ?? "匿名",
-            createdAt: (dict?["created_at"] as? String).flatMap { ISO8601DateFormatter().date(from: $0) } ?? now,
-            updatedAt: (dict?["updated_at"] as? String).flatMap { ISO8601DateFormatter().date(from: $0) } ?? now
+            deadline: deadline,
+            isActive: true,
+            shareUrl: shareUrl,
+            webUrl: webUrl,
+            createdBy: createdBy,
+            createdAt: now,
+            updatedAt: now
         )
         print("🍙 作成されたイベント: \(event)")
         
@@ -293,7 +323,7 @@ public class ScheduleManagementViewModel: ObservableObject {
             )
             
             print("🍙 Supabase更新開始 - EventID: \(eventId)")
-            let response = try await supabase
+            _ = try await supabase
                 .from("events")
                 .update(updateData)
                 .eq("id", value: eventId.uuidString.lowercased())
@@ -435,28 +465,30 @@ public class ScheduleManagementViewModel: ObservableObject {
     /// Supabaseからイベント一覧を取得
     public func fetchEventsFromSupabase() async {
         do {
-            let response = try await supabase
+            let eventDTOs: [EventDTO] = try await supabase
                 .from("events")
                 .select()
                 .order("created_at", ascending: false)
                 .execute()
-            let items = response.value as? [[String: Any]] ?? []
-            let events: [ScheduleEvent] = items.compactMap { dict in
+                .value
+            
+            let dateFormatter = ISO8601DateFormatter()
+            let events: [ScheduleEvent] = eventDTOs.compactMap { dto in
                 ScheduleEvent(
-                    id: UUID(uuidString: dict["id"] as? String ?? "") ?? UUID(),
-                    title: dict["title"] as? String ?? "",
-                    description: dict["description"] as? String,
-                    candidateDates: (dict["candidate_dates"] as? [String])?.compactMap { ISO8601DateFormatter().date(from: $0) } ?? [],
-                    location: dict["location"] as? String,
-                    budget: dict["budget"] as? Int,
+                    id: UUID(uuidString: dto.id) ?? UUID(),
+                    title: dto.title,
+                    description: dto.description,
+                    candidateDates: dto.candidate_dates.compactMap { dateFormatter.date(from: $0) },
+                    location: dto.location,
+                    budget: dto.budget,
                     responses: [],
-                    deadline: (dict["deadline"] as? String).flatMap { ISO8601DateFormatter().date(from: $0) },
-                    isActive: dict["is_active"] as? Bool ?? true,
-                    shareUrl: dict["share_url"] as? String,
-                    webUrl: dict["web_url"] as? String,
-                    createdBy: dict["created_by"] as? String ?? "匿名",
-                    createdAt: (dict["created_at"] as? String).flatMap { ISO8601DateFormatter().date(from: $0) } ?? Date(),
-                    updatedAt: (dict["updated_at"] as? String).flatMap { ISO8601DateFormatter().date(from: $0) } ?? Date()
+                    deadline: dto.deadline.flatMap { dateFormatter.date(from: $0) },
+                    isActive: dto.is_active,
+                    shareUrl: dto.share_url,
+                    webUrl: dto.web_url,
+                    createdBy: dto.created_by,
+                    createdAt: dateFormatter.date(from: dto.created_at) ?? Date(),
+                    updatedAt: dateFormatter.date(from: dto.updated_at) ?? Date()
                 )
             }
             await MainActor.run {
@@ -515,30 +547,27 @@ public class AttendanceManager: ObservableObject {
     /// Supabaseから特定イベントの回答一覧を取得
     public func fetchResponsesFromSupabase(eventId: UUID) async throws -> [ScheduleResponse] {
         do {
-            let response = try await supabase
+            let responseDTOs: [ResponseDTO] = try await supabase
                 .from("responses")
                 .select()
                 .eq("event_id", value: eventId.uuidString.lowercased())
                 .order("created_at", ascending: false)
                 .execute()
+                .value
             
-            let items = response.value as? [[String: Any]] ?? []
-            let responses: [ScheduleResponse] = items.compactMap { dict in
+            let dateFormatter = ISO8601DateFormatter()
+            let responses: [ScheduleResponse] = responseDTOs.compactMap { dto in
                 // 削除済みレコードをスキップ
-                if let participantName = dict["participant_name"] as? String,
-                   participantName.hasPrefix("[削除済み]") {
+                if dto.participant_name.hasPrefix("[削除済み]") {
                     return nil
                 }
                 
-                let dateFormatter = ISO8601DateFormatter()
-                
                 // available_datesをDate配列に変換
-                let availableDates = (dict["available_dates"] as? [String])?.compactMap { dateFormatter.date(from: $0) } ?? []
+                let availableDates = dto.available_dates.compactMap { dateFormatter.date(from: $0) }
                 
                 // statusをAttendanceStatusに変換
-                let statusString = dict["status"] as? String ?? "undecided"
                 let status: AttendanceStatus
-                switch statusString {
+                switch dto.status {
                 case "attending":
                     status = .attending
                 case "not_attending":
@@ -550,14 +579,14 @@ public class AttendanceManager: ObservableObject {
                 }
                 
                 return ScheduleResponse(
-                    id: UUID(uuidString: dict["id"] as? String ?? "") ?? UUID(),
-                    participantName: dict["participant_name"] as? String ?? "",
+                    id: UUID(uuidString: dto.id) ?? UUID(),
+                    participantName: dto.participant_name,
                     availableDates: availableDates,
                     maybeDates: [], // WebフォームではmaybeDatesは使用していない
                     status: status,
-                    responseDate: (dict["response_date"] as? String).flatMap { dateFormatter.date(from: $0) } ?? Date(),
-                    comment: dict["comment"] as? String,
-                    department: dict["department"] as? String
+                    responseDate: dateFormatter.date(from: dto.response_date) ?? Date(),
+                    comment: dto.comment,
+                    department: dto.department
                 )
             }
             
@@ -602,7 +631,7 @@ struct EventUrlSheet: View {
                         .font(.system(size: 60))
                         .foregroundColor(.green)
                     
-                    Text("イベントが作成されました！")
+                    Text("スケジュール調整が作成されました！")
                         .font(.title2)
                         .fontWeight(.bold)
                     
