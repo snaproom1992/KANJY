@@ -2760,13 +2760,11 @@ struct PrePlanView: View {
                             
                             Spacer()
                             
-                            // 参加希望数
-                            if votes > 0 {
-                                Text("\(votes)人")
-                                    .font(DesignSystem.Typography.subheadline)
-                                    .fontWeight(isTopChoice ? .bold : .regular)
-                                    .foregroundColor(isTopChoice ? .white : DesignSystem.Colors.primary)
-                            }
+                            // 参加希望数（常に表示）
+                            Text("\(votes)人")
+                                .font(DesignSystem.Typography.subheadline)
+                                .fontWeight(isTopChoice ? .bold : .regular)
+                                .foregroundColor(isTopChoice ? .white : (votes > 0 ? DesignSystem.Colors.primary : DesignSystem.Colors.secondary))
                         }
                         .padding(DesignSystem.Spacing.sm)
                         .background(
