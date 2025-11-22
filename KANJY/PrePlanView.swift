@@ -2307,9 +2307,22 @@ struct PrePlanView: View {
             scheduleBudget = ""
         }
         scheduleCandidateDates = event.candidateDates
+        
+        // scheduleCandidateDatesWithTime を初期化
+        scheduleCandidateDatesWithTime.removeAll()
+        for date in event.candidateDates {
+            // 時間が設定されているかチェック
+            let calendar = Calendar.current
+            let components = calendar.dateComponents([.hour, .minute], from: date)
+            let hasTime = (components.hour ?? 0) != 0 || (components.minute ?? 0) != 0
+            scheduleCandidateDatesWithTime[date] = hasTime
+        }
+        
         scheduleDeadline = event.deadline
         hasScheduleDeadline = event.deadline != nil
         isEditingSchedule = true
+        
+        print("🍙 編集開始: 候補日時 \(event.candidateDates.count)個")
     }
     
     // スケジュール作成・編集フォーム
