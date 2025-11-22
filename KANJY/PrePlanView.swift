@@ -1708,6 +1708,34 @@ struct PrePlanView: View {
         }
     }
     
+    // MARK: - 📊 参加希望数の計算
+    
+    // 各候補日時の参加希望数を計算
+    private func calculateVoteCounts(for event: ScheduleEvent) -> [Date: Int] {
+        var counts: [Date: Int] = [:]
+        
+        // 全候補日時を0で初期化
+        for date in event.candidateDates {
+            counts[date] = 0
+        }
+        
+        // 各回答の available_dates（参加可能な日）をカウント
+        for response in event.responses {
+            for availableDate in response.availableDates {
+                // 候補日時と一致する日をカウント
+                for candidateDate in event.candidateDates {
+                    // 日時を比較（秒単位の差を許容）
+                    if abs(availableDate.timeIntervalSince(candidateDate)) < 60 {
+                        counts[candidateDate, default: 0] += 1
+                        break
+                    }
+                }
+            }
+        }
+        
+        return counts
+    }
+    
     // MARK: - 🔄 自動同期機能
     
     // 画面表示時の自動チェック＆同期（初回のみ自動取り込み）
@@ -2703,57 +2731,47 @@ struct PrePlanView: View {
         onEdit: @escaping () -> Void
     ) -> some View {
         VStack(alignment: .leading, spacing: DesignSystem.Spacing.md) {
-            // デバッグ：候補日時の数を表示
-            Text("候補日時: \(event.candidateDates.count)個")
-                .font(DesignSystem.Typography.caption)
-                .foregroundColor(DesignSystem.Colors.secondary)
-            
-            // 候補日時を表示
-            if let optimalDate = event.optimalDate {
-                // 最適日が決まっている場合
-                HStack(spacing: DesignSystem.Spacing.sm) {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundColor(DesignSystem.Colors.success)
-                        .font(.system(size: 16))
-                    Text(scheduleViewModel.formatDateTime(optimalDate))
-                        .font(DesignSystem.Typography.body)
-                        .fontWeight(.semibold)
-                        .foregroundColor(DesignSystem.Colors.black)
-                }
-                .padding(DesignSystem.Spacing.sm)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(
-                    RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadiusSmall, style: .continuous)
-                        .fill(DesignSystem.Colors.success.opacity(0.1))
-                )
-            }
-            
-            // 候補日時を表示（最適日の有無に関わらず）
+            // 候補日時を参加希望数付きで表示
             if !event.candidateDates.isEmpty {
+                // 各候補日時の参加希望数を計算
+                let voteCounts = calculateVoteCounts(for: event)
+                let maxVotes = voteCounts.values.max() ?? 0
+                
                 VStack(spacing: DesignSystem.Spacing.xs) {
                     ForEach(Array(event.candidateDates.sorted().enumerated()), id: \.element) { index, date in
+                        let votes = voteCounts[date] ?? 0
+                        let isTopChoice = votes > 0 && votes == maxVotes
+                        
                         HStack(spacing: DesignSystem.Spacing.sm) {
+                            // 番号バッジ
                             Text("\(index + 1)")
                                 .font(DesignSystem.Typography.caption)
                                 .fontWeight(.bold)
-                                .foregroundColor(.white)
+                                .foregroundColor(isTopChoice ? .white : DesignSystem.Colors.primary)
                                 .frame(width: 24, height: 24)
-                                .background(Circle().fill(DesignSystem.Colors.primary))
+                                .background(
+                                    Circle().fill(isTopChoice ? DesignSystem.Colors.primary : DesignSystem.Colors.primary.opacity(0.2))
+                                )
                             
+                            // 日時
                             Text(scheduleViewModel.formatDateTime(date))
                                 .font(DesignSystem.Typography.body)
-                                .foregroundColor(DesignSystem.Colors.black)
+                                .foregroundColor(isTopChoice ? .white : DesignSystem.Colors.black)
                             
                             Spacer()
+                            
+                            // 参加希望数
+                            if votes > 0 {
+                                Text("\(votes)人")
+                                    .font(DesignSystem.Typography.subheadline)
+                                    .fontWeight(isTopChoice ? .bold : .regular)
+                                    .foregroundColor(isTopChoice ? .white : DesignSystem.Colors.primary)
+                            }
                         }
                         .padding(DesignSystem.Spacing.sm)
                         .background(
                             RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadiusSmall, style: .continuous)
-                                .fill(DesignSystem.Colors.white)
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadiusSmall, style: .continuous)
-                                .stroke(DesignSystem.Colors.primary.opacity(0.2), lineWidth: 1)
+                                .fill(isTopChoice ? DesignSystem.Colors.primary : DesignSystem.Colors.primary.opacity(0.1))
                         )
                     }
                 }
