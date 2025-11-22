@@ -2704,18 +2704,33 @@ struct PrePlanView: View {
                 }
             }
             
-            // メインアクション：URLを共有
-            Button(action: onShowUrl) {
-                Label("URLを共有", systemImage: "square.and.arrow.up")
-                    .font(DesignSystem.Typography.body)
-                    .fontWeight(.medium)
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(DesignSystem.Button.Padding.vertical)
+            // URL表示＆コピー
+            if let webUrl = event.webUrl {
+                Button(action: {
+                    UIPasteboard.general.string = webUrl
+                    // コピー成功のhaptic feedback
+                    let generator = UINotificationFeedbackGenerator()
+                    generator.notificationOccurred(.success)
+                }) {
+                    VStack(alignment: .leading, spacing: DesignSystem.Spacing.xs) {
+                        Text(webUrl)
+                            .font(DesignSystem.Typography.body)
+                            .foregroundColor(DesignSystem.Colors.primary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                        
+                        Text("タップしてコピー")
+                            .font(DesignSystem.Typography.caption)
+                            .foregroundColor(DesignSystem.Colors.secondary)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(DesignSystem.Spacing.md)
                     .background(
                         RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadiusSmall, style: .continuous)
-                            .fill(DesignSystem.Colors.primary)
+                            .fill(DesignSystem.Colors.primary.opacity(0.1))
                     )
+                }
+                .buttonStyle(PlainButtonStyle())
             }
             
             // サブアクション：プレビューと編集
