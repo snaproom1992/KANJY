@@ -81,27 +81,27 @@ struct TopView: View {
                 HelpGuideView()
             }
             .sheet(isPresented: $showingPrePlan, onDismiss: {
-                if !viewModel.editingPlanName.isEmpty {
-                    viewModel.savePlan(
-                        name: viewModel.editingPlanName.isEmpty ? "無題の飲み会" : viewModel.editingPlanName,
-                        date: viewModel.editingPlanDate ?? Date()
-                    )
-                }
                 shouldOpenScheduleTab = false
+                viewModel.editingPlanId = nil
             }) {
-                NavigationStack {
-                    PrePlanView(
-                        viewModel: viewModel,
-                        planName: viewModel.editingPlanName.isEmpty ? "" : viewModel.editingPlanName,
-                        planDate: viewModel.editingPlanDate,
-                        initialTask: shouldOpenScheduleTab ? .schedule : nil,
-                        onFinish: {
-                            showingPrePlan = false
-                        }
-                    )
+                // 新規作成の場合はQuickCreatePlanView、編集の場合はPrePlanView
+                if viewModel.editingPlanId == nil {
+                    QuickCreatePlanView(viewModel: viewModel)
+                } else {
+                    NavigationStack {
+                        PrePlanView(
+                            viewModel: viewModel,
+                            planName: viewModel.editingPlanName.isEmpty ? "" : viewModel.editingPlanName,
+                            planDate: viewModel.editingPlanDate,
+                            initialTask: shouldOpenScheduleTab ? .schedule : nil,
+                            onFinish: {
+                                showingPrePlan = false
+                            }
+                        )
+                    }
+                    .presentationDetents([.large])
+                    .presentationDragIndicator(.visible)
                 }
-                .presentationDetents([.large])
-                .presentationDragIndicator(.visible)
             }
             .alert("飲み会の削除", isPresented: $showingDeleteAlert) {
                 Button("キャンセル", role: .cancel) {}

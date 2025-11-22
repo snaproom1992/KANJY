@@ -579,4 +579,56 @@ public class PrePlanViewModel: ObservableObject {
         editingPlanEmoji = ""
         saveData()
     }
+    
+    // MARK: - Web回答同期機能
+    
+    /// スケジュール調整の回答から参加者を自動追加
+    /// - Parameters:
+    ///   - responses: スケジュール調整の回答リスト
+    ///   - replaceExisting: 既存の参加者を置き換えるか（デフォルト: false）
+    /// - Returns: 追加された参加者の数
+    @discardableResult
+    public func syncParticipantsFromWebResponses(_ responses: [ScheduleResponse], replaceExisting: Bool = false) -> Int {
+        // 重複を除いた回答者名のリストを取得
+        let uniqueNames = Set(responses.map { $0.participantName })
+        
+        var addedCount = 0
+        
+        for name in uniqueNames {
+            // 既に参加者リストにいるかチェック
+            let exists = participants.contains(where: { $0.name == name })
+            
+            if !exists {
+                // Web回答から自動追加
+                let participant = Participant(
+                    id: UUID(),
+                    name: name,
+                    roleType: .standard(.staff), // デフォルト役職
+                    hasCollected: false,
+                    hasFixedAmount: false,
+                    fixedAmount: 0,
+                    source: .webResponse // Web回答から追加されたことを記録
+                )
+                
+                participants.append(participant)
+                addedCount += 1
+            }
+        }
+        
+        if addedCount > 0 {
+            saveData()
+        }
+        
+        return addedCount
+    }
+    
+    /// Web回答から追加された参加者の数を取得
+    public var webResponseParticipantsCount: Int {
+        participants.filter { $0.source == .webResponse }.count
+    }
+    
+    /// 手動追加された参加者の数を取得
+    public var manualParticipantsCount: Int {
+        participants.filter { $0.source == .manual }.count
+    }
 } 

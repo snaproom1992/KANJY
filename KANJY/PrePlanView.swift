@@ -86,14 +86,22 @@ public struct Participant: Identifiable, Hashable, Codable {
     public var hasCollected: Bool = false  // 集金確認用のプロパティを追加
     public var hasFixedAmount: Bool = false  // 金額固定フラグ
     public var fixedAmount: Int = 0  // 固定金額
+    public var source: ParticipantSource = .manual  // 参加者の追加元
     
-    public init(id: UUID = UUID(), name: String, roleType: RoleType, hasCollected: Bool = false, hasFixedAmount: Bool = false, fixedAmount: Int = 0) {
+    public init(id: UUID = UUID(), name: String, roleType: RoleType, hasCollected: Bool = false, hasFixedAmount: Bool = false, fixedAmount: Int = 0, source: ParticipantSource = .manual) {
         self.id = id
         self.name = name
         self.roleType = roleType
         self.hasCollected = hasCollected
         self.hasFixedAmount = hasFixedAmount
         self.fixedAmount = fixedAmount
+        self.source = source
+    }
+    
+    // 参加者の追加元
+    public enum ParticipantSource: String, Codable {
+        case manual = "手動追加"
+        case webResponse = "Web回答"
     }
     
     public static func == (lhs: Participant, rhs: Participant) -> Bool {
@@ -1438,19 +1446,6 @@ struct PrePlanView: View {
                             }
                     }
                     
-                    // 予算
-                    VStack(alignment: .leading, spacing: DesignSystem.Spacing.xs) {
-                        Text("予算（任意）")
-                            .font(DesignSystem.Typography.emphasizedSubheadline)
-                            .foregroundColor(DesignSystem.Colors.black)
-                        TextField("予算を入力", text: $viewModel.totalAmount)
-                            .standardTextFieldStyle()
-                            .keyboardType(.numberPad)
-                            .onChange(of: viewModel.totalAmount) {
-                                autoSavePlan()
-                            }
-                    }
-                    
                     Text("日程は「スケジュール調整」で候補日時を設定し、「開催」タブで確定してください")
                         .font(DesignSystem.Typography.caption)
                         .foregroundColor(DesignSystem.Colors.secondary)
@@ -2485,6 +2480,39 @@ struct PrePlanView: View {
                             )
                     }
                 }
+                
+                // Web回答を取り込むボタン
+                Button(action: {
+                    Task {
+                        do {
+                            let responses = try await AttendanceManager.shared.fetchResponsesFromSupabase(eventId: event.id)
+                            let addedCount = viewModel.syncParticipantsFromWebResponses(responses)
+                            
+                            if addedCount > 0 {
+                                // 成功のhaptic feedback
+                                let generator = UINotificationFeedbackGenerator()
+                                generator.notificationOccurred(.success)
+                            }
+                        } catch {
+                            print("Web回答の取り込みエラー: \(error)")
+                        }
+                    }
+                }) {
+                    HStack {
+                        Image(systemName: "arrow.down.circle.fill")
+                        Text("Web回答を取り込む (\(event.responses.count)人)")
+                    }
+                    .font(DesignSystem.Typography.body)
+                    .fontWeight(.medium)
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(DesignSystem.Button.Padding.vertical)
+                    .background(
+                        RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadiusSmall, style: .continuous)
+                            .fill(DesignSystem.Colors.primary)
+                    )
+                }
+                .disabled(event.responses.isEmpty)
                 
                 Button(action: onEdit) {
                     Label("編集", systemImage: "pencil")
