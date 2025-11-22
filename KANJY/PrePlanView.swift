@@ -243,6 +243,8 @@ struct PrePlanView: View {
     @State private var confirmedLocation: String = ""
     @State private var selectedParticipantIds: Set<UUID> = []
     @State private var showingInvitationGenerator = false
+    @State private var showingAddParticipant = false
+    @State private var webResponsesCount: Int = 0  // Web回答数
     
     // Webフォームの回答
     @State private var scheduleResponses: [ScheduleResponse] = []
@@ -752,34 +754,29 @@ struct PrePlanView: View {
                 SummaryCard()
                     .padding(.horizontal, DesignSystem.Spacing.lg)
                 
-                // メインステップタブコントロール（目立つ位置に配置）
-                MainStepTabControl(selectedStep: $selectedStep)
-                    .padding(.horizontal, DesignSystem.Spacing.lg)
-                    .padding(.top, DesignSystem.Spacing.md)
-                
-                // 選択されたステップのコンテンツを表示
-                MainStepContentView(selectedStep: selectedStep)
-                    .padding(.horizontal, DesignSystem.Spacing.lg)
-                    .padding(.bottom, 100) // 下部ボタン用のスペース
+                // 🎨 カード式レイアウト：シンプルで分かりやすい構造
+                VStack(spacing: DesignSystem.Spacing.xl) {
+                    // 📋 基本情報カード
+                    BasicInfoCardView()
+                    
+                    // 📅👥 日程＆参加者カード（統合）
+                    ScheduleAndParticipantsCardView()
+                    
+                    // 📢 開催準備カード（日程確定後に表示）
+                    if confirmedDate != nil || hasScheduleEvent {
+                        EventCardView()
+                    }
+                    
+                    // 💰 集金管理カード（参加者がいる場合のみ表示）
+                    if !viewModel.participants.isEmpty {
+                        CollectionCardView()
+                    }
+                }
+                .padding(.horizontal, DesignSystem.Spacing.lg)
+                .padding(.bottom, 100) // 下部ボタン用のスペース
             }
             .padding(.top, DesignSystem.Spacing.xxl)
             .padding(.bottom, DesignSystem.Spacing.xl)
-            .onChange(of: selectedTask) { _, newTask in
-                // スケジュールタブが選択されたとき、スケジュール調整が未作成なら自動的にフォームを表示
-                if newTask == .schedule && !hasScheduleEvent && !isCreatingSchedule && !isEditingSchedule {
-                    startCreatingSchedule()
-                }
-            }
-            .onChange(of: selectedStep) { _, newStep in
-                // ステップ変更時の処理
-                if newStep == .planning {
-                    // 企画タブに戻ったときの処理
-                } else if newStep == .event {
-                    // 開催タブに移動したときの処理
-                } else if newStep == .collection {
-                    // 集金タブに移動したときの処理
-                }
-            }
         }
         .safeAreaInset(edge: .bottom) {
             SaveButton()
@@ -1477,6 +1474,282 @@ struct PrePlanView: View {
                             )
                     )
             }
+        }
+    }
+    
+    // MARK: - 🎨 カード式ビュー
+    
+    // 👤 参加者行ビュー
+    @ViewBuilder
+    private func ParticipantRow(participant: Participant) -> some View {
+        HStack(spacing: DesignSystem.Spacing.md) {
+            // 参加者名
+            VStack(alignment: .leading, spacing: DesignSystem.Spacing.xs) {
+                Text(participant.name)
+                    .font(DesignSystem.Typography.body)
+                    .foregroundColor(DesignSystem.Colors.black)
+                
+                Text(participant.roleType.name)
+                    .font(DesignSystem.Typography.caption)
+                    .foregroundColor(DesignSystem.Colors.secondary)
+            }
+            
+            Spacer()
+            
+            // ソースバッジ
+            if participant.source == .webResponse {
+                Text("Web")
+                    .font(DesignSystem.Typography.caption)
+                    .foregroundColor(DesignSystem.Colors.primary)
+                    .padding(.horizontal, DesignSystem.Spacing.sm)
+                    .padding(.vertical, DesignSystem.Spacing.xs)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            .fill(DesignSystem.Colors.primary.opacity(0.1))
+                    )
+            }
+            
+            // 集金状態
+            if participant.hasCollected {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundColor(DesignSystem.Colors.success)
+            }
+        }
+        .padding(DesignSystem.Spacing.md)
+        .background(
+            RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadiusSmall, style: .continuous)
+                .fill(DesignSystem.Colors.white)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadiusSmall, style: .continuous)
+                .stroke(Color.gray.opacity(0.1), lineWidth: 1)
+        )
+    }
+    
+    // 📋 基本情報カード
+    @ViewBuilder
+    private func BasicInfoCardView() -> some View {
+        InfoCard(
+            title: "基本情報",
+            icon: "info.circle.fill"
+        ) {
+            VStack(alignment: .leading, spacing: DesignSystem.Spacing.md) {
+                // 説明
+                VStack(alignment: .leading, spacing: DesignSystem.Spacing.xs) {
+                    Text("説明（任意）")
+                        .font(DesignSystem.Typography.emphasizedSubheadline)
+                        .foregroundColor(DesignSystem.Colors.black)
+                    TextField("説明を入力", text: $viewModel.editingPlanDescription, axis: .vertical)
+                        .font(DesignSystem.Typography.body)
+                        .foregroundColor(DesignSystem.Colors.black)
+                        .padding(DesignSystem.TextField.Padding.horizontal)
+                        .frame(minHeight: DesignSystem.TextField.Height.medium)
+                        .background(
+                            RoundedRectangle(cornerRadius: DesignSystem.TextField.cornerRadius, style: .continuous)
+                                .fill(DesignSystem.TextField.backgroundColor)
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: DesignSystem.TextField.cornerRadius, style: .continuous)
+                                .stroke(DesignSystem.TextField.borderColor, lineWidth: DesignSystem.TextField.borderWidth)
+                        )
+                        .lineLimit(3...6)
+                        .onChange(of: viewModel.editingPlanDescription) {
+                            autoSavePlan()
+                        }
+                }
+                
+                // 場所
+                VStack(alignment: .leading, spacing: DesignSystem.Spacing.xs) {
+                    Text("場所（任意）")
+                        .font(DesignSystem.Typography.emphasizedSubheadline)
+                        .foregroundColor(DesignSystem.Colors.black)
+                    TextField("場所を入力", text: $viewModel.editingPlanLocation)
+                        .standardTextFieldStyle()
+                        .onChange(of: viewModel.editingPlanLocation) {
+                            autoSavePlan()
+                        }
+                }
+            }
+        }
+    }
+    
+    // 📅👥 日程＆参加者カード（統合）
+    @ViewBuilder
+    private func ScheduleAndParticipantsCardView() -> some View {
+        InfoCard(
+            title: "日程調整 & 参加者",
+            icon: "calendar.badge.person.crop"
+        ) {
+            VStack(spacing: DesignSystem.Spacing.xl) {
+                // 📅 スケジュール調整セクション
+                VStack(alignment: .leading, spacing: DesignSystem.Spacing.md) {
+                    // セクションヘッダー
+                    HStack {
+                        Image(systemName: "calendar")
+                            .foregroundColor(DesignSystem.Colors.primary)
+                        Text("候補日時")
+                            .font(DesignSystem.Typography.emphasizedSubheadline)
+                            .foregroundColor(DesignSystem.Colors.black)
+                    }
+                    
+                    // スケジュール調整コンテンツ
+                    ScheduleSectionContent()
+                }
+                
+                Divider()
+                    .padding(.vertical, DesignSystem.Spacing.xs)
+                
+                // 👥 参加者セクション
+                VStack(alignment: .leading, spacing: DesignSystem.Spacing.md) {
+                    // セクションヘッダー
+                    HStack {
+                        Image(systemName: "person.3.fill")
+                            .foregroundColor(DesignSystem.Colors.primary)
+                        Text("参加者")
+                            .font(DesignSystem.Typography.emphasizedSubheadline)
+                            .foregroundColor(DesignSystem.Colors.black)
+                        
+                        Spacer()
+                        
+                        // 参加者数
+                        Text("\(viewModel.participants.count)人")
+                            .font(DesignSystem.Typography.caption)
+                            .foregroundColor(DesignSystem.Colors.secondary)
+                    }
+                    
+                    // Web回答取り込みボタン（スケジュール作成後は常に表示）
+                    if hasScheduleEvent, let event = scheduleEvent {
+                        Button(action: {
+                            Task {
+                                await syncWebResponses()
+                            }
+                        }) {
+                            HStack {
+                                Image(systemName: "arrow.down.circle.fill")
+                                if webResponsesCount > 0 {
+                                    Text("Web回答を取り込む (\(webResponsesCount)人)")
+                                } else {
+                                    Text("Web回答を取り込む")
+                                }
+                            }
+                            .font(DesignSystem.Typography.body)
+                            .foregroundColor(DesignSystem.Colors.primary)
+                            .frame(maxWidth: .infinity)
+                            .padding(DesignSystem.Button.Padding.vertical)
+                            .background(
+                                RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadiusSmall, style: .continuous)
+                                    .fill(DesignSystem.Colors.primary.opacity(0.15))
+                            )
+                        }
+                        .padding(.bottom, DesignSystem.Spacing.sm)
+                    }
+                    
+                    // 参加者リスト
+                    if viewModel.participants.isEmpty {
+                        Text("参加者がいません")
+                            .font(DesignSystem.Typography.subheadline)
+                            .foregroundColor(DesignSystem.Colors.secondary)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, DesignSystem.Spacing.lg)
+                    } else {
+                        VStack(spacing: DesignSystem.Spacing.sm) {
+                            ForEach(viewModel.participants) { participant in
+                                ParticipantRow(participant: participant)
+                            }
+                        }
+                    }
+                    
+                    // 手動で参加者追加ボタン
+                    Button(action: {
+                        showingAddParticipant = true
+                    }) {
+                        Label("参加者を追加", systemImage: "plus.circle.fill")
+                            .font(DesignSystem.Typography.body)
+                            .foregroundColor(DesignSystem.Colors.primary)
+                            .frame(maxWidth: .infinity)
+                            .padding(DesignSystem.Button.Padding.vertical)
+                            .background(
+                                RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadiusSmall, style: .continuous)
+                                    .fill(DesignSystem.Colors.primary.opacity(0.1))
+                            )
+                    }
+                }
+                .onAppear {
+                    // 画面表示時に自動的にWeb回答をチェック・取り込み
+                    if hasScheduleEvent, let event = scheduleEvent {
+                        Task {
+                            await autoCheckAndSyncResponses(eventId: event.id)
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    // 📢 開催準備カード
+    @ViewBuilder
+    private func EventCardView() -> some View {
+        InfoCard(
+            title: "開催準備",
+            icon: "calendar.badge.checkmark"
+        ) {
+            EventStepContent()
+        }
+    }
+    
+    // 💰 集金管理カード
+    @ViewBuilder
+    private func CollectionCardView() -> some View {
+        InfoCard(
+            title: "集金管理",
+            icon: "creditcard.fill"
+        ) {
+            CollectionStepContent()
+        }
+    }
+    
+    // MARK: - 🔄 自動同期機能
+    
+    // 画面表示時の自動チェック＆同期（初回のみ自動取り込み）
+    private func autoCheckAndSyncResponses(eventId: UUID) async {
+        do {
+            let responses = try await AttendanceManager.shared.fetchResponsesFromSupabase(eventId: eventId)
+            
+            // Web回答数を更新
+            webResponsesCount = responses.count
+            
+            // 参加者が0人の場合のみ自動取り込み
+            if viewModel.participants.isEmpty && !responses.isEmpty {
+                let addedCount = viewModel.syncParticipantsFromWebResponses(responses)
+                
+                if addedCount > 0 {
+                    // 成功のhaptic feedback
+                    let generator = UINotificationFeedbackGenerator()
+                    generator.notificationOccurred(.success)
+                }
+            }
+        } catch {
+            print("Web回答のチェックエラー: \(error)")
+        }
+    }
+    
+    // Web回答を手動で取り込む
+    private func syncWebResponses() async {
+        guard let event = scheduleEvent else { return }
+        
+        do {
+            let responses = try await AttendanceManager.shared.fetchResponsesFromSupabase(eventId: event.id)
+            let addedCount = viewModel.syncParticipantsFromWebResponses(responses)
+            
+            // Web回答数を更新
+            webResponsesCount = responses.count
+            
+            if addedCount > 0 {
+                let generator = UINotificationFeedbackGenerator()
+                generator.notificationOccurred(.success)
+            }
+        } catch {
+            print("Web回答の取り込みエラー: \(error)")
         }
     }
     
@@ -2480,39 +2753,6 @@ struct PrePlanView: View {
                             )
                     }
                 }
-                
-                // Web回答を取り込むボタン
-                Button(action: {
-                    Task {
-                        do {
-                            let responses = try await AttendanceManager.shared.fetchResponsesFromSupabase(eventId: event.id)
-                            let addedCount = viewModel.syncParticipantsFromWebResponses(responses)
-                            
-                            if addedCount > 0 {
-                                // 成功のhaptic feedback
-                                let generator = UINotificationFeedbackGenerator()
-                                generator.notificationOccurred(.success)
-                            }
-                        } catch {
-                            print("Web回答の取り込みエラー: \(error)")
-                        }
-                    }
-                }) {
-                    HStack {
-                        Image(systemName: "arrow.down.circle.fill")
-                        Text("Web回答を取り込む (\(event.responses.count)人)")
-                    }
-                    .font(DesignSystem.Typography.body)
-                    .fontWeight(.medium)
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(DesignSystem.Button.Padding.vertical)
-                    .background(
-                        RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadiusSmall, style: .continuous)
-                            .fill(DesignSystem.Colors.primary)
-                    )
-                }
-                .disabled(event.responses.isEmpty)
                 
                 Button(action: onEdit) {
                     Label("編集", systemImage: "pencil")

@@ -258,7 +258,7 @@ private extension TopView {
                         .offset(y: appearedItems.contains(plan.id) ? 0 : 20)
                         .onAppear {
                             let animation = Animation.spring(response: 0.5, dampingFraction: 0.8).delay(Double(index) * 0.05)
-                            withAnimation(animation) {
+                            _ = withAnimation(animation) {
                                 appearedItems.insert(plan.id)
                             }
                         }
