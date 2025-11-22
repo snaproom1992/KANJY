@@ -2692,15 +2692,50 @@ struct PrePlanView: View {
         VStack(alignment: .leading, spacing: DesignSystem.Spacing.md) {
             // 候補日時を表示
             if let optimalDate = event.optimalDate {
-                Text(scheduleViewModel.formatDateTime(optimalDate))
-                    .font(DesignSystem.Typography.body)
-                    .foregroundColor(DesignSystem.Colors.black)
-            } else if !event.candidateDates.isEmpty {
-                // 最適日がない場合は候補日時を表示
-                ForEach(event.candidateDates.sorted(), id: \.self) { date in
-                    Text(scheduleViewModel.formatDateTime(date))
+                // 最適日が決まっている場合
+                HStack(spacing: DesignSystem.Spacing.sm) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundColor(DesignSystem.Colors.success)
+                        .font(.system(size: 16))
+                    Text(scheduleViewModel.formatDateTime(optimalDate))
                         .font(DesignSystem.Typography.body)
+                        .fontWeight(.semibold)
                         .foregroundColor(DesignSystem.Colors.black)
+                }
+                .padding(DesignSystem.Spacing.sm)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(
+                    RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadiusSmall, style: .continuous)
+                        .fill(DesignSystem.Colors.success.opacity(0.1))
+                )
+            } else if !event.candidateDates.isEmpty {
+                // 候補日時を表示
+                VStack(spacing: DesignSystem.Spacing.xs) {
+                    ForEach(Array(event.candidateDates.sorted().enumerated()), id: \.element) { index, date in
+                        HStack(spacing: DesignSystem.Spacing.sm) {
+                            Text("\(index + 1)")
+                                .font(DesignSystem.Typography.caption)
+                                .fontWeight(.bold)
+                                .foregroundColor(.white)
+                                .frame(width: 24, height: 24)
+                                .background(Circle().fill(DesignSystem.Colors.primary))
+                            
+                            Text(scheduleViewModel.formatDateTime(date))
+                                .font(DesignSystem.Typography.body)
+                                .foregroundColor(DesignSystem.Colors.black)
+                            
+                            Spacer()
+                        }
+                        .padding(DesignSystem.Spacing.sm)
+                        .background(
+                            RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadiusSmall, style: .continuous)
+                                .fill(DesignSystem.Colors.white)
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadiusSmall, style: .continuous)
+                                .stroke(DesignSystem.Colors.primary.opacity(0.2), lineWidth: 1)
+                        )
+                    }
                 }
             }
             
