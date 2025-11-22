@@ -2690,6 +2690,11 @@ struct PrePlanView: View {
         onEdit: @escaping () -> Void
     ) -> some View {
         VStack(alignment: .leading, spacing: DesignSystem.Spacing.md) {
+            // デバッグ：候補日時の数を表示
+            Text("候補日時: \(event.candidateDates.count)個")
+                .font(DesignSystem.Typography.caption)
+                .foregroundColor(DesignSystem.Colors.secondary)
+            
             // 候補日時を表示
             if let optimalDate = event.optimalDate {
                 // 最適日が決まっている場合
@@ -2708,8 +2713,10 @@ struct PrePlanView: View {
                     RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadiusSmall, style: .continuous)
                         .fill(DesignSystem.Colors.success.opacity(0.1))
                 )
-            } else if !event.candidateDates.isEmpty {
-                // 候補日時を表示
+            }
+            
+            // 候補日時を表示（最適日の有無に関わらず）
+            if !event.candidateDates.isEmpty {
                 VStack(spacing: DesignSystem.Spacing.xs) {
                     ForEach(Array(event.candidateDates.sorted().enumerated()), id: \.element) { index, date in
                         HStack(spacing: DesignSystem.Spacing.sm) {
@@ -2737,6 +2744,11 @@ struct PrePlanView: View {
                         )
                     }
                 }
+            } else {
+                Text("候補日時が設定されていません")
+                    .font(DesignSystem.Typography.subheadline)
+                    .foregroundColor(DesignSystem.Colors.secondary)
+                    .italic()
             }
             
             // URL表示＆コピー
