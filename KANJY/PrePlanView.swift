@@ -2712,18 +2712,27 @@ struct PrePlanView: View {
                     let generator = UINotificationFeedbackGenerator()
                     generator.notificationOccurred(.success)
                 }) {
-                    VStack(alignment: .leading, spacing: DesignSystem.Spacing.xs) {
-                        Text(webUrl)
-                            .font(DesignSystem.Typography.body)
-                            .foregroundColor(DesignSystem.Colors.primary)
-                            .lineLimit(1)
-                            .truncationMode(.middle)
+                    HStack(spacing: DesignSystem.Spacing.md) {
+                        VStack(alignment: .leading, spacing: DesignSystem.Spacing.xs) {
+                            Text(webUrl)
+                                .font(DesignSystem.Typography.body)
+                                .foregroundColor(DesignSystem.Colors.primary)
+                                .lineLimit(1)
+                                .truncationMode(.middle)
+                            
+                            HStack(spacing: DesignSystem.Spacing.xs) {
+                                Text("タップしてコピー")
+                                    .font(DesignSystem.Typography.caption)
+                                    .foregroundColor(DesignSystem.Colors.secondary)
+                                
+                                Image(systemName: "doc.on.doc")
+                                    .font(DesignSystem.Typography.caption)
+                                    .foregroundColor(DesignSystem.Colors.secondary)
+                            }
+                        }
                         
-                        Text("タップしてコピー")
-                            .font(DesignSystem.Typography.caption)
-                            .foregroundColor(DesignSystem.Colors.secondary)
+                        Spacer()
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(DesignSystem.Spacing.md)
                     .background(
                         RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadiusSmall, style: .continuous)
