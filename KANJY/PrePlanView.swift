@@ -2690,88 +2690,55 @@ struct PrePlanView: View {
         onEdit: @escaping () -> Void
     ) -> some View {
         VStack(alignment: .leading, spacing: DesignSystem.Spacing.md) {
-            HStack {
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundColor(DesignSystem.Colors.success)
-                Text("スケジュール調整完了")
-                    .font(DesignSystem.Typography.headline)
-                    .foregroundColor(DesignSystem.Colors.success)
-                Spacer()
-            }
-            
-            Text(event.title)
-                .font(DesignSystem.Typography.subheadline)
-                .foregroundColor(DesignSystem.Colors.secondary)
-            
+            // 候補日時を表示
             if let optimalDate = event.optimalDate {
-                HStack(spacing: DesignSystem.Spacing.sm) {
-                    Image(systemName: "calendar")
-                        .foregroundColor(DesignSystem.Colors.primary)
-                    Text("決定日時: \(scheduleViewModel.formatDateTime(optimalDate))")
-                        .font(DesignSystem.Typography.subheadline)
+                Text(scheduleViewModel.formatDateTime(optimalDate))
+                    .font(DesignSystem.Typography.body)
+                    .foregroundColor(DesignSystem.Colors.black)
+            } else if !event.candidateDates.isEmpty {
+                // 最適日がない場合は候補日時を表示
+                ForEach(event.candidateDates.sorted(), id: \.self) { date in
+                    Text(scheduleViewModel.formatDateTime(date))
+                        .font(DesignSystem.Typography.body)
                         .foregroundColor(DesignSystem.Colors.black)
                 }
             }
             
-            // 参加者状況の表示
-            let attendingCount = event.responses.filter { $0.status == .attending }.count
-            let totalResponses = event.responses.count
-            HStack(spacing: DesignSystem.Spacing.sm) {
-                Image(systemName: "person.2")
-                    .foregroundColor(DesignSystem.Colors.primary)
-                Text("参加者: \(attendingCount)/\(totalResponses)人")
-                    .font(DesignSystem.Typography.subheadline)
-                    .foregroundColor(DesignSystem.Colors.black)
+            // メインアクション：URLを共有
+            Button(action: onShowUrl) {
+                Label("URLを共有", systemImage: "square.and.arrow.up")
+                    .font(DesignSystem.Typography.body)
+                    .fontWeight(.medium)
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(DesignSystem.Button.Padding.vertical)
+                    .background(
+                        RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadiusSmall, style: .continuous)
+                            .fill(DesignSystem.Colors.primary)
+                    )
             }
             
-            VStack(spacing: DesignSystem.Spacing.sm) {
-                HStack(spacing: DesignSystem.Spacing.md) {
-                    Button(action: {
-                        // プレビューをWebViewで表示
-                        showingSchedulePreview = true
-                    }) {
-                        Label("プレビュー", systemImage: "eye.fill")
-                            .font(DesignSystem.Typography.body)
-                            .foregroundColor(DesignSystem.Colors.primary)
-                            .frame(maxWidth: .infinity)
-                            .padding(DesignSystem.Button.Padding.vertical)
-                            .background(
-                                RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadiusSmall, style: .continuous)
-                                    .fill(DesignSystem.Colors.primary.opacity(0.1))
-                            )
-                    }
-                    
-                    Button(action: onShowUrl) {
-                        Label("URLを共有", systemImage: "square.and.arrow.up")
-                            .font(DesignSystem.Typography.body)
-                            .foregroundColor(DesignSystem.Colors.primary)
-                            .frame(maxWidth: .infinity)
-                            .padding(DesignSystem.Button.Padding.vertical)
-                            .background(
-                                RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadiusSmall, style: .continuous)
-                                    .fill(DesignSystem.Colors.primary.opacity(0.1))
-                            )
-                    }
+            // サブアクション：プレビューと編集
+            HStack(spacing: DesignSystem.Spacing.lg) {
+                Button(action: {
+                    showingSchedulePreview = true
+                }) {
+                    Text("プレビュー")
+                        .font(DesignSystem.Typography.subheadline)
+                        .foregroundColor(DesignSystem.Colors.primary)
                 }
                 
+                Text("|")
+                    .foregroundColor(DesignSystem.Colors.gray2)
+                
                 Button(action: onEdit) {
-                    Label("編集", systemImage: "pencil")
-                        .font(DesignSystem.Typography.body)
-                        .foregroundColor(DesignSystem.Colors.secondary)
-                        .frame(maxWidth: .infinity)
-                        .padding(DesignSystem.Button.Padding.vertical)
-                        .background(
-                            RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadiusSmall, style: .continuous)
-                                .fill(DesignSystem.Colors.gray3.opacity(0.2))
-                        )
+                    Text("編集")
+                        .font(DesignSystem.Typography.subheadline)
+                        .foregroundColor(DesignSystem.Colors.primary)
                 }
             }
+            .frame(maxWidth: .infinity)
         }
-        .padding(DesignSystem.Card.Padding.medium)
-        .background(
-            RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadiusSmall, style: .continuous)
-                .fill(DesignSystem.Colors.gray1)
-        )
     }
     
     // スケジュールプレビューシート
