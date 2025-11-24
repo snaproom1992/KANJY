@@ -576,7 +576,7 @@ struct PrePlanView: View {
                     }
                 }
             }
-            .sheet(isPresented: $showScheduleEditSheet) {
+            .popover(isPresented: $showScheduleEditSheet) {
                 NavigationStack {
                     ScrollView {
                         VStack(spacing: 0) {
@@ -585,6 +585,7 @@ struct PrePlanView: View {
                                 .padding(.bottom, DesignSystem.Spacing.xxl)
                         }
                     }
+                    .background(.ultraThinMaterial)
                     .navigationTitle("スケジュール編集")
                     .navigationBarTitleDisplayMode(.inline)
                         .toolbar {
@@ -607,9 +608,9 @@ struct PrePlanView: View {
                             }
                         }
                 }
+                .presentationCompactAdaptation(.sheet)
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
-                .presentationBackground(.ultraThinMaterial)
             }
             .sheet(isPresented: $showingSchedulePreview) {
                 SchedulePreviewSheet(
