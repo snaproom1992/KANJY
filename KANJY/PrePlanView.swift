@@ -1667,7 +1667,6 @@ struct PrePlanView: View {
                 }
             }
         }
-        .padding(.horizontal, DesignSystem.Spacing.lg)
     }
     
     // 📢 開催準備カード
