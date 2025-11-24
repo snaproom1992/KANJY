@@ -608,7 +608,7 @@ struct PrePlanView: View {
                             }
                         }
                 }
-                .presentationDetents([.large])
+                .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
             }
             .sheet(isPresented: $showingSchedulePreview) {
