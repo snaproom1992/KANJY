@@ -253,11 +253,8 @@ struct PrePlanView: View {
     @State private var scheduleResponses: [ScheduleResponse] = []
     @State private var isLoadingResponses = false
     
-    // 候補日時編集用
-    @State private var showEditCandidatePopover = false
-    @State private var editingCandidateDate: Date?
-    @State private var editingCandidateDateTemp: Date = Date()
-    @State private var editingCandidateHasTime = true
+    // スケジュール編集シート用
+    @State private var showScheduleEditSheet = false
     
     // 3ステップのタブ構造
     enum MainStep: String, CaseIterable {
@@ -579,6 +576,31 @@ struct PrePlanView: View {
                         // URL表示完了後は飲み会作成画面に戻る（トップには戻らない）
                     }
                 }
+            }
+            .sheet(isPresented: $showScheduleEditSheet) {
+                NavigationStack {
+                    ScheduleCreationFormView()
+                        .navigationTitle("スケジュール編集")
+                        .navigationBarTitleDisplayMode(.inline)
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) {
+                                Button("キャンセル") {
+                                    isEditingSchedule = false
+                                    showScheduleEditSheet = false
+                                }
+                            }
+                            ToolbarItem(placement: .confirmationAction) {
+                                Button("保存") {
+                                    updateScheduleEvent()
+                                    showScheduleEditSheet = false
+                                }
+                                .fontWeight(.bold)
+                                .disabled(!canCreateSchedule)
+                            }
+                        }
+                }
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
             }
             .sheet(isPresented: $showingSchedulePreview) {
                 SchedulePreviewSheet(
@@ -2271,6 +2293,7 @@ struct PrePlanView: View {
                     },
                     onEdit: {
                         startEditingSchedule(event: event)
+                        showScheduleEditSheet = true
                     }
                 )
             } else {
@@ -2775,43 +2798,12 @@ struct PrePlanView: View {
                                 .font(DesignSystem.Typography.subheadline)
                                 .fontWeight(isTopChoice ? .bold : .regular)
                                 .foregroundColor(isTopChoice ? .white : (votes > 0 ? DesignSystem.Colors.primary : DesignSystem.Colors.secondary))
-                            
-                            // 編集ボタン
-                            Button(action: {
-                                editingCandidateDate = date
-                                editingCandidateDateTemp = date
-                                editingCandidateHasTime = scheduleCandidateDatesWithTime[date] ?? true
-                                showEditCandidatePopover = true
-                            }) {
-                                Image(systemName: "pencil.circle.fill")
-                                    .font(.system(size: 20))
-                                    .foregroundColor(isTopChoice ? .white.opacity(0.8) : DesignSystem.Colors.primary.opacity(0.6))
-                            }
-                            .buttonStyle(.plain)
                         }
                         .padding(DesignSystem.Spacing.sm)
                         .background(
                             RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadiusSmall, style: .continuous)
                                 .fill(isTopChoice ? DesignSystem.Colors.primary : DesignSystem.Colors.primary.opacity(0.1))
                         )
-                        .popover(isPresented: $showEditCandidatePopover) {
-                            CandidateDateEditPopover(
-                                date: $editingCandidateDateTemp,
-                                hasTime: $editingCandidateHasTime,
-                                onSave: {
-                                    if let oldDate = editingCandidateDate,
-                                       let oldIndex = scheduleCandidateDates.firstIndex(of: oldDate) {
-                                        scheduleCandidateDates[oldIndex] = editingCandidateDateTemp
-                                        scheduleCandidateDatesWithTime.removeValue(forKey: oldDate)
-                                        scheduleCandidateDatesWithTime[editingCandidateDateTemp] = editingCandidateHasTime
-                                        showEditCandidatePopover = false
-                                    }
-                                },
-                                onCancel: {
-                                    showEditCandidatePopover = false
-                                }
-                            )
-                        }
                     }
                 }
             } else {
@@ -3005,57 +2997,6 @@ struct SimpleInfoRow: View {
                     lineWidth: 1
                 )
         )
-    }
-}
-
-// MARK: - Candidate Date Edit Popover
-/// 候補日時を編集するPopover（リキッドグラス効果）
-struct CandidateDateEditPopover: View {
-    @Binding var date: Date
-    @Binding var hasTime: Bool
-    let onSave: () -> Void
-    let onCancel: () -> Void
-    
-    var body: some View {
-        NavigationStack {
-            VStack(spacing: DesignSystem.Spacing.lg) {
-                // 日付選択
-                VStack(alignment: .leading, spacing: DesignSystem.Spacing.sm) {
-                    Text("日付")
-                        .font(DesignSystem.Typography.emphasizedSubheadline)
-                        .foregroundColor(DesignSystem.Colors.black)
-                    
-                    DatePicker("", selection: $date, displayedComponents: hasTime ? [.date, .hourAndMinute] : [.date])
-                        .datePickerStyle(.graphical)
-                        .labelsHidden()
-                }
-                
-                // 時間設定トグル
-                Toggle("時間を設定", isOn: $hasTime)
-                    .font(DesignSystem.Typography.body)
-                    .foregroundColor(DesignSystem.Colors.black)
-                
-                Spacer()
-            }
-            .padding(DesignSystem.Spacing.lg)
-            .navigationTitle("候補日時を編集")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("キャンセル") {
-                        onCancel()
-                    }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("保存") {
-                        onSave()
-                    }
-                    .fontWeight(.bold)
-                }
-            }
-        }
-        .presentationDetents([.medium])
-        .presentationDragIndicator(.visible)
     }
 }
 
