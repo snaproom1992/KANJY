@@ -416,3 +416,4 @@ NG:
 **Keep it simple. Keep it fun. Keep it focused on 飲み会. 🍻**
 
 
+

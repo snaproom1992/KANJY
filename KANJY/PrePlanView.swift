@@ -1,6 +1,9 @@
 import SwiftUI
 import Combine
 
+// 絵文字の選択肢
+private let availableEmojis = ["🍻", "🍺", "🥂", "🍷", "🍸", "🍹", "🍾", "🥃", "🍴", "🍖", "🍗", "🍣", "🍕", "🍔", "🥩", "🍙", "🤮", "🤢", "🥴", "😵", "😵‍💫", "💸", "🎊"]
+
 // 役職を表す列挙型
 public enum Role: String, CaseIterable, Identifiable, Codable {
     case director = "部長"
@@ -1618,7 +1621,7 @@ struct PrePlanView: View {
                     }
                     
                     // Web回答取り込みボタン（スケジュール作成後は常に表示）
-                    if hasScheduleEvent, let event = scheduleEvent {
+                    if hasScheduleEvent {
                         Button(action: {
                             Task {
                                 await syncWebResponses()
@@ -2016,8 +2019,7 @@ struct PrePlanView: View {
                 Section {
                     // ランダム絵文字ボタン
                     Button(action: {
-                        let emojis = ["🍻", "🍺", "🥂", "🍷", "🍸", "🍹", "🍾", "🥃", "🍴", "🍖", "🍗", "🍣", "🍕", "🍔", "🥩", "🍙", "🤮", "🤢", "🥴", "��", "😵‍💫", "💸", "🎊"]
-                        viewModel.selectedEmoji = emojis.randomElement() ?? "🍻"
+                        viewModel.selectedEmoji = availableEmojis.randomElement() ?? "🍻"
                         showEmojiPicker = false
                     }) {
                         HStack {
