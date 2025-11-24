@@ -598,23 +598,11 @@ struct PrePlanView: View {
                 }
             }
             .alert("日程候補日を更新しました", isPresented: $showingScheduleUpdatedAlert) {
-                if let webUrl = scheduleEvent?.webUrl {
-                    Button("URLをコピー") {
-                        UIPasteboard.general.string = webUrl
-                        let generator = UINotificationFeedbackGenerator()
-                        generator.notificationOccurred(.success)
-                    }
-                }
-                Button("OK", role: .cancel) {
+                Button("OK") {
                     // アラートを閉じる
                 }
             } message: {
-                if let webUrl = scheduleEvent?.webUrl {
-                    Text(webUrl)
-                        .font(.system(.caption, design: .monospaced))
-                } else {
-                    Text("更新が完了しました")
-                }
+                Text("既に共有したURLはそのまま使用できます")
             }
             .sheet(isPresented: $showScheduleEditSheet) {
                 NavigationStack {
