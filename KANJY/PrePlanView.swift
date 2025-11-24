@@ -241,12 +241,6 @@ struct PrePlanView: View {
     @State private var selectedScheduleDateHasTime = true // 選択中の日時に時間を含むかどうか
     @State private var isEditingSchedule = false
     
-    // 候補日時編集ダイアログ用
-    @State private var showingEditCandidateDialog = false
-    @State private var editingCandidateIndex: Int?
-    @State private var editingCandidateDate = Date()
-    @State private var editingCandidateHasTime = true
-    
     // 開催確定用の状態変数
     @State private var confirmedDate: Date?
     @State private var confirmedLocation: String = ""
@@ -258,6 +252,12 @@ struct PrePlanView: View {
     // Webフォームの回答
     @State private var scheduleResponses: [ScheduleResponse] = []
     @State private var isLoadingResponses = false
+    
+    // 候補日時編集用
+    @State private var showEditCandidatePopover = false
+    @State private var editingCandidateDate: Date?
+    @State private var editingCandidateDateTemp: Date = Date()
+    @State private var editingCandidateHasTime = true
     
     // 3ステップのタブ構造
     enum MainStep: String, CaseIterable {
@@ -579,9 +579,6 @@ struct PrePlanView: View {
                         // URL表示完了後は飲み会作成画面に戻る（トップには戻らない）
                     }
                 }
-            }
-            .sheet(isPresented: $showingEditCandidateDialog) {
-                EditCandidateDateDialog()
             }
             .sheet(isPresented: $showingSchedulePreview) {
                 SchedulePreviewSheet(
@@ -2101,65 +2098,6 @@ struct PrePlanView: View {
         .presentationDragIndicator(.visible)
     }
     
-    // 候補日時編集ダイアログ
-    @ViewBuilder
-    private func EditCandidateDateDialog() -> some View {
-        NavigationStack {
-            Form {
-                Section {
-                    // 日付
-                    DatePicker("日付", 
-                              selection: $editingCandidateDate,
-                              displayedComponents: editingCandidateHasTime ? [.date, .hourAndMinute] : [.date])
-                        .font(DesignSystem.Typography.body)
-                        .environment(\.locale, Locale(identifier: "ja_JP"))
-                    
-                    // 時間設定トグル
-                    Toggle("時間を設定", isOn: $editingCandidateHasTime)
-                        .font(DesignSystem.Typography.body)
-                        .onChange(of: editingCandidateHasTime) { _, newValue in
-                            if !newValue {
-                                // 時間を00:00にリセット
-                                let calendar = Calendar.current
-                                let components = calendar.dateComponents([.year, .month, .day], from: editingCandidateDate)
-                                if let dateOnly = calendar.date(from: components) {
-                                    editingCandidateDate = dateOnly
-                                }
-                            }
-                        }
-                } header: {
-                    Text("日時設定")
-                }
-            }
-            .navigationTitle("候補日時を編集")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("キャンセル") {
-                        showingEditCandidateDialog = false
-                    }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("保存") {
-                        if let index = editingCandidateIndex {
-                            let sortedDates = scheduleCandidateDates.sorted()
-                            if index < sortedDates.count {
-                                let oldDate = sortedDates[index]
-                                scheduleCandidateDates.removeAll { $0 == oldDate }
-                                scheduleCandidateDates.append(editingCandidateDate)
-                                scheduleCandidateDatesWithTime.removeValue(forKey: oldDate)
-                                scheduleCandidateDatesWithTime[editingCandidateDate] = editingCandidateHasTime
-                            }
-                        }
-                        showingEditCandidateDialog = false
-                    }
-                }
-            }
-        }
-        .presentationDetents([.medium])
-        .presentationDragIndicator(.visible)
-    }
-    
     // シンプルな絵文字グリッド行
     @ViewBuilder
     private func SimpleEmojiGridRow(emojis: [String]) -> some View {
@@ -2445,34 +2383,29 @@ struct PrePlanView: View {
                 } else {
                     ForEach(Array(scheduleCandidateDates.sorted().enumerated()), id: \.element) { index, date in
                         HStack {
-                            // 候補日時の表示
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("候補\(index + 1)")
-                                    .font(DesignSystem.Typography.caption)
-                                    .foregroundColor(DesignSystem.Colors.secondary)
-                                Text(scheduleViewModel.formatDateTime(date))
+                            // 日時選択（回答期限と全く同じスタイル - 常にDatePickerを表示）
+                            let dateBinding = Binding(
+                                get: { scheduleCandidateDates.sorted()[index] },
+                                set: { newDate in
+                                    let sortedDates = scheduleCandidateDates.sorted()
+                                    let oldDate = sortedDates[index]
+                                    scheduleCandidateDates.removeAll { $0 == oldDate }
+                                    scheduleCandidateDates.append(newDate)
+                                    scheduleCandidateDatesWithTime.removeValue(forKey: oldDate)
+                                    scheduleCandidateDatesWithTime[newDate] = hasTimeForAllCandidates
+                                }
+                            )
+                            
+                            if hasTimeForAllCandidates {
+                                DatePicker("候補\(index + 1)", selection: dateBinding, displayedComponents: [.date, .hourAndMinute])
                                     .font(DesignSystem.Typography.body)
                                     .foregroundColor(DesignSystem.Colors.black)
-                            }
-                            
-                            Spacer()
-                            
-                            // 編集ボタン
-                            Button(action: {
-                                editingCandidateIndex = index
-                                editingCandidateDate = date
-                                editingCandidateHasTime = scheduleCandidateDatesWithTime[date] ?? hasTimeForAllCandidates
-                                showingEditCandidateDialog = true
-                            }) {
-                                Text("編集")
-                                    .font(DesignSystem.Typography.caption)
-                                    .foregroundColor(DesignSystem.Colors.primary)
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 6)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 6)
-                                            .fill(DesignSystem.Colors.primary.opacity(0.1))
-                                    )
+                                    .environment(\.locale, Locale(identifier: "ja_JP"))
+                            } else {
+                                DatePicker("候補\(index + 1)", selection: dateBinding, displayedComponents: [.date])
+                                    .font(DesignSystem.Typography.body)
+                                    .foregroundColor(DesignSystem.Colors.black)
+                                    .environment(\.locale, Locale(identifier: "ja_JP"))
                             }
                             
                             // 削除ボタン（バツ）
@@ -2842,12 +2775,43 @@ struct PrePlanView: View {
                                 .font(DesignSystem.Typography.subheadline)
                                 .fontWeight(isTopChoice ? .bold : .regular)
                                 .foregroundColor(isTopChoice ? .white : (votes > 0 ? DesignSystem.Colors.primary : DesignSystem.Colors.secondary))
+                            
+                            // 編集ボタン
+                            Button(action: {
+                                editingCandidateDate = date
+                                editingCandidateDateTemp = date
+                                editingCandidateHasTime = scheduleCandidateDatesWithTime[date] ?? true
+                                showEditCandidatePopover = true
+                            }) {
+                                Image(systemName: "pencil.circle.fill")
+                                    .font(.system(size: 20))
+                                    .foregroundColor(isTopChoice ? .white.opacity(0.8) : DesignSystem.Colors.primary.opacity(0.6))
+                            }
+                            .buttonStyle(.plain)
                         }
                         .padding(DesignSystem.Spacing.sm)
                         .background(
                             RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadiusSmall, style: .continuous)
                                 .fill(isTopChoice ? DesignSystem.Colors.primary : DesignSystem.Colors.primary.opacity(0.1))
                         )
+                        .popover(isPresented: $showEditCandidatePopover) {
+                            CandidateDateEditPopover(
+                                date: $editingCandidateDateTemp,
+                                hasTime: $editingCandidateHasTime,
+                                onSave: {
+                                    if let oldDate = editingCandidateDate,
+                                       let oldIndex = scheduleCandidateDates.firstIndex(of: oldDate) {
+                                        scheduleCandidateDates[oldIndex] = editingCandidateDateTemp
+                                        scheduleCandidateDatesWithTime.removeValue(forKey: oldDate)
+                                        scheduleCandidateDatesWithTime[editingCandidateDateTemp] = editingCandidateHasTime
+                                        showEditCandidatePopover = false
+                                    }
+                                },
+                                onCancel: {
+                                    showEditCandidatePopover = false
+                                }
+                            )
+                        }
                     }
                 }
             } else {
@@ -3041,6 +3005,57 @@ struct SimpleInfoRow: View {
                     lineWidth: 1
                 )
         )
+    }
+}
+
+// MARK: - Candidate Date Edit Popover
+/// 候補日時を編集するPopover（リキッドグラス効果）
+struct CandidateDateEditPopover: View {
+    @Binding var date: Date
+    @Binding var hasTime: Bool
+    let onSave: () -> Void
+    let onCancel: () -> Void
+    
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: DesignSystem.Spacing.lg) {
+                // 日付選択
+                VStack(alignment: .leading, spacing: DesignSystem.Spacing.sm) {
+                    Text("日付")
+                        .font(DesignSystem.Typography.emphasizedSubheadline)
+                        .foregroundColor(DesignSystem.Colors.black)
+                    
+                    DatePicker("", selection: $date, displayedComponents: hasTime ? [.date, .hourAndMinute] : [.date])
+                        .datePickerStyle(.graphical)
+                        .labelsHidden()
+                }
+                
+                // 時間設定トグル
+                Toggle("時間を設定", isOn: $hasTime)
+                    .font(DesignSystem.Typography.body)
+                    .foregroundColor(DesignSystem.Colors.black)
+                
+                Spacer()
+            }
+            .padding(DesignSystem.Spacing.lg)
+            .navigationTitle("候補日時を編集")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("キャンセル") {
+                        onCancel()
+                    }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("保存") {
+                        onSave()
+                    }
+                    .fontWeight(.bold)
+                }
+            }
+        }
+        .presentationDetents([.medium])
+        .presentationDragIndicator(.visible)
     }
 }
 
