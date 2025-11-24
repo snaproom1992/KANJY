@@ -579,25 +579,32 @@ struct PrePlanView: View {
             }
             .sheet(isPresented: $showScheduleEditSheet) {
                 NavigationStack {
-                    ScheduleCreationFormView()
-                        .navigationTitle("スケジュール編集")
-                        .navigationBarTitleDisplayMode(.inline)
-                        .toolbar {
-                            ToolbarItem(placement: .cancellationAction) {
-                                Button("キャンセル") {
-                                    isEditingSchedule = false
-                                    showScheduleEditSheet = false
-                                }
-                            }
-                            ToolbarItem(placement: .confirmationAction) {
-                                Button("保存") {
-                                    updateScheduleEvent()
-                                    showScheduleEditSheet = false
-                                }
-                                .fontWeight(.bold)
-                                .disabled(!canCreateSchedule)
+                    ScrollView {
+                        VStack(spacing: 0) {
+                            ScheduleCreationFormView()
+                                .padding(.horizontal, DesignSystem.Spacing.lg)
+                                .padding(.bottom, DesignSystem.Spacing.xxl)
+                        }
+                    }
+                    .background(Color(.systemGroupedBackground))
+                    .navigationTitle("スケジュール編集")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("キャンセル") {
+                                isEditingSchedule = false
+                                showScheduleEditSheet = false
                             }
                         }
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("保存") {
+                                updateScheduleEvent()
+                                showScheduleEditSheet = false
+                            }
+                            .fontWeight(.bold)
+                            .disabled(!canCreateSchedule)
+                        }
+                    }
                 }
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
