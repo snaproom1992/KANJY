@@ -584,11 +584,12 @@ struct PrePlanView: View {
                             .background(.ultraThinMaterial)
                         
                         ScrollView {
-                            VStack(spacing: 0) {
+                            VStack(spacing: DesignSystem.Spacing.lg) {
                                 ScheduleCreationFormView()
                                     .padding(.horizontal, DesignSystem.Spacing.lg)
-                                    .padding(.bottom, DesignSystem.Spacing.xxl)
+                                    .padding(.vertical, DesignSystem.Spacing.md)
                             }
+                            .padding(.bottom, DesignSystem.Spacing.xxl)
                         }
                     }
                     .navigationTitle("スケジュール編集")
@@ -600,16 +601,11 @@ struct PrePlanView: View {
                                 }
                             }
                             ToolbarItem(placement: .confirmationAction) {
-                                Button("保存") {
-                                    if hasScheduleEvent {
-                                        // Supabaseに更新
-                                        updateScheduleEvent()
-                                    }
-                                    // ローカル状態は既に更新されているのでシートを閉じるだけ
+                                Button("閉じる") {
+                                    // シートを閉じるだけ（ローカル状態は既に更新されている）
                                     showScheduleEditSheet = false
                                 }
                                 .fontWeight(.bold)
-                                .disabled(!canCreateSchedule)
                             }
                         }
                 }
@@ -2404,12 +2400,13 @@ struct PrePlanView: View {
     // スケジュール作成・編集フォーム
     @ViewBuilder
     private func ScheduleCreationFormView() -> some View {
-        VStack(alignment: .leading, spacing: DesignSystem.Spacing.lg) {
-            // 候補日時
-            VStack(alignment: .leading, spacing: DesignSystem.Spacing.sm) {
+        VStack(spacing: DesignSystem.Spacing.lg) {
+            // 候補日時カード
+            VStack(alignment: .leading, spacing: DesignSystem.Spacing.md) {
                 Text("候補日時")
-                    .font(DesignSystem.Typography.emphasizedSubheadline)
+                    .font(DesignSystem.Typography.headline)
                     .foregroundColor(DesignSystem.Colors.black)
+                    .padding(.bottom, DesignSystem.Spacing.xs)
                 
                 // 時間設定トグル（回答期限を設定と同じスタイル）
                 Toggle("時間を設定", isOn: Binding(
@@ -2511,9 +2508,19 @@ struct PrePlanView: View {
                     )
                 }
             }
+            .padding(DesignSystem.Spacing.lg)
+            .background(
+                RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadius, style: .continuous)
+                    .fill(Color(.systemBackground))
+            )
             
-            // 回答期限
-            VStack(alignment: .leading, spacing: DesignSystem.Spacing.sm) {
+            // 回答期限カード
+            VStack(alignment: .leading, spacing: DesignSystem.Spacing.md) {
+                Text("回答期限")
+                    .font(DesignSystem.Typography.headline)
+                    .foregroundColor(DesignSystem.Colors.black)
+                    .padding(.bottom, DesignSystem.Spacing.xs)
+                
                 Toggle("回答期限を設定", isOn: $hasScheduleDeadline)
                     .font(DesignSystem.Typography.body)
                     .foregroundColor(DesignSystem.Colors.black)
@@ -2526,38 +2533,29 @@ struct PrePlanView: View {
                     .font(DesignSystem.Typography.body)
                     .foregroundColor(DesignSystem.Colors.black)
                     .environment(\.locale, Locale(identifier: "ja_JP"))
+                    .padding(.top, DesignSystem.Spacing.xs)
                 }
             }
-            
-            Divider()
-                .padding(.vertical, DesignSystem.Spacing.md)
-            
-            Text("スケジュール調整ページを作成")
-                .font(DesignSystem.Typography.subheadline)
-                .foregroundColor(DesignSystem.Colors.secondary)
-                .padding(.top, DesignSystem.Spacing.md)
+            .padding(DesignSystem.Spacing.lg)
+            .background(
+                RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadius, style: .continuous)
+                    .fill(Color(.systemBackground))
+            )
             
             // アクションボタン
-            VStack(spacing: DesignSystem.Spacing.sm) {
-                Button(action: {
-                    // プレビュー用に一時的なイベントを作成してWebViewで表示
-                    createPreviewEvent()
-                }) {
-                    HStack {
-                        Image(systemName: "eye.fill")
-                            .foregroundColor(canPreviewSchedule ? DesignSystem.Colors.primary : DesignSystem.Colors.secondary)
-                        Text("プレビューを表示")
-                            .font(DesignSystem.Typography.body)
-                            .foregroundColor(canPreviewSchedule ? DesignSystem.Colors.primary : DesignSystem.Colors.secondary)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(DesignSystem.Button.Padding.vertical)
-                    .background(
-                        RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadiusSmall, style: .continuous)
-                            .fill(DesignSystem.Colors.primary.opacity(canPreviewSchedule ? 0.12 : 0.05))
-                    )
+            VStack(spacing: DesignSystem.Spacing.md) {
+                // 説明文
+                VStack(alignment: .leading, spacing: DesignSystem.Spacing.xs) {
+                    Text("スケジュール調整ページを公開")
+                        .font(DesignSystem.Typography.headline)
+                        .foregroundColor(DesignSystem.Colors.black)
+                    
+                    Text("URLを発行すると、参加者が候補日時に回答できるようになります")
+                        .font(DesignSystem.Typography.subheadline)
+                        .foregroundColor(DesignSystem.Colors.secondary)
                 }
-                .disabled(!canPreviewSchedule)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.bottom, DesignSystem.Spacing.xs)
                 
                 Button(action: {
                     print("🔘 ボタンがタップされました")
@@ -2572,14 +2570,17 @@ struct PrePlanView: View {
                         // 新規作成
                         createScheduleEvent()
                     }
+                    // シートを閉じる
+                    showScheduleEditSheet = false
                 }) {
-                    HStack {
+                    HStack(spacing: DesignSystem.Spacing.sm) {
                         Image(systemName: hasScheduleEvent ? "arrow.clockwise" : "link.badge.plus")
-                            .foregroundColor(DesignSystem.Colors.white)
-                        Text(hasScheduleEvent ? "ページのURLを更新" : "ページのURLを発行")
+                            .font(.system(size: 18, weight: .semibold))
+                        Text(hasScheduleEvent ? "URLを更新して公開" : "URLを発行して公開")
                             .font(DesignSystem.Typography.body)
-                            .foregroundColor(DesignSystem.Colors.white)
+                            .fontWeight(.semibold)
                     }
+                    .foregroundColor(DesignSystem.Colors.white)
                     .frame(maxWidth: .infinity)
                     .padding(DesignSystem.Button.Padding.vertical)
                     .background(
@@ -2589,6 +2590,11 @@ struct PrePlanView: View {
                 }
                 .disabled(!canCreateSchedule)
             }
+            .padding(DesignSystem.Spacing.lg)
+            .background(
+                RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadius, style: .continuous)
+                    .fill(Color(.systemBackground))
+            )
         }
         // 候補日時追加用のシート
         .sheet(isPresented: $showingScheduleDatePicker) {
