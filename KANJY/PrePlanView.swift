@@ -576,16 +576,21 @@ struct PrePlanView: View {
                     }
                 }
             }
-            .popover(isPresented: $showScheduleEditSheet) {
+            .sheet(isPresented: $showScheduleEditSheet) {
                 NavigationStack {
-                    ScrollView {
-                        VStack(spacing: 0) {
-                            ScheduleCreationFormView()
-                                .padding(.horizontal, DesignSystem.Spacing.lg)
-                                .padding(.bottom, DesignSystem.Spacing.xxl)
+                    ZStack {
+                        // リキッドグラス効果の背景
+                        Color.clear
+                            .background(.ultraThinMaterial)
+                        
+                        ScrollView {
+                            VStack(spacing: 0) {
+                                ScheduleCreationFormView()
+                                    .padding(.horizontal, DesignSystem.Spacing.lg)
+                                    .padding(.bottom, DesignSystem.Spacing.xxl)
+                            }
                         }
                     }
-                    .background(.ultraThinMaterial)
                     .navigationTitle("スケジュール編集")
                     .navigationBarTitleDisplayMode(.inline)
                         .toolbar {
@@ -608,9 +613,9 @@ struct PrePlanView: View {
                             }
                         }
                 }
-                .presentationCompactAdaptation(.sheet)
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
+                .presentationBackground(.clear)
             }
             .sheet(isPresented: $showingSchedulePreview) {
                 SchedulePreviewSheet(
