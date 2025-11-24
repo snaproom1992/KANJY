@@ -239,7 +239,6 @@ struct PrePlanView: View {
     @State private var showingScheduleDatePicker = false
     @State private var selectedScheduleDate = Date()
     @State private var selectedScheduleDateHasTime = true // 選択中の日時に時間を含むかどうか
-    @State private var isEditingSchedule = false
     
     // 開催確定用の状態変数
     @State private var confirmedDate: Date?
@@ -589,22 +588,25 @@ struct PrePlanView: View {
                     .background(Color(.systemGroupedBackground))
                     .navigationTitle("スケジュール編集")
                     .navigationBarTitleDisplayMode(.inline)
-                    .toolbar {
-                        ToolbarItem(placement: .cancellationAction) {
-                            Button("キャンセル") {
-                                isEditingSchedule = false
-                                showScheduleEditSheet = false
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) {
+                                Button("キャンセル") {
+                                    showScheduleEditSheet = false
+                                }
+                            }
+                            ToolbarItem(placement: .confirmationAction) {
+                                Button("保存") {
+                                    if hasScheduleEvent {
+                                        // Supabaseに更新
+                                        updateScheduleEvent()
+                                    }
+                                    // ローカル状態は既に更新されているのでシートを閉じるだけ
+                                    showScheduleEditSheet = false
+                                }
+                                .fontWeight(.bold)
+                                .disabled(!canCreateSchedule)
                             }
                         }
-                        ToolbarItem(placement: .confirmationAction) {
-                            Button("保存") {
-                                updateScheduleEvent()
-                                showScheduleEditSheet = false
-                            }
-                            .fontWeight(.bold)
-                            .disabled(!canCreateSchedule)
-                        }
-                    }
                 }
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
@@ -2290,8 +2292,8 @@ struct PrePlanView: View {
     @ViewBuilder
     private func ScheduleSectionContent() -> some View {
         VStack(spacing: DesignSystem.Spacing.md) {
-            if hasScheduleEvent, let event = scheduleEvent, !isEditingSchedule {
-                // スケジュール調整済みの場合（表示モード）
+            if hasScheduleEvent, let event = scheduleEvent {
+                // スケジュール作成済み（Supabaseに保存済み）
                 ScheduleDisplayView(
                     event: event,
                     scheduleViewModel: scheduleViewModel,
@@ -2299,20 +2301,24 @@ struct PrePlanView: View {
                         showingScheduleUrlSheet = true
                     },
                     onEdit: {
-                        startEditingSchedule(event: event)
+                        // シート表示のための準備
+                        startEditingScheduleForSheet(event: event)
                         showScheduleEditSheet = true
                     }
                 )
             } else {
-                // スケジュール作成・編集フォーム（インライン表示）
-                // 未作成の場合は自動的にフォームを表示（onAppearで初期化）
-                ScheduleCreationFormView()
-                    .onAppear {
-                        // 基本情報から自動的に引き継ぐ
-                        if !isCreatingSchedule && !isEditingSchedule {
-                            startCreatingSchedule()
-                        }
+                // 未作成の状態：プレビュー・編集可能な表示
+                ScheduleEmptyStateView(
+                    candidateDatesCount: scheduleCandidateDates.count,
+                    onEdit: {
+                        // シート表示のための準備
+                        prepareScheduleForEditing()
+                        showScheduleEditSheet = true
+                    },
+                    onPreview: {
+                        createPreviewEvent()
                     }
+                )
             }
         }
     }
@@ -2340,8 +2346,27 @@ struct PrePlanView: View {
         isCreatingSchedule = true
     }
     
+    // シート編集の準備（未作成状態から）
+    private func prepareScheduleForEditing() {
+        // 基本情報から自動的に引き継ぐ（タイトル、説明、場所、予算）
+        scheduleTitle = localPlanName.isEmpty ? (planName.isEmpty ? "無題の飲み会" : planName) : localPlanName
+        scheduleDescription = viewModel.editingPlanDescription
+        scheduleLocation = viewModel.editingPlanLocation
+        let amountString = viewModel.totalAmount.filter { $0.isNumber }
+        if !amountString.isEmpty, let amount = Int(amountString) {
+            scheduleBudget = String(amount)
+        } else {
+            scheduleBudget = ""
+        }
+        // scheduleCandidateDatesはそのまま（既に追加された候補日を維持）
+        // scheduleDeadlineもそのまま
+        
+        print("🍙 シート編集準備（未作成状態）: 候補日時 \(scheduleCandidateDates.count)個")
+    }
+    
     // スケジュール編集開始
-    private func startEditingSchedule(event: ScheduleEvent) {
+    // シート表示用の編集準備（インライン編集モードにはしない）
+    private func startEditingScheduleForSheet(event: ScheduleEvent) {
         // 基本情報から自動的に引き継ぐ（タイトル、説明、場所、予算）
         scheduleTitle = localPlanName.isEmpty ? (planName.isEmpty ? "無題の飲み会" : planName) : localPlanName
         scheduleDescription = viewModel.editingPlanDescription
@@ -2366,9 +2391,8 @@ struct PrePlanView: View {
         
         scheduleDeadline = event.deadline
         hasScheduleDeadline = event.deadline != nil
-        isEditingSchedule = true
         
-        print("🍙 編集開始: 候補日時 \(event.candidateDates.count)個")
+        print("🍙 シート編集準備: 候補日時 \(event.candidateDates.count)個")
     }
     
     // スケジュール作成・編集フォーム
@@ -2531,20 +2555,22 @@ struct PrePlanView: View {
                 
                 Button(action: {
                     print("🔘 ボタンがタップされました")
-                    print("  isEditingSchedule: \(isEditingSchedule)")
+                    print("  hasScheduleEvent: \(hasScheduleEvent)")
                     print("  canCreateSchedule: \(canCreateSchedule)")
                     print("  候補日数: \(scheduleCandidateDates.count)")
                     
-                    if isEditingSchedule {
+                    if hasScheduleEvent {
+                        // 既存のイベントがある場合は更新
                         updateScheduleEvent()
                     } else {
+                        // 新規作成
                         createScheduleEvent()
                     }
                 }) {
                     HStack {
-                        Image(systemName: isEditingSchedule ? "arrow.clockwise" : "link.badge.plus")
+                        Image(systemName: hasScheduleEvent ? "arrow.clockwise" : "link.badge.plus")
                             .foregroundColor(DesignSystem.Colors.white)
-                        Text(isEditingSchedule ? "ページのURLを更新" : "ページのURLを発行")
+                        Text(hasScheduleEvent ? "ページのURLを更新" : "ページのURLを発行")
                             .font(DesignSystem.Typography.body)
                             .foregroundColor(DesignSystem.Colors.white)
                     }
@@ -2591,7 +2617,7 @@ struct PrePlanView: View {
     
     // プレビュー可能かどうか
     private var canPreviewSchedule: Bool {
-        if let _ = scheduleEvent, hasScheduleEvent || isEditingSchedule {
+        if let _ = scheduleEvent, hasScheduleEvent {
             return true
         }
         return !scheduleCandidateDates.isEmpty
@@ -2656,7 +2682,6 @@ struct PrePlanView: View {
     // スケジュール作成キャンセル
     private func cancelScheduleCreation() {
         isCreatingSchedule = false
-        isEditingSchedule = false
     }
     
     // スケジュール作成
@@ -2747,7 +2772,6 @@ struct PrePlanView: View {
                     // 更新されたイベントを取得
                     if let updatedEvent = scheduleViewModel.events.first(where: { $0.id == event.id }) {
                         scheduleEvent = updatedEvent
-                        isEditingSchedule = false
                         
                         // 確定日時に反映
                         if let optimalDate = updatedEvent.optimalDate {
@@ -2960,6 +2984,61 @@ struct CompactSwitchToggleStyle: ToggleStyle {
                 }
             }
         }
+    }
+}
+
+// MARK: - Schedule Empty State View
+/// スケジュール未作成状態の表示（プレビュー・編集ボタン付き）
+struct ScheduleEmptyStateView: View {
+    let candidateDatesCount: Int
+    let onEdit: () -> Void
+    let onPreview: () -> Void
+    
+    var body: some View {
+        VStack(spacing: DesignSystem.Spacing.lg) {
+            // メッセージ
+            HStack(spacing: DesignSystem.Spacing.sm) {
+                Image(systemName: "calendar.badge.clock")
+                    .font(.system(size: 20, weight: .medium))
+                    .foregroundColor(DesignSystem.Colors.secondary)
+                
+                if candidateDatesCount > 0 {
+                    Text("\(candidateDatesCount)個の候補日が設定されています")
+                        .font(DesignSystem.Typography.body)
+                        .foregroundColor(DesignSystem.Colors.secondary)
+                } else {
+                    Text("まだ候補日は設定されていません")
+                        .font(DesignSystem.Typography.body)
+                        .foregroundColor(DesignSystem.Colors.secondary)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            
+            // サブアクション：プレビューと編集
+            HStack(spacing: DesignSystem.Spacing.lg) {
+                Button(action: onPreview) {
+                    Text("プレビュー")
+                        .font(DesignSystem.Typography.subheadline)
+                        .foregroundColor(DesignSystem.Colors.primary)
+                }
+                
+                Text("|")
+                    .foregroundColor(DesignSystem.Colors.gray2)
+                
+                Button(action: onEdit) {
+                    Text("編集")
+                        .font(DesignSystem.Typography.subheadline)
+                        .foregroundColor(DesignSystem.Colors.primary)
+                }
+            }
+            .frame(maxWidth: .infinity)
+        }
+        .padding(DesignSystem.Spacing.lg)
+        .background(
+            RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadius, style: .continuous)
+                .fill(Color(.systemBackground))
+                .shadow(color: DesignSystem.Colors.shadow, radius: DesignSystem.Card.shadowRadius, x: 0, y: 2)
+        )
     }
 }
 
