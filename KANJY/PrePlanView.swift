@@ -236,6 +236,14 @@ struct PrePlanView: View {
     @State private var scheduleBudget = ""
     @State private var scheduleDeadline: Date?
     @State private var hasScheduleDeadline = false
+    
+    // 編集前の状態を保存（キャンセル時に元に戻すため）
+    @State private var originalCandidateDates: [Date] = []
+    @State private var originalCandidateDatesWithTime: [Date: Bool] = [:]
+    @State private var originalHasTimeForAllCandidates = true
+    @State private var originalDeadline: Date?
+    @State private var originalHasScheduleDeadline = false
+    
     @State private var showingScheduleDatePicker = false
     @State private var selectedScheduleDate = Date()
     @State private var selectedScheduleDateHasTime = true // 選択中の日時に時間を含むかどうか
@@ -597,12 +605,14 @@ struct PrePlanView: View {
                         .toolbar {
                             ToolbarItem(placement: .cancellationAction) {
                                 Button("キャンセル") {
+                                    // 編集をキャンセルして元の状態に戻す
+                                    cancelScheduleEditing()
                                     showScheduleEditSheet = false
                                 }
                             }
                             ToolbarItem(placement: .confirmationAction) {
                                 Button("閉じる") {
-                                    // シートを閉じるだけ（ローカル状態は既に更新されている）
+                                    // 変更を保持したままシートを閉じる（ローカル状態は既に更新されている）
                                     showScheduleEditSheet = false
                                 }
                                 .fontWeight(.bold)
@@ -2350,6 +2360,13 @@ struct PrePlanView: View {
     
     // シート編集の準備（未作成状態から）
     private func prepareScheduleForEditing() {
+        // 編集前の状態を保存
+        originalCandidateDates = scheduleCandidateDates
+        originalCandidateDatesWithTime = scheduleCandidateDatesWithTime
+        originalHasTimeForAllCandidates = hasTimeForAllCandidates
+        originalDeadline = scheduleDeadline
+        originalHasScheduleDeadline = hasScheduleDeadline
+        
         // 基本情報から自動的に引き継ぐ（タイトル、説明、場所、予算）
         scheduleTitle = localPlanName.isEmpty ? (planName.isEmpty ? "無題の飲み会" : planName) : localPlanName
         scheduleDescription = viewModel.editingPlanDescription
@@ -2369,6 +2386,13 @@ struct PrePlanView: View {
     // スケジュール編集開始
     // シート表示用の編集準備（インライン編集モードにはしない）
     private func startEditingScheduleForSheet(event: ScheduleEvent) {
+        // 編集前の状態を保存
+        originalCandidateDates = scheduleCandidateDates
+        originalCandidateDatesWithTime = scheduleCandidateDatesWithTime
+        originalHasTimeForAllCandidates = hasTimeForAllCandidates
+        originalDeadline = scheduleDeadline
+        originalHasScheduleDeadline = hasScheduleDeadline
+        
         // 基本情報から自動的に引き継ぐ（タイトル、説明、場所、予算）
         scheduleTitle = localPlanName.isEmpty ? (planName.isEmpty ? "無題の飲み会" : planName) : localPlanName
         scheduleDescription = viewModel.editingPlanDescription
@@ -2395,6 +2419,15 @@ struct PrePlanView: View {
         hasScheduleDeadline = event.deadline != nil
         
         print("🍙 シート編集準備: 候補日時 \(event.candidateDates.count)個")
+    }
+    
+    // 編集をキャンセルして元の状態に戻す
+    private func cancelScheduleEditing() {
+        scheduleCandidateDates = originalCandidateDates
+        scheduleCandidateDatesWithTime = originalCandidateDatesWithTime
+        hasTimeForAllCandidates = originalHasTimeForAllCandidates
+        scheduleDeadline = originalDeadline
+        hasScheduleDeadline = originalHasScheduleDeadline
     }
     
     // スケジュール作成・編集フォーム
