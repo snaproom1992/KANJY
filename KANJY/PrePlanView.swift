@@ -225,6 +225,7 @@ struct PrePlanView: View {
     @State private var hasScheduleEvent = false // スケジュール調整済みかどうか
     @State private var showingHelpGuide = false
     @State private var showingUrlPublishedAlert = false
+    @State private var showingScheduleUpdatedAlert = false
     
     // スケジュール作成用の状態変数（インライン作成用）
     @State private var isCreatingSchedule = false
@@ -594,6 +595,25 @@ struct PrePlanView: View {
                         .font(.system(.caption, design: .monospaced))
                 } else {
                     Text("URLをコピーして共有できます")
+                }
+            }
+            .alert("日程候補日を更新しました", isPresented: $showingScheduleUpdatedAlert) {
+                if let webUrl = scheduleEvent?.webUrl {
+                    Button("URLをコピー") {
+                        UIPasteboard.general.string = webUrl
+                        let generator = UINotificationFeedbackGenerator()
+                        generator.notificationOccurred(.success)
+                    }
+                }
+                Button("OK", role: .cancel) {
+                    // アラートを閉じる
+                }
+            } message: {
+                if let webUrl = scheduleEvent?.webUrl {
+                    Text(webUrl)
+                        .font(.system(.caption, design: .monospaced))
+                } else {
+                    Text("更新が完了しました")
                 }
             }
             .sheet(isPresented: $showScheduleEditSheet) {
@@ -2803,6 +2823,9 @@ struct PrePlanView: View {
                             confirmedDate = optimalDate
                         }
                     }
+                    
+                    // 更新確認アラートを表示
+                    showingScheduleUpdatedAlert = true
                 }
             } catch {
                 print("スケジュール更新エラー: \(error)")
