@@ -610,13 +610,6 @@ struct PrePlanView: View {
                                     showScheduleEditSheet = false
                                 }
                             }
-                            ToolbarItem(placement: .confirmationAction) {
-                                Button("閉じる") {
-                                    // 変更を保持したままシートを閉じる（ローカル状態は既に更新されている）
-                                    showScheduleEditSheet = false
-                                }
-                                .fontWeight(.bold)
-                            }
                         }
                 }
                 .presentationDetents([.medium, .large])
