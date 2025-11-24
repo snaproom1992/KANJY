@@ -582,7 +582,7 @@ struct PrePlanView: View {
                     // アラートを閉じるだけ
                 }
             } message: {
-                Text("スケジュール表示カードからURLをコピーできます")
+                Text("下に表示されているURLをタップしてコピーできます")
             }
             .sheet(isPresented: $showScheduleEditSheet) {
                 NavigationStack {
