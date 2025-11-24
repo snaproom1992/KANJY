@@ -224,6 +224,7 @@ struct PrePlanView: View {
     @State private var showingSchedulePreview = false
     @State private var hasScheduleEvent = false // スケジュール調整済みかどうか
     @State private var showingHelpGuide = false
+    @State private var showingUrlPublishedAlert = false
     
     // スケジュール作成用の状態変数（インライン作成用）
     @State private var isCreatingSchedule = false
@@ -575,6 +576,13 @@ struct PrePlanView: View {
                         // URL表示完了後は飲み会作成画面に戻る（トップには戻らない）
                     }
                 }
+            }
+            .alert("URLを発行しました", isPresented: $showingUrlPublishedAlert) {
+                Button("OK") {
+                    // アラートを閉じるだけ
+                }
+            } message: {
+                Text("スケジュール表示カードからURLをコピーできます")
             }
             .sheet(isPresented: $showScheduleEditSheet) {
                 NavigationStack {
@@ -2738,9 +2746,8 @@ struct PrePlanView: View {
                         print("📆 確定日時を設定: \(optimalDate)")
                     }
                     
-                    // URL表示シートを表示
-                    print("🔗 URLシート表示: showingScheduleUrlSheet = true")
-                    showingScheduleUrlSheet = true
+                    // シンプルな確認アラートを表示
+                    showingUrlPublishedAlert = true
                 }
             } catch {
                 print("❌ スケジュール作成エラー: \(error)")
