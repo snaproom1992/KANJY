@@ -224,7 +224,8 @@ struct PrePlanView: View {
     @State private var showingSchedulePreview = false
     @State private var hasScheduleEvent = false // スケジュール調整済みかどうか
     @State private var showingHelpGuide = false
-    @State private var showingUrlPublishedAlert = false
+    @State private var showingUrlPublishedDialog = false
+    @State private var publishedUrl: String = ""
     
     // スケジュール作成用の状態変数（インライン作成用）
     @State private var isCreatingSchedule = false
@@ -577,12 +578,12 @@ struct PrePlanView: View {
                     }
                 }
             }
-            .alert("URLを発行しました", isPresented: $showingUrlPublishedAlert) {
-                Button("OK") {
-                    // アラートを閉じるだけ
+            .sheet(isPresented: $showingUrlPublishedDialog) {
+                UrlPublishedDialog(url: publishedUrl) {
+                    showingUrlPublishedDialog = false
                 }
-            } message: {
-                Text("下に表示されているURLをタップしてコピーできます")
+                .presentationDetents([.height(280)])
+                .presentationDragIndicator(.visible)
             }
             .sheet(isPresented: $showScheduleEditSheet) {
                 NavigationStack {
@@ -2746,8 +2747,11 @@ struct PrePlanView: View {
                         print("📆 確定日時を設定: \(optimalDate)")
                     }
                     
-                    // シンプルな確認アラートを表示
-                    showingUrlPublishedAlert = true
+                    // URLを保存してダイアログを表示
+                    if let webUrl = event.webUrl {
+                        publishedUrl = webUrl
+                        showingUrlPublishedDialog = true
+                    }
                 }
             } catch {
                 print("❌ スケジュール作成エラー: \(error)")
@@ -3096,6 +3100,89 @@ struct SimpleInfoRow: View {
                     lineWidth: 1
                 )
         )
+    }
+}
+
+// MARK: - URL発行確認ダイアログ
+struct UrlPublishedDialog: View {
+    let url: String
+    let onDismiss: () -> Void
+    
+    @State private var showingCopyAlert = false
+    
+    var body: some View {
+        VStack(spacing: DesignSystem.Spacing.lg) {
+            // タイトル
+            Text("URLを発行しました")
+                .font(DesignSystem.Typography.headline)
+                .foregroundColor(DesignSystem.Colors.black)
+                .padding(.top, DesignSystem.Spacing.lg)
+            
+            // URL表示
+            VStack(alignment: .leading, spacing: DesignSystem.Spacing.xs) {
+                Text("共有URL")
+                    .font(DesignSystem.Typography.subheadline)
+                    .foregroundColor(DesignSystem.Colors.secondary)
+                
+                HStack {
+                    Text(url)
+                        .font(.system(.body, design: .monospaced))
+                        .foregroundColor(DesignSystem.Colors.black)
+                        .lineLimit(2)
+                        .truncationMode(.middle)
+                    
+                    Spacer()
+                }
+                .padding(DesignSystem.Spacing.md)
+                .background(
+                    RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadiusSmall, style: .continuous)
+                        .fill(Color(.systemGray6))
+                )
+            }
+            .padding(.horizontal, DesignSystem.Spacing.lg)
+            
+            // ボタン
+            VStack(spacing: DesignSystem.Spacing.sm) {
+                Button(action: {
+                    UIPasteboard.general.string = url
+                    let generator = UINotificationFeedbackGenerator()
+                    generator.notificationOccurred(.success)
+                    showingCopyAlert = true
+                }) {
+                    HStack {
+                        Image(systemName: "doc.on.clipboard.fill")
+                        Text("URLをコピー")
+                    }
+                    .font(DesignSystem.Typography.body)
+                    .fontWeight(.semibold)
+                    .foregroundColor(DesignSystem.Colors.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(DesignSystem.Button.Padding.vertical)
+                    .background(
+                        RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadiusSmall, style: .continuous)
+                            .fill(DesignSystem.Colors.primary)
+                    )
+                }
+                
+                Button(action: onDismiss) {
+                    Text("閉じる")
+                        .font(DesignSystem.Typography.body)
+                        .foregroundColor(DesignSystem.Colors.secondary)
+                        .frame(maxWidth: .infinity)
+                        .padding(DesignSystem.Button.Padding.vertical)
+                }
+            }
+            .padding(.horizontal, DesignSystem.Spacing.lg)
+            .padding(.bottom, DesignSystem.Spacing.lg)
+        }
+        .background(Color(.systemBackground))
+        .alert("コピー完了", isPresented: $showingCopyAlert) {
+            Button("OK") {
+                onDismiss()
+            }
+        } message: {
+            Text("URLがクリップボードにコピーされました")
+        }
     }
 }
 
