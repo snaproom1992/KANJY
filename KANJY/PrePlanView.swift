@@ -1588,71 +1588,70 @@ struct PrePlanView: View {
                     Text("参加者")
                         .font(DesignSystem.Typography.headline)
                         .foregroundColor(DesignSystem.Colors.black)
-                        
-                        Spacer()
-                        
-                        // 参加者数
-                        Text("\(viewModel.participants.count)人")
-                            .font(DesignSystem.Typography.caption)
-                            .foregroundColor(DesignSystem.Colors.secondary)
-                    }
                     
-                    // Web回答取り込みボタン（スケジュール作成後は常に表示）
-                    if hasScheduleEvent {
-                        Button(action: {
-                            Task {
-                                await syncWebResponses()
-                            }
-                        }) {
-                            HStack {
-                                Image(systemName: "arrow.down.circle.fill")
-                                if webResponsesCount > 0 {
-                                    Text("回答を同期 (\(webResponsesCount)人)")
-                                } else {
-                                    Text("回答を同期")
-                                }
-                            }
-                            .font(DesignSystem.Typography.body)
-                            .foregroundColor(DesignSystem.Colors.primary)
-                            .frame(maxWidth: .infinity)
-                            .padding(DesignSystem.Button.Padding.vertical)
-                            .background(
-                                RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadiusSmall, style: .continuous)
-                                    .fill(DesignSystem.Colors.primary.opacity(0.15))
-                            )
-                        }
-                        .padding(.bottom, DesignSystem.Spacing.sm)
-                    }
+                    Spacer()
                     
-                    // 参加者リスト
-                    if viewModel.participants.isEmpty {
-                        Text("参加者がいません")
-                            .font(DesignSystem.Typography.subheadline)
-                            .foregroundColor(DesignSystem.Colors.secondary)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, DesignSystem.Spacing.lg)
-                    } else {
-                        VStack(spacing: DesignSystem.Spacing.sm) {
-                            ForEach(viewModel.participants) { participant in
-                                ParticipantRow(participant: participant)
-                            }
-                        }
-                    }
-                    
-                    // 手動で参加者追加ボタン
+                    // 参加者数
+                    Text("\(viewModel.participants.count)人")
+                        .font(DesignSystem.Typography.caption)
+                        .foregroundColor(DesignSystem.Colors.secondary)
+                }
+                
+                // Web回答取り込みボタン（スケジュール作成後は常に表示）
+                if hasScheduleEvent {
                     Button(action: {
-                        showingAddParticipant = true
+                        Task {
+                            await syncWebResponses()
+                        }
                     }) {
-                        Label("参加者を追加", systemImage: "plus.circle.fill")
-                            .font(DesignSystem.Typography.body)
-                            .foregroundColor(DesignSystem.Colors.primary)
-                            .frame(maxWidth: .infinity)
-                            .padding(DesignSystem.Button.Padding.vertical)
-                            .background(
-                                RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadiusSmall, style: .continuous)
-                                    .fill(DesignSystem.Colors.primary.opacity(0.1))
-                            )
+                        HStack {
+                            Image(systemName: "arrow.down.circle.fill")
+                            if webResponsesCount > 0 {
+                                Text("回答を同期 (\(webResponsesCount)人)")
+                            } else {
+                                Text("回答を同期")
+                            }
+                        }
+                        .font(DesignSystem.Typography.body)
+                        .foregroundColor(DesignSystem.Colors.primary)
+                        .frame(maxWidth: .infinity)
+                        .padding(DesignSystem.Button.Padding.vertical)
+                        .background(
+                            RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadiusSmall, style: .continuous)
+                                .fill(DesignSystem.Colors.primary.opacity(0.15))
+                        )
                     }
+                    .padding(.bottom, DesignSystem.Spacing.sm)
+                }
+                
+                // 参加者リスト
+                if viewModel.participants.isEmpty {
+                    Text("参加者がいません")
+                        .font(DesignSystem.Typography.subheadline)
+                        .foregroundColor(DesignSystem.Colors.secondary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, DesignSystem.Spacing.lg)
+                } else {
+                    VStack(spacing: DesignSystem.Spacing.sm) {
+                        ForEach(viewModel.participants) { participant in
+                            ParticipantRow(participant: participant)
+                        }
+                    }
+                }
+                
+                // 手動で参加者追加ボタン
+                Button(action: {
+                    showingAddParticipant = true
+                }) {
+                    Label("参加者を追加", systemImage: "plus.circle.fill")
+                        .font(DesignSystem.Typography.body)
+                        .foregroundColor(DesignSystem.Colors.primary)
+                        .frame(maxWidth: .infinity)
+                        .padding(DesignSystem.Button.Padding.vertical)
+                        .background(
+                            RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadiusSmall, style: .continuous)
+                                .fill(DesignSystem.Colors.primary.opacity(0.1))
+                        )
                 }
             }
             .padding(DesignSystem.Spacing.lg)
