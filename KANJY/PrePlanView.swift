@@ -248,6 +248,9 @@ struct PrePlanView: View {
     @State private var selectedScheduleDate = Date()
     @State private var selectedScheduleDateHasTime = true // 選択中の日時に時間を含むかどうか
     
+    // キャンセル確認アラート
+    @State private var showingCancelAlert = false
+    
     // 開催確定用の状態変数
     @State private var confirmedDate: Date?
     @State private var confirmedLocation: String = ""
@@ -605,11 +608,27 @@ struct PrePlanView: View {
                         .toolbar {
                             ToolbarItem(placement: .cancellationAction) {
                                 Button("キャンセル") {
-                                    // 編集をキャンセルして元の状態に戻す
-                                    cancelScheduleEditing()
-                                    showScheduleEditSheet = false
+                                    // 変更がある場合は確認アラートを表示
+                                    if hasScheduleChanges {
+                                        showingCancelAlert = true
+                                    } else {
+                                        // 変更がない場合はそのまま閉じる
+                                        showScheduleEditSheet = false
+                                    }
                                 }
                             }
+                        }
+                        .alert("編集を破棄しますか？", isPresented: $showingCancelAlert) {
+                            Button("キャンセル", role: .cancel) {
+                                // アラートを閉じるだけ
+                            }
+                            Button("破棄", role: .destructive) {
+                                // 編集をキャンセルして元の状態に戻す
+                                cancelScheduleEditing()
+                                showScheduleEditSheet = false
+                            }
+                        } message: {
+                            Text("変更内容は保存されません")
                         }
                 }
                 .presentationDetents([.medium, .large])
@@ -2412,6 +2431,20 @@ struct PrePlanView: View {
         hasScheduleDeadline = event.deadline != nil
         
         print("🍙 シート編集準備: 候補日時 \(event.candidateDates.count)個")
+    }
+    
+    // 変更があるかどうかをチェック
+    private var hasScheduleChanges: Bool {
+        // 候補日時の変更をチェック
+        let datesChanged = scheduleCandidateDates.sorted() != originalCandidateDates.sorted()
+        let datesWithTimeChanged = scheduleCandidateDatesWithTime != originalCandidateDatesWithTime
+        let hasTimeChanged = hasTimeForAllCandidates != originalHasTimeForAllCandidates
+        
+        // 回答期限の変更をチェック
+        let deadlineChanged = scheduleDeadline != originalDeadline
+        let hasDeadlineChanged = hasScheduleDeadline != originalHasScheduleDeadline
+        
+        return datesChanged || datesWithTimeChanged || hasTimeChanged || deadlineChanged || hasDeadlineChanged
     }
     
     // 編集をキャンセルして元の状態に戻す
