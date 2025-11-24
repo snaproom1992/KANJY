@@ -744,7 +744,7 @@ struct PrePlanView: View {
     // メインコンテンツビュー
     private func MainContentView() -> some View {
         ScrollView {
-            VStack(spacing: DesignSystem.Spacing.lg) {
+            VStack(spacing: DesignSystem.Spacing.xl) {
                 // 絵文字と飲み会名の行
                 HStack(spacing: DesignSystem.Spacing.md) {
                     EmojiButton()
@@ -758,7 +758,7 @@ struct PrePlanView: View {
                     .padding(.horizontal, DesignSystem.Spacing.lg)
                 
                 // 🎨 カード式レイアウト：シンプルで分かりやすい構造
-                VStack(spacing: DesignSystem.Spacing.xl) {
+                VStack(spacing: 24) {
                     // 📋 基本情報カード
                     BasicInfoCardView()
                     
@@ -1369,13 +1369,9 @@ struct PrePlanView: View {
                     Image(systemName: "person.2.slash")
                         .font(.system(size: 50))
                         .foregroundColor(DesignSystem.Colors.secondary)
-                    Text("参加者がいません")
+                    Text("参加者なし")
                         .font(DesignSystem.Typography.headline)
                         .foregroundColor(DesignSystem.Colors.black)
-                    Text("まず「企画」タブで参加者を追加してください")
-                        .font(DesignSystem.Typography.subheadline)
-                        .foregroundColor(DesignSystem.Colors.secondary)
-                        .multilineTextAlignment(.center)
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, DesignSystem.Spacing.xxxl)
@@ -1446,10 +1442,7 @@ struct PrePlanView: View {
                             }
                     }
                     
-                    Text("日程は「スケジュール調整」で候補日時を設定し、「開催」タブで確定してください")
-                        .font(DesignSystem.Typography.caption)
-                        .foregroundColor(DesignSystem.Colors.secondary)
-                        .padding(.vertical, DesignSystem.Spacing.xs)
+                    // 説明文を削除（シンプルに）
                 }
                 .padding(DesignSystem.Card.Padding.medium)
                 .background(
@@ -1536,41 +1529,26 @@ struct PrePlanView: View {
             title: "基本情報",
             icon: "info.circle.fill"
         ) {
-            VStack(alignment: .leading, spacing: DesignSystem.Spacing.md) {
-                // 説明
-                VStack(alignment: .leading, spacing: DesignSystem.Spacing.xs) {
-                    Text("説明（任意）")
-                        .font(DesignSystem.Typography.emphasizedSubheadline)
-                        .foregroundColor(DesignSystem.Colors.black)
-                    TextField("説明を入力", text: $viewModel.editingPlanDescription, axis: .vertical)
-                        .font(DesignSystem.Typography.body)
-                        .foregroundColor(DesignSystem.Colors.black)
-                        .padding(DesignSystem.TextField.Padding.horizontal)
-                        .frame(minHeight: DesignSystem.TextField.Height.medium)
-                        .background(
-                            RoundedRectangle(cornerRadius: DesignSystem.TextField.cornerRadius, style: .continuous)
-                                .fill(DesignSystem.TextField.backgroundColor)
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: DesignSystem.TextField.cornerRadius, style: .continuous)
-                                .stroke(DesignSystem.TextField.borderColor, lineWidth: DesignSystem.TextField.borderWidth)
-                        )
-                        .lineLimit(3...6)
-                        .onChange(of: viewModel.editingPlanDescription) {
-                            autoSavePlan()
-                        }
+            VStack(alignment: .leading, spacing: DesignSystem.Spacing.lg) {
+                // 場所
+                SimpleInfoRow(
+                    icon: "location.fill",
+                    value: $viewModel.editingPlanLocation,
+                    placeholder: "場所を追加"
+                )
+                .onChange(of: viewModel.editingPlanLocation) {
+                    autoSavePlan()
                 }
                 
-                // 場所
-                VStack(alignment: .leading, spacing: DesignSystem.Spacing.xs) {
-                    Text("場所（任意）")
-                        .font(DesignSystem.Typography.emphasizedSubheadline)
-                        .foregroundColor(DesignSystem.Colors.black)
-                    TextField("場所を入力", text: $viewModel.editingPlanLocation)
-                        .standardTextFieldStyle()
-                        .onChange(of: viewModel.editingPlanLocation) {
-                            autoSavePlan()
-                        }
+                // 説明
+                SimpleInfoRow(
+                    icon: "text.alignleft",
+                    value: $viewModel.editingPlanDescription,
+                    placeholder: "メモを追加",
+                    isMultiline: true
+                )
+                .onChange(of: viewModel.editingPlanDescription) {
+                    autoSavePlan()
                 }
             }
         }
@@ -1630,9 +1608,9 @@ struct PrePlanView: View {
                             HStack {
                                 Image(systemName: "arrow.down.circle.fill")
                                 if webResponsesCount > 0 {
-                                    Text("Web回答を取り込む (\(webResponsesCount)人)")
+                                    Text("回答を同期 (\(webResponsesCount)人)")
                                 } else {
-                                    Text("Web回答を取り込む")
+                                    Text("回答を同期")
                                 }
                             }
                             .font(DesignSystem.Typography.body)
@@ -2922,6 +2900,50 @@ struct CompactSwitchToggleStyle: ToggleStyle {
                 }
             }
         }
+    }
+}
+
+// MARK: - Simple Info Row Component
+/// シンプルな情報入力行（アイコン＋入力フィールド）
+struct SimpleInfoRow: View {
+    let icon: String
+    @Binding var value: String
+    let placeholder: String
+    var isMultiline: Bool = false
+    
+    var body: some View {
+        HStack(alignment: isMultiline ? .top : .center, spacing: DesignSystem.Spacing.md) {
+            // アイコン
+            Image(systemName: icon)
+                .font(.system(size: 20, weight: .medium))
+                .foregroundColor(value.isEmpty ? DesignSystem.Colors.secondary : DesignSystem.Colors.primary)
+                .frame(width: 24, height: 24)
+                .padding(.top, isMultiline ? 8 : 0)
+            
+            // 入力フィールド
+            if isMultiline {
+                TextField(placeholder, text: $value, axis: .vertical)
+                    .font(DesignSystem.Typography.body)
+                    .foregroundColor(DesignSystem.Colors.black)
+                    .lineLimit(2...4)
+            } else {
+                TextField(placeholder, text: $value)
+                    .font(DesignSystem.Typography.body)
+                    .foregroundColor(DesignSystem.Colors.black)
+            }
+        }
+        .padding(DesignSystem.Spacing.md)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color(.systemBackground))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .strokeBorder(
+                    value.isEmpty ? Color(.separator) : DesignSystem.Colors.primary.opacity(0.3),
+                    lineWidth: 1
+                )
+        )
     }
 }
 
