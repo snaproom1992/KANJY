@@ -2494,6 +2494,11 @@ struct PrePlanView: View {
                 .disabled(!canPreviewSchedule)
                 
                 Button(action: {
+                    print("🔘 ボタンがタップされました")
+                    print("  isEditingSchedule: \(isEditingSchedule)")
+                    print("  canCreateSchedule: \(canCreateSchedule)")
+                    print("  候補日数: \(scheduleCandidateDates.count)")
+                    
                     if isEditingSchedule {
                         updateScheduleEvent()
                     } else {
@@ -2620,7 +2625,14 @@ struct PrePlanView: View {
     
     // スケジュール作成
     private func createScheduleEvent() {
-        guard canCreateSchedule else { return }
+        guard canCreateSchedule else { 
+            print("⚠️ スケジュール作成不可: 候補日が設定されていません")
+            return 
+        }
+        
+        print("📅 スケジュール作成開始...")
+        print("  タイトル: \(scheduleTitle)")
+        print("  候補日数: \(scheduleCandidateDates.count)")
         
         let budgetInt = scheduleBudget.isEmpty ? nil : Int(scheduleBudget)
         let finalDeadline = hasScheduleDeadline ? scheduleDeadline : nil
@@ -2636,29 +2648,39 @@ struct PrePlanView: View {
                     deadline: finalDeadline
                 )
                 
+                print("✅ スケジュール作成成功: \(event.id)")
+                
                 await MainActor.run {
                     scheduleEvent = event
                     hasScheduleEvent = true
                     isCreatingSchedule = false
+                    
+                    print("📝 状態更新完了")
                     
                     // PlanにscheduleEventIdを紐づける
                     if let planId = viewModel.editingPlanId,
                        let planIndex = viewModel.savedPlans.firstIndex(where: { $0.id == planId }) {
                         viewModel.savedPlans[planIndex].scheduleEventId = event.id
                         viewModel.saveData()
+                        print("💾 Planに紐づけ完了")
                     }
                     
                     // 確定日時に反映
                     if let optimalDate = event.optimalDate {
                         confirmedDate = optimalDate
+                        print("📆 確定日時を設定: \(optimalDate)")
                     }
                     
                     // URL表示シートを表示
+                    print("🔗 URLシート表示: showingScheduleUrlSheet = true")
                     showingScheduleUrlSheet = true
                 }
             } catch {
-                print("スケジュール作成エラー: \(error)")
-                // エラーハンドリング（必要に応じてアラート表示）
+                print("❌ スケジュール作成エラー: \(error)")
+                await MainActor.run {
+                    // エラーメッセージを表示（TODO: アラート実装）
+                    isCreatingSchedule = false
+                }
             }
         }
     }
