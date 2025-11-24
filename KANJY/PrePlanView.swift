@@ -585,7 +585,6 @@ struct PrePlanView: View {
                                 .padding(.bottom, DesignSystem.Spacing.xxl)
                         }
                     }
-                    .background(Color(.systemGroupedBackground))
                     .navigationTitle("スケジュール編集")
                     .navigationBarTitleDisplayMode(.inline)
                         .toolbar {
@@ -610,6 +609,7 @@ struct PrePlanView: View {
                 }
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
+                .presentationBackground(.ultraThinMaterial)
             }
             .sheet(isPresented: $showingSchedulePreview) {
                 SchedulePreviewSheet(
