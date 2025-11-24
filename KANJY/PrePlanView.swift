@@ -1557,38 +1557,37 @@ struct PrePlanView: View {
     // 📅👥 日程＆参加者カード（統合）
     @ViewBuilder
     private func ScheduleAndParticipantsCardView() -> some View {
-        InfoCard(
-            title: "日程調整 & 参加者",
-            icon: "calendar.badge.person.crop"
-        ) {
-            VStack(spacing: DesignSystem.Spacing.xl) {
-                // 📅 スケジュール調整セクション
-                VStack(alignment: .leading, spacing: DesignSystem.Spacing.md) {
-                    // セクションヘッダー
-                    HStack {
-                        Image(systemName: "calendar")
-                            .foregroundColor(DesignSystem.Colors.primary)
-                        Text("候補日時")
-                            .font(DesignSystem.Typography.emphasizedSubheadline)
-                            .foregroundColor(DesignSystem.Colors.black)
-                    }
-                    
-                    // スケジュール調整コンテンツ
-                    ScheduleSectionContent()
+        VStack(spacing: 24) {
+            // 📅 スケジュール調整セクション
+            VStack(alignment: .leading, spacing: DesignSystem.Spacing.md) {
+                // セクションヘッダー
+                HStack {
+                    Image(systemName: "calendar")
+                        .font(.system(size: 20, weight: .semibold))
+                        .foregroundColor(DesignSystem.Colors.primary)
+                    Text("候補日時")
+                        .font(DesignSystem.Typography.headline)
+                        .foregroundColor(DesignSystem.Colors.black)
                 }
                 
-                Divider()
-                    .padding(.vertical, DesignSystem.Spacing.xs)
-                
-                // 👥 参加者セクション
-                VStack(alignment: .leading, spacing: DesignSystem.Spacing.md) {
-                    // セクションヘッダー
-                    HStack {
-                        Image(systemName: "person.3.fill")
-                            .foregroundColor(DesignSystem.Colors.primary)
-                        Text("参加者")
-                            .font(DesignSystem.Typography.emphasizedSubheadline)
-                            .foregroundColor(DesignSystem.Colors.black)
+                // スケジュール調整コンテンツ
+                ScheduleSectionContent()
+            }
+            .padding(DesignSystem.Spacing.lg)
+            .background(Color(.systemBackground))
+            .cornerRadius(DesignSystem.Card.cornerRadius)
+            .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
+            
+            // 👥 参加者セクション
+            VStack(alignment: .leading, spacing: DesignSystem.Spacing.md) {
+                // セクションヘッダー
+                HStack {
+                    Image(systemName: "person.3.fill")
+                        .font(.system(size: 20, weight: .semibold))
+                        .foregroundColor(DesignSystem.Colors.primary)
+                    Text("参加者")
+                        .font(DesignSystem.Typography.headline)
+                        .foregroundColor(DesignSystem.Colors.black)
                         
                         Spacer()
                         
@@ -1655,16 +1654,21 @@ struct PrePlanView: View {
                             )
                     }
                 }
-                .onAppear {
-                    // 画面表示時に自動的にWeb回答をチェック・取り込み
-                    if hasScheduleEvent, let event = scheduleEvent {
-                        Task {
-                            await autoCheckAndSyncResponses(eventId: event.id)
-                        }
+            }
+            .padding(DesignSystem.Spacing.lg)
+            .background(Color(.systemBackground))
+            .cornerRadius(DesignSystem.Card.cornerRadius)
+            .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
+            .onAppear {
+                // 画面表示時に自動的にWeb回答をチェック・取り込み
+                if hasScheduleEvent, let event = scheduleEvent {
+                    Task {
+                        await autoCheckAndSyncResponses(eventId: event.id)
                     }
                 }
             }
         }
+        .padding(.horizontal, DesignSystem.Spacing.lg)
     }
     
     // 📢 開催準備カード
