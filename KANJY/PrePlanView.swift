@@ -236,20 +236,9 @@ struct PrePlanView: View {
     @State private var scheduleBudget = ""
     @State private var scheduleDeadline: Date?
     @State private var hasScheduleDeadline = false
-    
-    // 編集前の状態を保存（キャンセル時に元に戻すため）
-    @State private var originalCandidateDates: [Date] = []
-    @State private var originalCandidateDatesWithTime: [Date: Bool] = [:]
-    @State private var originalHasTimeForAllCandidates = true
-    @State private var originalDeadline: Date?
-    @State private var originalHasScheduleDeadline = false
-    
     @State private var showingScheduleDatePicker = false
     @State private var selectedScheduleDate = Date()
     @State private var selectedScheduleDateHasTime = true // 選択中の日時に時間を含むかどうか
-    
-    // キャンセル確認アラート
-    @State private var showingCancelAlert = false
     
     // 開催確定用の状態変数
     @State private var confirmedDate: Date?
@@ -608,27 +597,10 @@ struct PrePlanView: View {
                         .toolbar {
                             ToolbarItem(placement: .cancellationAction) {
                                 Button("キャンセル") {
-                                    // 変更がある場合は確認アラートを表示
-                                    if hasScheduleChanges {
-                                        showingCancelAlert = true
-                                    } else {
-                                        // 変更がない場合はそのまま閉じる
-                                        showScheduleEditSheet = false
-                                    }
+                                    // シートを閉じるだけ（変更は保持される）
+                                    showScheduleEditSheet = false
                                 }
                             }
-                        }
-                        .alert("編集を破棄しますか？", isPresented: $showingCancelAlert) {
-                            Button("キャンセル", role: .cancel) {
-                                // アラートを閉じるだけ
-                            }
-                            Button("破棄", role: .destructive) {
-                                // 編集をキャンセルして元の状態に戻す
-                                cancelScheduleEditing()
-                                showScheduleEditSheet = false
-                            }
-                        } message: {
-                            Text("変更内容は保存されません")
                         }
                 }
                 .presentationDetents([.medium, .large])
@@ -2372,13 +2344,6 @@ struct PrePlanView: View {
     
     // シート編集の準備（未作成状態から）
     private func prepareScheduleForEditing() {
-        // 編集前の状態を保存
-        originalCandidateDates = scheduleCandidateDates
-        originalCandidateDatesWithTime = scheduleCandidateDatesWithTime
-        originalHasTimeForAllCandidates = hasTimeForAllCandidates
-        originalDeadline = scheduleDeadline
-        originalHasScheduleDeadline = hasScheduleDeadline
-        
         // 基本情報から自動的に引き継ぐ（タイトル、説明、場所、予算）
         scheduleTitle = localPlanName.isEmpty ? (planName.isEmpty ? "無題の飲み会" : planName) : localPlanName
         scheduleDescription = viewModel.editingPlanDescription
@@ -2398,13 +2363,6 @@ struct PrePlanView: View {
     // スケジュール編集開始
     // シート表示用の編集準備（インライン編集モードにはしない）
     private func startEditingScheduleForSheet(event: ScheduleEvent) {
-        // 編集前の状態を保存
-        originalCandidateDates = scheduleCandidateDates
-        originalCandidateDatesWithTime = scheduleCandidateDatesWithTime
-        originalHasTimeForAllCandidates = hasTimeForAllCandidates
-        originalDeadline = scheduleDeadline
-        originalHasScheduleDeadline = hasScheduleDeadline
-        
         // 基本情報から自動的に引き継ぐ（タイトル、説明、場所、予算）
         scheduleTitle = localPlanName.isEmpty ? (planName.isEmpty ? "無題の飲み会" : planName) : localPlanName
         scheduleDescription = viewModel.editingPlanDescription
@@ -2431,29 +2389,6 @@ struct PrePlanView: View {
         hasScheduleDeadline = event.deadline != nil
         
         print("🍙 シート編集準備: 候補日時 \(event.candidateDates.count)個")
-    }
-    
-    // 変更があるかどうかをチェック
-    private var hasScheduleChanges: Bool {
-        // 候補日時の変更をチェック
-        let datesChanged = scheduleCandidateDates.sorted() != originalCandidateDates.sorted()
-        let datesWithTimeChanged = scheduleCandidateDatesWithTime != originalCandidateDatesWithTime
-        let hasTimeChanged = hasTimeForAllCandidates != originalHasTimeForAllCandidates
-        
-        // 回答期限の変更をチェック
-        let deadlineChanged = scheduleDeadline != originalDeadline
-        let hasDeadlineChanged = hasScheduleDeadline != originalHasScheduleDeadline
-        
-        return datesChanged || datesWithTimeChanged || hasTimeChanged || deadlineChanged || hasDeadlineChanged
-    }
-    
-    // 編集をキャンセルして元の状態に戻す
-    private func cancelScheduleEditing() {
-        scheduleCandidateDates = originalCandidateDates
-        scheduleCandidateDatesWithTime = originalCandidateDatesWithTime
-        hasTimeForAllCandidates = originalHasTimeForAllCandidates
-        scheduleDeadline = originalDeadline
-        hasScheduleDeadline = originalHasScheduleDeadline
     }
     
     // スケジュール作成・編集フォーム
