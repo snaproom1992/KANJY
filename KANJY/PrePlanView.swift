@@ -2308,7 +2308,7 @@ struct PrePlanView: View {
                 )
             } else {
                 // 未作成の状態：プレビュー・編集可能な表示
-                ScheduleEmptyStateView(
+                PrePlanScheduleEmptyStateView(
                     candidateDatesCount: scheduleCandidateDates.count,
                     onEdit: {
                         // シート表示のための準備
@@ -2987,9 +2987,9 @@ struct CompactSwitchToggleStyle: ToggleStyle {
     }
 }
 
-// MARK: - Schedule Empty State View
-/// スケジュール未作成状態の表示（プレビュー・編集ボタン付き）
-struct ScheduleEmptyStateView: View {
+// MARK: - PrePlan Schedule Empty State View
+/// プレプラン画面用：スケジュール未作成状態の表示（プレビュー・編集ボタン付き）
+struct PrePlanScheduleEmptyStateView: View {
     let candidateDatesCount: Int
     let onEdit: () -> Void
     let onPreview: () -> Void
@@ -3037,8 +3037,8 @@ struct ScheduleEmptyStateView: View {
         .background(
             RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadius, style: .continuous)
                 .fill(Color(.systemBackground))
-                .shadow(color: DesignSystem.Colors.shadow, radius: DesignSystem.Card.shadowRadius, x: 0, y: 2)
         )
+        .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
     }
 }
 
