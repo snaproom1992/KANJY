@@ -597,7 +597,7 @@ struct PrePlanView: View {
                     Text("URLをコピーして共有できます")
                 }
             }
-            .alert("日程候補日を更新しました", isPresented: $showingScheduleUpdatedAlert) {
+            .alert("公開中の内容を更新しました", isPresented: $showingScheduleUpdatedAlert) {
                 Button("OK") {
                     // アラートを閉じる
                 }
@@ -2598,7 +2598,7 @@ struct PrePlanView: View {
                     HStack(spacing: DesignSystem.Spacing.sm) {
                         Image(systemName: hasScheduleEvent ? "arrow.clockwise" : "link.badge.plus")
                             .font(.system(size: 18, weight: .semibold))
-                        Text(hasScheduleEvent ? "URLを更新して公開" : "URLを発行して公開")
+                        Text(hasScheduleEvent ? "公開中の内容を更新" : "URLを発行して公開")
                             .font(DesignSystem.Typography.body)
                             .fontWeight(.semibold)
                     }
