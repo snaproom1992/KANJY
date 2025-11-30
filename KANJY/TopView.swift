@@ -9,6 +9,7 @@ struct TopView: View {
     @State private var planToDelete: Plan? = nil
     @State private var showingCalendarSheet = false
     @State private var showingHelpGuide = false
+    @State private var showingStyleGuide = false
     @State private var shouldOpenScheduleTab = false
     @State private var isRefreshing = false
     @State private var appearedItems: Set<UUID> = []
@@ -63,12 +64,25 @@ struct TopView: View {
             .navigationTitle("飲み会")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button {
-                        hapticImpact(.light)
-                        showingHelpGuide = true
-                    } label: {
-                        Image(systemName: "questionmark.circle")
-                            .foregroundColor(.accentColor)
+                    HStack(spacing: DesignSystem.Spacing.md) {
+                        #if DEBUG
+                        // スタイルガイドボタン（デバッグ時のみ表示）
+                        Button {
+                            hapticImpact(.light)
+                            showingStyleGuide = true
+                        } label: {
+                            Image(systemName: "paintbrush.fill")
+                                .foregroundColor(.accentColor)
+                        }
+                        #endif
+                        
+                        Button {
+                            hapticImpact(.light)
+                            showingHelpGuide = true
+                        } label: {
+                            Image(systemName: "questionmark.circle")
+                                .foregroundColor(.accentColor)
+                        }
                     }
                 }
             }
@@ -79,6 +93,9 @@ struct TopView: View {
             }
             .sheet(isPresented: $showingHelpGuide) {
                 HelpGuideView()
+            }
+            .sheet(isPresented: $showingStyleGuide) {
+                StyleGuideView()
             }
             .sheet(isPresented: $showingPrePlan, onDismiss: {
                 shouldOpenScheduleTab = false

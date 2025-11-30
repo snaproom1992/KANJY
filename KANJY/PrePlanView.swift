@@ -158,8 +158,8 @@ struct PrePlanView: View {
         self.initialTask = initialTask
         self.onFinish = onFinish
         _selectedTask = State(initialValue: initialTask ?? .basicInfo)
-        // 初期ステップは企画
-        _selectedStep = State(initialValue: .planning)
+        // 初期ステップは飲み会前
+        _selectedStep = State(initialValue: .before)
     }
     
     // 編集関連の状態
@@ -249,6 +249,8 @@ struct PrePlanView: View {
     @State private var showingInvitationGenerator = false
     @State private var showingAddParticipant = false
     @State private var webResponsesCount: Int = 0  // Web回答数
+    @State private var showingCopyToast = false  // コピー完了トースト
+    @State private var showingUpToDateToast = false  // 最新状態トースト
     
     // Webフォームの回答
     @State private var scheduleResponses: [ScheduleResponse] = []
@@ -257,30 +259,27 @@ struct PrePlanView: View {
     // スケジュール編集シート用
     @State private var showScheduleEditSheet = false
     
-    // 3ステップのタブ構造
+    // 2ステップのタブ構造（飲み会前・飲み会後）
     enum MainStep: String, CaseIterable {
-        case planning = "企画"
-        case event = "開催"
-        case collection = "集金"
+        case before = "飲み会前"
+        case after = "飲み会後"
         
         var icon: String {
             switch self {
-            case .planning: return "lightbulb.fill"
-            case .event: return "calendar.badge.checkmark"
-            case .collection: return "creditcard.fill"
+            case .before: return "calendar"
+            case .after: return "creditcard.fill"
             }
         }
         
         var description: String {
             switch self {
-            case .planning: return "飲み会を企画する"
-            case .event: return "開催準備と案内"
-            case .collection: return "集金管理"
+            case .before: return "企画・調整"
+            case .after: return "集金管理"
             }
         }
     }
     
-    @State private var selectedStep: MainStep = .planning
+    @State private var selectedStep: MainStep = .before
     
     // タスク選択（セグメントコントロール用）- 企画タブ内で使用
     enum TaskSection: String, CaseIterable, Hashable {
@@ -530,6 +529,48 @@ struct PrePlanView: View {
             ZStack {
                 Color(.systemGroupedBackground).ignoresSafeArea()
                 MainContentView()
+                
+                // コピー完了トースト
+                if showingCopyToast {
+                    VStack {
+                        Spacer()
+                        HStack {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundColor(.white)
+                            Text("クリップボードにコピーしました")
+                                .font(DesignSystem.Typography.body)
+                                .foregroundColor(.white)
+                        }
+                        .padding(DesignSystem.Spacing.md)
+                        .background(
+                            RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadiusSmall, style: .continuous)
+                                .fill(Color.black.opacity(0.8))
+                        )
+                        .padding(.bottom, 100)
+                    }
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
+                
+                // 最新状態トースト
+                if showingUpToDateToast {
+                    VStack {
+                        Spacer()
+                        HStack {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundColor(.white)
+                            Text("最新の状態です")
+                                .font(DesignSystem.Typography.body)
+                                .foregroundColor(.white)
+                        }
+                        .padding(DesignSystem.Spacing.md)
+                        .background(
+                            RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadiusSmall, style: .continuous)
+                                .fill(Color.black.opacity(0.8))
+                        )
+                        .padding(.bottom, 100)
+                    }
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
             }
             .navigationTitle("")
             .toolbar {
@@ -737,6 +778,8 @@ struct PrePlanView: View {
                 await MainActor.run {
                     scheduleResponses = responses
                     isLoadingResponses = false
+                    // 回答が読み込まれたら、開催日程に参加可能な回答者を自動的に参加者に反映
+                    syncAvailableParticipantsToViewModel()
                 }
             } catch {
                 print("回答取得エラー: \(error)")
@@ -814,29 +857,16 @@ struct PrePlanView: View {
                 .padding(.horizontal, DesignSystem.Spacing.lg)
                 .padding(.top, DesignSystem.Spacing.md)
                 
-                // サマリーカード（重要情報を集約）
-                SummaryCard()
-                    .padding(.horizontal, DesignSystem.Spacing.lg)
-                
-                // 🎨 カード式レイアウト：シンプルで分かりやすい構造
-                VStack(spacing: 24) {
-                    // 📋 基本情報カード
-                    BasicInfoCardView()
+                // 🎨 ステップタブ + コンテンツ：2つのステップで分ける
+                VStack(spacing: DesignSystem.Spacing.lg) {
+                    // ステップタブコントロール
+                    MainStepTabControl(selectedStep: $selectedStep)
+                        .padding(.horizontal, DesignSystem.Spacing.lg)
                     
-                    // 📅👥 日程＆参加者カード（統合）
-                    ScheduleAndParticipantsCardView()
-                    
-                    // 📢 開催準備カード（日程確定後に表示）
-                    if confirmedDate != nil || hasScheduleEvent {
-                        EventCardView()
-                    }
-                    
-                    // 💰 集金管理カード（参加者がいる場合のみ表示）
-                    if !viewModel.participants.isEmpty {
-                        CollectionCardView()
-                    }
+                    // 選択されたステップのコンテンツ
+                    MainStepContentView(selectedStep: selectedStep)
+                        .padding(.horizontal, DesignSystem.Spacing.lg)
                 }
-                .padding(.horizontal, DesignSystem.Spacing.lg)
                 .padding(.bottom, 100) // 下部ボタン用のスペース
             }
             .padding(.top, DesignSystem.Spacing.xxl)
@@ -921,94 +951,6 @@ struct PrePlanView: View {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 isTitleFocused = true
             }
-        }
-    }
-    
-    // サマリーカード（重要情報を集約）
-    @ViewBuilder
-    private func SummaryCard() -> some View {
-        VStack(spacing: DesignSystem.Spacing.md) {
-            // タイトル（控えめに）
-            HStack {
-                Text("サマリー")
-                    .font(DesignSystem.Typography.emphasizedSubheadline)
-                    .foregroundColor(DesignSystem.Colors.secondary)
-                Spacer()
-            }
-            
-            // グリッドレイアウトで重要情報を表示
-            LazyVGrid(columns: [
-                GridItem(.flexible()),
-                GridItem(.flexible())
-            ], spacing: DesignSystem.Spacing.sm) {
-                // 開催日（確定日時があれば表示）
-                SummaryItem(
-                    icon: "calendar",
-                    label: "開催日",
-                    value: summaryConfirmedDateText
-                )
-                
-                // 参加者数（Webフォームの回答から）
-                SummaryItem(
-                    icon: "person.2.fill",
-                    label: "参加者",
-                    value: summaryParticipantCountText
-                )
-                
-                // 合計金額
-                SummaryItem(
-                    icon: "yensign.circle.fill",
-                    label: "合計金額",
-                    value: summaryTotalAmountText
-                )
-                
-                // 集金状況（Webフォームの回答から）
-                SummaryItem(
-                    icon: "creditcard.fill",
-                    label: "集金状況",
-                    value: summaryCollectionStatusText
-                )
-            }
-        }
-        .padding(DesignSystem.Card.Padding.medium)
-        .background(
-            RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadius, style: .continuous)
-                .fill(DesignSystem.Colors.secondaryBackground)
-                .shadow(
-                    color: Color.black.opacity(DesignSystem.Card.Shadow.opacity),
-                    radius: DesignSystem.Card.Shadow.radius,
-                    x: DesignSystem.Card.Shadow.offset.width,
-                    y: DesignSystem.Card.Shadow.offset.height
-                )
-        )
-    }
-    
-    // サマリー用のcomputed properties
-    private var summaryConfirmedDateText: String {
-        confirmedDate != nil ? scheduleViewModel.formatDateTime(confirmedDate!) : "未設定"
-    }
-    
-    private var summaryParticipantCountText: String {
-        if let confirmedDate = confirmedDate {
-            let attendingCount = attendingResponsesForDate(confirmedDate).count
-            return "\(attendingCount)人"
-        } else {
-            let attendingCount = scheduleResponses.filter { $0.status == .attending }.count
-            return attendingCount > 0 ? "\(attendingCount)人" : "未回答"
-        }
-    }
-    
-    private var summaryTotalAmountText: String {
-        viewModel.totalAmount.isEmpty ? "未設定" : "¥\(viewModel.formatAmount(viewModel.totalAmount))"
-    }
-    
-    private var summaryCollectionStatusText: String {
-        let targetResponses = targetResponsesForCollection
-        let totalCount = targetResponses.count
-        if totalCount == 0 {
-            return "未回答"
-        } else {
-            return "\(totalCount)人回答"
         }
     }
     
@@ -1103,32 +1045,44 @@ struct PrePlanView: View {
         .padding(.vertical, DesignSystem.Spacing.xs)
     }
     
-    // サマリー項目（情報に強弱をつける）
-    @ViewBuilder
-    private func SummaryItem(icon: String, label: String, value: String) -> some View {
-        VStack(alignment: .leading, spacing: DesignSystem.Spacing.sm) {
-            // ラベル（小さく、控えめに）
-            HStack(spacing: DesignSystem.Spacing.xs) {
-                Image(systemName: icon)
-                    .font(.system(size: DesignSystem.Icon.Size.small, weight: DesignSystem.Typography.FontWeight.medium))
-                    .foregroundColor(DesignSystem.Colors.secondary)
-                Text(label)
-                    .font(DesignSystem.Typography.caption2)
-                    .foregroundColor(DesignSystem.Colors.secondary)
-            }
-            
-            // 値（大きく、強調）
-            Text(value)
-                .font(DesignSystem.Typography.emphasizedTitle)
-                .foregroundColor(value.contains("未設定") ? DesignSystem.Colors.secondary : DesignSystem.Colors.black)
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
+    // 開催日程に参加可能な回答者を自動的に参加者に反映
+    private func syncAvailableParticipantsToViewModel() {
+        guard let confirmedDate = confirmedDate else {
+            // 開催日程が決まっていない場合、Web回答から追加された参加者を削除
+            viewModel.participants.removeAll { $0.source == .webResponse }
+            return
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(DesignSystem.Spacing.sm)
-        .background(
-            RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadiusSmall, style: .continuous)
-                .fill(DesignSystem.Colors.background)
+        
+        // 開催日程に参加可能な回答者を取得
+        let availableResponses = attendingResponsesForDate(confirmedDate)
+        let availableParticipantNames = Set(availableResponses.map { $0.participantName })
+        
+        // 既存の参加者名を取得
+        let existingNames = Set(viewModel.participants.map { $0.name })
+        
+        // 新しく参加者になる人を追加
+        let newParticipants = availableResponses
+            .filter { !existingNames.contains($0.participantName) }
+            .map { response in
+                Participant(
+                    name: response.participantName,
+                    roleType: .standard(.staff),
+                    source: .webResponse
+                )
+            }
+        viewModel.participants.append(contentsOf: newParticipants)
+        
+        // 参加可能でなくなったWeb回答からの参加者を削除
+        viewModel.participants.removeAll { participant in
+            participant.source == .webResponse && !availableParticipantNames.contains(participant.name)
+        }
+        
+        // 確定情報を保存
+        let confirmedParticipantIds = availableResponses.map { $0.id }
+        viewModel.saveConfirmedInfo(
+            confirmedDate: confirmedDate,
+            confirmedLocation: confirmedLocation.isEmpty ? nil : confirmedLocation,
+            confirmedParticipants: confirmedParticipantIds
         )
     }
     
@@ -1178,16 +1132,22 @@ struct PrePlanView: View {
         }
     }
     
-    // メインステップコンテンツビュー
+    // メインステップコンテンツビュー（2ステップ：飲み会前・飲み会後）
     @ViewBuilder
     private func MainStepContentView(selectedStep: MainStep) -> some View {
         switch selectedStep {
-        case .planning:
-            PlanningStepContent()
-        case .event:
-            EventStepContent()
-        case .collection:
-            CollectionStepContent()
+        case .before:
+            // 飲み会前（企画）：日程調整・参加者・基本情報
+            VStack(spacing: 20) {
+                // 📅👥 日程調整用Web・参加者カード
+                ScheduleAndParticipantsCardView()
+                
+                // 📋 基本情報カード
+                BasicInfoCardView()
+            }
+        case .after:
+            // 飲み会後（集金）：金額設定・集金管理
+            CollectionCardView()
         }
     }
     
@@ -1347,11 +1307,13 @@ struct PrePlanView: View {
             }
         }
         .onChange(of: confirmedDate) { _, _ in
+            // 開催日程が決まったら、参加可能な回答者を自動的に参加者に反映
+            syncAvailableParticipantsToViewModel()
             // 確定情報が変更されたら保存
             viewModel.saveConfirmedInfo(
                 confirmedDate: confirmedDate,
                 confirmedLocation: confirmedLocation.isEmpty ? nil : confirmedLocation,
-                confirmedParticipants: Array(selectedParticipantIds)
+                confirmedParticipants: [] // 参加者リストは自動的に反映されるので空配列
             )
             // 確定日時が変更されたら回答を再取得
             if let scheduleEventId = scheduleEvent?.id {
@@ -1401,6 +1363,28 @@ struct PrePlanView: View {
     @ViewBuilder
     private func CollectionStepContent() -> some View {
         VStack(spacing: DesignSystem.Spacing.lg) {
+            // 参加者一覧セクション（飲み会後）
+            InfoCard(
+                title: "参加者一覧",
+                icon: "person.3.fill"
+            ) {
+                VStack(alignment: .leading, spacing: DesignSystem.Spacing.md) {
+                    if viewModel.participants.isEmpty {
+                        Text("参加者がいません")
+                            .font(DesignSystem.Typography.subheadline)
+                            .foregroundColor(DesignSystem.Colors.secondary)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, DesignSystem.Spacing.lg)
+                    } else {
+                        VStack(spacing: DesignSystem.Spacing.sm) {
+                            ForEach(viewModel.participants) { participant in
+                                ParticipantRow(participant: participant)
+                            }
+                        }
+                    }
+                }
+            }
+            
             // 金額設定セクション
             InfoCard(
                 title: "金額設定",
@@ -1518,7 +1502,12 @@ struct PrePlanView: View {
                 )
                 
             case .schedule:
-                ScheduleSectionContent()
+                if hasScheduleEvent, let event = scheduleEvent {
+                    CandidateDatesListView(
+                        event: event,
+                        scheduleViewModel: scheduleViewModel,
+                        confirmedDate: $confirmedDate
+                    )
                     .padding(DesignSystem.Card.Padding.medium)
                     .background(
                         RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadius, style: .continuous)
@@ -1530,6 +1519,29 @@ struct PrePlanView: View {
                                 y: DesignSystem.Card.Shadow.offset.height
                             )
                     )
+                } else {
+                    PrePlanScheduleEmptyStateView(
+                        candidateDatesCount: scheduleCandidateDates.count,
+                        onEdit: {
+                            prepareScheduleForEditing()
+                            showScheduleEditSheet = true
+                        },
+                        onPreview: {
+                            createPreviewEvent()
+                        }
+                    )
+                    .padding(DesignSystem.Card.Padding.medium)
+                    .background(
+                        RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadius, style: .continuous)
+                            .fill(DesignSystem.Colors.secondaryBackground)
+                            .shadow(
+                                color: Color.black.opacity(DesignSystem.Card.Shadow.opacity),
+                                radius: DesignSystem.Card.Shadow.radius,
+                                x: DesignSystem.Card.Shadow.offset.width,
+                                y: DesignSystem.Card.Shadow.offset.height
+                            )
+                    )
+                }
             }
         }
     }
@@ -1583,12 +1595,12 @@ struct PrePlanView: View {
         )
     }
     
-    // 📋 基本情報カード
+    // 📋 開催場所カード
     @ViewBuilder
     private func BasicInfoCardView() -> some View {
         InfoCard(
-            title: "基本情報",
-            icon: "info.circle.fill"
+            title: "開催場所",
+            icon: "location.fill"
         ) {
             VStack(alignment: .leading, spacing: DesignSystem.Spacing.lg) {
                 // 場所
@@ -1619,8 +1631,27 @@ struct PrePlanView: View {
     @ViewBuilder
     private func ScheduleAndParticipantsCardView() -> some View {
         VStack(spacing: 24) {
-            // 📅 スケジュール調整セクション
-            VStack(alignment: .leading, spacing: DesignSystem.Spacing.md) {
+            // 🔗 URL・プレビュー・編集カード（一番上）
+            if hasScheduleEvent, let event = scheduleEvent {
+                ScheduleUrlAndActionsCardView(
+                    event: event,
+                    webResponsesCount: webResponsesCount,
+                    onShowUrl: {
+                        showingScheduleUrlSheet = true
+                    },
+                    onPreview: {
+                        showingSchedulePreview = true
+                    },
+                    onSyncResponses: {
+                        Task {
+                            await syncWebResponses()
+                        }
+                    }
+                )
+            }
+            
+            // 📅 候補日時セクション（開催日程を選択）
+            VStack(alignment: .leading, spacing: DesignSystem.Spacing.lg) {
                 // セクションヘッダー
                 HStack {
                     Image(systemName: "calendar")
@@ -1629,90 +1660,98 @@ struct PrePlanView: View {
                     Text("候補日時")
                         .font(DesignSystem.Typography.headline)
                         .foregroundColor(DesignSystem.Colors.black)
+                    
+                    Spacer()
+                    
+                    // 編集アイコンボタン（右上、候補日程を変更）
+                    Button(action: {
+                        if hasScheduleEvent, let event = scheduleEvent {
+                            startEditingScheduleForSheet(event: event)
+                            showScheduleEditSheet = true
+                        } else {
+                            prepareScheduleForEditing()
+                            showScheduleEditSheet = true
+                        }
+                    }) {
+                        Image(systemName: "pencil")
+                            .font(.system(size: DesignSystem.Icon.Size.large, weight: .medium))
+                            .foregroundColor(DesignSystem.Colors.primary)
+                            .frame(width: DesignSystem.Button.Size.medium, height: DesignSystem.Button.Size.medium)
+                    }
                 }
                 
-                // スケジュール調整コンテンツ
-                ScheduleSectionContent()
+                // 候補日時リストのみ表示
+                if hasScheduleEvent, let event = scheduleEvent {
+                    CandidateDatesListView(
+                        event: event,
+                        scheduleViewModel: scheduleViewModel,
+                        confirmedDate: $confirmedDate
+                    )
+                } else {
+                    // 未作成の状態：プレビュー・編集可能な表示
+                    PrePlanScheduleEmptyStateView(
+                        candidateDatesCount: scheduleCandidateDates.count,
+                        onEdit: {
+                            prepareScheduleForEditing()
+                            showScheduleEditSheet = true
+                        },
+                        onPreview: {
+                            createPreviewEvent()
+                        }
+                    )
+                }
             }
             .padding(DesignSystem.Spacing.lg)
             .background(Color(.systemBackground))
             .cornerRadius(DesignSystem.Card.cornerRadius)
             .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
             
-            // 👥 参加者セクション
-            VStack(alignment: .leading, spacing: DesignSystem.Spacing.md) {
+            // 👥 回答者一覧セクション（飲み会前）
+            VStack(alignment: .leading, spacing: DesignSystem.Spacing.lg) {
                 // セクションヘッダー
                 HStack {
                     Image(systemName: "person.3.fill")
                         .font(.system(size: 20, weight: .semibold))
                         .foregroundColor(DesignSystem.Colors.primary)
-                    Text("参加者")
+                    Text("回答者一覧")
                         .font(DesignSystem.Typography.headline)
                         .foregroundColor(DesignSystem.Colors.black)
                     
                     Spacer()
                     
-                    // 参加者数
-                    Text("\(viewModel.participants.count)人")
+                    // 回答者数
+                    Text("\(scheduleResponses.count)人")
                         .font(DesignSystem.Typography.caption)
                         .foregroundColor(DesignSystem.Colors.secondary)
                 }
                 
-                // Web回答取り込みボタン（スケジュール作成後は常に表示）
-                if hasScheduleEvent {
-                    Button(action: {
-                        Task {
-                            await syncWebResponses()
-                        }
-                    }) {
-                        HStack {
-                            Image(systemName: "arrow.down.circle.fill")
-                            if webResponsesCount > 0 {
-                                Text("回答を同期 (\(webResponsesCount)人)")
-                            } else {
-                                Text("回答を同期")
-                            }
-                        }
-                        .font(DesignSystem.Typography.body)
-                        .foregroundColor(DesignSystem.Colors.primary)
-                        .frame(maxWidth: .infinity)
-                        .padding(DesignSystem.Button.Padding.vertical)
-                        .background(
-                            RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadiusSmall, style: .continuous)
-                                .fill(DesignSystem.Colors.primary.opacity(0.15))
-                        )
-                    }
-                    .padding(.bottom, DesignSystem.Spacing.sm)
-                }
-                
-                // 参加者リスト
-                if viewModel.participants.isEmpty {
-                    Text("参加者がいません")
+                // 回答者リスト（開催日程が決まっている場合、参加可能な回答者にチェックがつく）
+                if scheduleResponses.isEmpty {
+                    Text("まだ回答がありません")
                         .font(DesignSystem.Typography.subheadline)
                         .foregroundColor(DesignSystem.Colors.secondary)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, DesignSystem.Spacing.lg)
                 } else {
                     VStack(spacing: DesignSystem.Spacing.sm) {
-                        ForEach(viewModel.participants) { participant in
-                            ParticipantRow(participant: participant)
+                        ForEach(scheduleResponses) { response in
+                            HStack {
+                                // 開催日程が決まっている場合、参加可能な回答者にチェックを表示
+                                if let confirmedDate = confirmedDate {
+                                    let isAvailable = attendingResponsesForDate(confirmedDate).contains { $0.id == response.id }
+                                    Image(systemName: isAvailable ? "checkmark.circle.fill" : "circle")
+                                        .foregroundColor(isAvailable ? DesignSystem.Colors.success : DesignSystem.Colors.gray4)
+                                }
+                                
+                                Text(response.participantName)
+                                    .font(DesignSystem.Typography.body)
+                                    .foregroundColor(DesignSystem.Colors.black)
+                                
+                                Spacer()
+                            }
+                            .padding(.vertical, DesignSystem.Spacing.sm)
                         }
                     }
-                }
-                
-                // 手動で参加者追加ボタン
-                Button(action: {
-                    showingAddParticipant = true
-                }) {
-                    Label("参加者を追加", systemImage: "plus.circle.fill")
-                        .font(DesignSystem.Typography.body)
-                        .foregroundColor(DesignSystem.Colors.primary)
-                        .frame(maxWidth: .infinity)
-                        .padding(DesignSystem.Button.Padding.vertical)
-                        .background(
-                            RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadiusSmall, style: .continuous)
-                                .fill(DesignSystem.Colors.primary.opacity(0.1))
-                        )
                 }
             }
             .padding(DesignSystem.Spacing.lg)
@@ -1721,35 +1760,29 @@ struct PrePlanView: View {
             .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
             .onAppear {
                 // 画面表示時に自動的にWeb回答をチェック・取り込み
-                if hasScheduleEvent, let event = scheduleEvent {
+                if hasScheduleEvent {
                     Task {
-                        await autoCheckAndSyncResponses(eventId: event.id)
+                        await syncWebResponses()
                     }
                 }
+                // 既存の開催日程がある場合、参加者を自動反映
+                syncAvailableParticipantsToViewModel()
             }
-        }
-    }
-    
-    // 📢 開催準備カード
-    @ViewBuilder
-    private func EventCardView() -> some View {
-        InfoCard(
-            title: "開催準備",
-            icon: "calendar.badge.checkmark"
-        ) {
-            EventStepContent()
+            .onChange(of: confirmedDate) { _, _ in
+                // 開催日程が決まったら、参加可能な回答者を自動的に参加者に反映
+                syncAvailableParticipantsToViewModel()
+            }
+            .onChange(of: scheduleResponses.count) { _, _ in
+                // 回答者が追加されたら、参加者を再反映
+                syncAvailableParticipantsToViewModel()
+            }
         }
     }
     
     // 💰 集金管理カード
     @ViewBuilder
     private func CollectionCardView() -> some View {
-        InfoCard(
-            title: "集金管理",
-            icon: "creditcard.fill"
-        ) {
-            CollectionStepContent()
-        }
+        CollectionStepContent()
     }
     
     // MARK: - 📊 参加希望数の計算
@@ -1763,13 +1796,16 @@ struct PrePlanView: View {
             counts[date] = 0
         }
         
-        // 各回答の available_dates（参加可能な日）をカウント
-        for response in event.responses {
+        // Web回答から回答状況を取得（scheduleResponsesを使用）
+        for response in scheduleResponses {
+            // 参加可能な回答者のみをカウント
+            guard response.status == .attending else { continue }
+            
             for availableDate in response.availableDates {
                 // 候補日時と一致する日をカウント
                 for candidateDate in event.candidateDates {
-                    // 日時を比較（秒単位の差を許容）
-                    if abs(availableDate.timeIntervalSince(candidateDate)) < 60 {
+                    // 日時を比較（日単位で比較）
+                    if Calendar.current.isDate(availableDate, inSameDayAs: candidateDate) {
                         counts[candidateDate, default: 0] += 1
                         break
                     }
@@ -1810,15 +1846,35 @@ struct PrePlanView: View {
         guard let event = scheduleEvent else { return }
         
         do {
+            let previousCount = scheduleResponses.count
             let responses = try await AttendanceManager.shared.fetchResponsesFromSupabase(eventId: event.id)
-            let addedCount = viewModel.syncParticipantsFromWebResponses(responses)
             
-            // Web回答数を更新
-            webResponsesCount = responses.count
+            await MainActor.run {
+                scheduleResponses = responses
+                webResponsesCount = responses.count
+            }
             
-            if addedCount > 0 {
+            // 参加者を自動反映
+            syncAvailableParticipantsToViewModel()
+            
+            // 新しい回答があったかチェック
+            if responses.count > previousCount {
+                // 新しい回答があった場合
                 let generator = UINotificationFeedbackGenerator()
                 generator.notificationOccurred(.success)
+            } else if responses.count == previousCount && previousCount > 0 {
+                // 回答数が変わらない場合（最新の状態）
+                await MainActor.run {
+                    withAnimation {
+                        showingUpToDateToast = true
+                    }
+                    // 2秒後に自動で非表示
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                        withAnimation {
+                            showingUpToDateToast = false
+                        }
+                    }
+                }
             }
         } catch {
             print("Web回答の取り込みエラー: \(error)")
@@ -1833,11 +1889,11 @@ struct PrePlanView: View {
         isOptional: Bool = false,
         @ViewBuilder content: () -> Content
     ) -> some View {
-        VStack(alignment: .leading, spacing: DesignSystem.Spacing.md) {
-            // ヘッダー（シンプルに）
+        VStack(alignment: .leading, spacing: DesignSystem.Spacing.lg) {
+            // ヘッダー（スケジュール調整URLに合わせて統一）
             HStack {
                 Image(systemName: icon)
-                    .font(.system(size: DesignSystem.Icon.Size.medium, weight: DesignSystem.Typography.FontWeight.medium))
+                    .font(.system(size: 20, weight: .semibold))
                     .foregroundColor(DesignSystem.Colors.primary)
                 
                 Text(title)
@@ -1851,12 +1907,16 @@ struct PrePlanView: View {
                 }
                 
                 Spacer()
+                
+                // 高さを確保するための透明なスペーサー（スケジュール調整URLのボタンと同じ高さ）
+                Color.clear
+                    .frame(width: DesignSystem.Button.Size.medium, height: DesignSystem.Button.Size.medium)
             }
             
             // コンテンツ
             content()
         }
-        .padding(DesignSystem.Card.Padding.medium)
+        .padding(DesignSystem.Spacing.lg)
         .background(
             RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadius, style: .continuous)
                 .fill(DesignSystem.Colors.secondaryBackground)
@@ -2312,40 +2372,6 @@ struct PrePlanView: View {
         )
     }
     
-    // スケジュール調整セクションの内容
-    @ViewBuilder
-    private func ScheduleSectionContent() -> some View {
-        VStack(spacing: DesignSystem.Spacing.md) {
-            if hasScheduleEvent, let event = scheduleEvent {
-                // スケジュール作成済み（Supabaseに保存済み）
-                ScheduleDisplayView(
-                    event: event,
-                    scheduleViewModel: scheduleViewModel,
-                    onShowUrl: {
-                        showingScheduleUrlSheet = true
-                    },
-                    onEdit: {
-                        // シート表示のための準備
-                        startEditingScheduleForSheet(event: event)
-                        showScheduleEditSheet = true
-                    }
-                )
-            } else {
-                // 未作成の状態：プレビュー・編集可能な表示
-                PrePlanScheduleEmptyStateView(
-                    candidateDatesCount: scheduleCandidateDates.count,
-                    onEdit: {
-                        // シート表示のための準備
-                        prepareScheduleForEditing()
-                        showScheduleEditSheet = true
-                    },
-                    onPreview: {
-                        createPreviewEvent()
-                    }
-                )
-            }
-        }
-    }
     
     // スケジュール作成開始
     private func startCreatingSchedule() {
@@ -2568,11 +2594,11 @@ struct PrePlanView: View {
             VStack(spacing: DesignSystem.Spacing.md) {
                 // 説明文
                 VStack(alignment: .leading, spacing: DesignSystem.Spacing.xs) {
-                    Text("スケジュール調整ページを公開")
+                    Text(hasScheduleEvent ? "公開内容を更新" : "スケジュール調整ページを公開")
                         .font(DesignSystem.Typography.headline)
                         .foregroundColor(DesignSystem.Colors.black)
                     
-                    Text("URLを発行すると、参加者が候補日時に回答できるようになります")
+                    Text(hasScheduleEvent ? "同じURLで変更が反映されます" : "参加者が候補日時に回答できるようになります")
                         .font(DesignSystem.Typography.subheadline)
                         .foregroundColor(DesignSystem.Colors.secondary)
                 }
@@ -2822,122 +2848,180 @@ struct PrePlanView: View {
         }
     }
     
-    // スケジュール表示ビュー
+    // 🔗 URL・プレビュー・編集カード（一番上に配置）
     @ViewBuilder
-    private func ScheduleDisplayView(
+    private func ScheduleUrlAndActionsCardView(
+        event: ScheduleEvent,
+        webResponsesCount: Int,
+        onShowUrl: @escaping () -> Void,
+        onPreview: @escaping () -> Void,
+        onSyncResponses: @escaping () -> Void
+    ) -> some View {
+        VStack(alignment: .leading, spacing: DesignSystem.Spacing.lg) {
+            // セクションヘッダー
+            HStack {
+                Image(systemName: "link")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundColor(DesignSystem.Colors.primary)
+                Text("スケジュール調整URL")
+                    .font(DesignSystem.Typography.headline)
+                    .foregroundColor(DesignSystem.Colors.black)
+                
+                Spacer()
+                
+                // 更新アイコンボタン（右上のみ）
+                Button(action: onSyncResponses) {
+                    Image(systemName: "arrow.clockwise")
+                        .font(.system(size: DesignSystem.Icon.Size.large, weight: .medium))
+                        .foregroundColor(DesignSystem.Colors.primary)
+                        .frame(width: DesignSystem.Button.Size.medium, height: DesignSystem.Button.Size.medium)
+                }
+            }
+            
+            // URL表示＆コピー
+            if let webUrl = event.webUrl {
+                VStack(spacing: DesignSystem.Spacing.md) {
+                    // URL表示エリア（タップでプレビュー）
+                    HStack(spacing: DesignSystem.Spacing.md) {
+                        Button(action: onPreview) {
+                            HStack(spacing: DesignSystem.Spacing.xs) {
+                                Text(webUrl)
+                                    .font(DesignSystem.Typography.body)
+                                    .foregroundColor(DesignSystem.Colors.primary)
+                                    .lineLimit(1)
+                                    .truncationMode(.middle)
+                                
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: DesignSystem.Icon.Size.small))
+                                    .foregroundColor(DesignSystem.Colors.secondary)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        
+                        Spacer()
+                        
+                        // コピーアイコンボタン
+                        Button(action: {
+                            UIPasteboard.general.string = webUrl
+                            // コピー成功のhaptic feedback
+                            let generator = UINotificationFeedbackGenerator()
+                            generator.notificationOccurred(.success)
+                            // トーストを表示
+                            withAnimation {
+                                showingCopyToast = true
+                            }
+                            // 2秒後に自動で非表示
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                                withAnimation {
+                                    showingCopyToast = false
+                                }
+                            }
+                        }) {
+                            Image(systemName: "doc.on.doc.fill")
+                                .font(.system(size: DesignSystem.Icon.Size.xlarge, weight: .medium))
+                                .foregroundColor(DesignSystem.Colors.primary)
+                                .frame(width: DesignSystem.Button.Size.medium, height: DesignSystem.Button.Size.medium)
+                                .background(
+                                    Circle()
+                                        .fill(DesignSystem.Colors.primary.opacity(0.1))
+                                )
+                        }
+                    }
+                    .padding(DesignSystem.Spacing.md)
+                    .background(
+                        RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadiusSmall, style: .continuous)
+                            .fill(DesignSystem.Colors.gray1)
+                    )
+                }
+            }
+        }
+        .padding(DesignSystem.Spacing.lg)
+        .background(Color(.systemBackground))
+        .cornerRadius(DesignSystem.Card.cornerRadius)
+        .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
+    }
+    
+    // 📅 候補日時リストビュー
+    @ViewBuilder
+    private func CandidateDatesListView(
         event: ScheduleEvent,
         scheduleViewModel: ScheduleManagementViewModel,
-        onShowUrl: @escaping () -> Void,
-        onEdit: @escaping () -> Void
+        confirmedDate: Binding<Date?>
     ) -> some View {
-        VStack(alignment: .leading, spacing: DesignSystem.Spacing.md) {
-            // 候補日時を参加希望数付きで表示
-            if !event.candidateDates.isEmpty {
-                // 各候補日時の参加希望数を計算
-                let voteCounts = calculateVoteCounts(for: event)
-                let maxVotes = voteCounts.values.max() ?? 0
-                
-                VStack(spacing: DesignSystem.Spacing.xs) {
-                    ForEach(Array(event.candidateDates.sorted().enumerated()), id: \.element) { index, date in
-                        let votes = voteCounts[date] ?? 0
-                        let isTopChoice = votes > 0 && votes == maxVotes
-                        
-                        HStack(spacing: DesignSystem.Spacing.sm) {
+        if !event.candidateDates.isEmpty {
+            // 各候補日時の参加希望数を計算
+            let voteCounts = calculateVoteCounts(for: event)
+            let maxVotes = voteCounts.values.max() ?? 0
+            
+            VStack(spacing: DesignSystem.Spacing.md) {
+                ForEach(Array(event.candidateDates.sorted().enumerated()), id: \.element) { index, date in
+                    let votes = voteCounts[date] ?? 0
+                    let isTopChoice = votes > 0 && votes == maxVotes
+                    let isConfirmedDate = confirmedDate.wrappedValue != nil && Calendar.current.isDate(date, inSameDayAs: confirmedDate.wrappedValue!)
+                    
+                    Button(action: {
+                        // 候補日時をタップして開催日として設定
+                        if isConfirmedDate {
+                            // 既に開催日になっている場合は解除
+                            confirmedDate.wrappedValue = nil
+                        } else {
+                            // 開催日として設定
+                            confirmedDate.wrappedValue = date
+                        }
+                    }) {
+                        HStack(spacing: DesignSystem.Spacing.md) {
+                            // 開催日フラグ
+                            if isConfirmedDate {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundColor(DesignSystem.Colors.success)
+                                    .font(.system(size: 20))
+                            } else {
+                                Image(systemName: "circle")
+                                    .foregroundColor(DesignSystem.Colors.gray4)
+                                    .font(.system(size: 20))
+                            }
+                            
                             // 番号バッジ
                             Text("\(index + 1)")
                                 .font(DesignSystem.Typography.caption)
                                 .fontWeight(.bold)
-                                .foregroundColor(isTopChoice ? .white : DesignSystem.Colors.primary)
-                                .frame(width: 24, height: 24)
+                                .foregroundColor(isTopChoice ? .white : DesignSystem.Colors.gray6)
+                                .frame(width: 28, height: 28)
                                 .background(
-                                    Circle().fill(isTopChoice ? DesignSystem.Colors.primary : DesignSystem.Colors.primary.opacity(0.2))
+                                    Circle().fill(isTopChoice ? DesignSystem.Colors.primary : DesignSystem.Colors.gray2)
                                 )
                             
                             // 日時
                             Text(scheduleViewModel.formatDateTime(date))
                                 .font(DesignSystem.Typography.body)
-                                .foregroundColor(isTopChoice ? .white : DesignSystem.Colors.black)
+                                .foregroundColor(DesignSystem.Colors.black)
                             
                             Spacer()
                             
                             // 参加希望数（常に表示）
                             Text("\(votes)人")
                                 .font(DesignSystem.Typography.subheadline)
-                                .fontWeight(isTopChoice ? .bold : .regular)
-                                .foregroundColor(isTopChoice ? .white : (votes > 0 ? DesignSystem.Colors.primary : DesignSystem.Colors.secondary))
+                                .fontWeight(.medium)
+                                .foregroundColor(votes > 0 ? DesignSystem.Colors.gray6 : DesignSystem.Colors.secondary)
                         }
-                        .padding(DesignSystem.Spacing.sm)
+                        .padding(DesignSystem.Spacing.md)
                         .background(
                             RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadiusSmall, style: .continuous)
-                                .fill(isTopChoice ? DesignSystem.Colors.primary : DesignSystem.Colors.primary.opacity(0.1))
+                                .fill(DesignSystem.Colors.gray1)
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadiusSmall, style: .continuous)
+                                .stroke(isConfirmedDate ? DesignSystem.Colors.success : Color.clear, lineWidth: 2)
                         )
                     }
-                }
-            } else {
-                Text("候補日時が設定されていません")
-                    .font(DesignSystem.Typography.subheadline)
-                    .foregroundColor(DesignSystem.Colors.secondary)
-                    .italic()
-            }
-            
-            // URL表示＆コピー
-            if let webUrl = event.webUrl {
-                Button(action: {
-                    UIPasteboard.general.string = webUrl
-                    // コピー成功のhaptic feedback
-                    let generator = UINotificationFeedbackGenerator()
-                    generator.notificationOccurred(.success)
-                }) {
-                    HStack(spacing: DesignSystem.Spacing.md) {
-                        VStack(alignment: .leading, spacing: DesignSystem.Spacing.xs) {
-                            Text(webUrl)
-                                .font(DesignSystem.Typography.body)
-                                .foregroundColor(DesignSystem.Colors.primary)
-                                .lineLimit(1)
-                                .truncationMode(.middle)
-                            
-                            HStack(spacing: DesignSystem.Spacing.xs) {
-                                Text("タップしてコピー")
-                                    .font(DesignSystem.Typography.caption)
-                                    .foregroundColor(DesignSystem.Colors.secondary)
-                                
-                                Image(systemName: "doc.on.doc")
-                                    .font(DesignSystem.Typography.caption)
-                                    .foregroundColor(DesignSystem.Colors.secondary)
-                            }
-                        }
-                        
-                        Spacer()
-                    }
-                    .padding(DesignSystem.Spacing.md)
-                    .background(
-                        RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadiusSmall, style: .continuous)
-                            .fill(DesignSystem.Colors.primary.opacity(0.1))
-                    )
-                }
-                .buttonStyle(PlainButtonStyle())
-            }
-            
-            // サブアクション：プレビューと編集
-            HStack(spacing: DesignSystem.Spacing.lg) {
-                Button(action: {
-                    showingSchedulePreview = true
-                }) {
-                    Text("プレビュー")
-                        .font(DesignSystem.Typography.subheadline)
-                        .foregroundColor(DesignSystem.Colors.primary)
-                }
-                
-                Text("|")
-                    .foregroundColor(DesignSystem.Colors.gray2)
-                
-                Button(action: onEdit) {
-                    Text("編集")
-                        .font(DesignSystem.Typography.subheadline)
-                        .foregroundColor(DesignSystem.Colors.primary)
+                    .buttonStyle(.plain)
                 }
             }
-            .frame(maxWidth: .infinity)
+        } else {
+            Text("候補日時が設定されていません")
+                .font(DesignSystem.Typography.subheadline)
+                .foregroundColor(DesignSystem.Colors.secondary)
+                .italic()
         }
     }
     
