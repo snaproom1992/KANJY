@@ -237,8 +237,8 @@ struct WebView: UIViewRepresentable {
                     print("❓ [Navigation]: 不明なタイプ")
                 }
                 
-                // kanjy-web.netlify.app ドメイン内のナビゲーションを許可
-                if url.host == "kanjy-web.netlify.app" || url.host == "localhost" {
+                // kanjy.vercel.app ドメイン内のナビゲーションを許可
+                if url.host == "kanjy.vercel.app" || url.host == "kanjy-dzxo9jpk7-snaprooms-projects.vercel.app" || url.host == "localhost" {
                     print("✅ [Navigation]: 同一ドメイン内の遷移を許可")
                     decisionHandler(.allow)
                 } else {
