@@ -318,3 +318,4 @@ Identifier 'supabase' has already been declared
 **最終更新:** 2025-12-20  
 **作成者:** AI Assistant
 
+

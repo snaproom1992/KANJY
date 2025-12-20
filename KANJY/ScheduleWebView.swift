@@ -91,6 +91,13 @@ struct WebView: UIViewRepresentable {
         // WebViewの設定（iOS 14以降の推奨方法）
         configuration.defaultWebpagePreferences.allowsContentJavaScript = true
         
+        // JavaScript主導のナビゲーションを許可
+        configuration.preferences.javaScriptCanOpenWindowsAutomatically = true
+        
+        // メディア再生設定
+        configuration.allowsInlineMediaPlayback = true
+        configuration.mediaTypesRequiringUserActionForPlayback = []
+        
         // JavaScriptのコンソールログをSwiftのコンソールに出力
         let userContentController = WKUserContentController()
         
@@ -136,6 +143,12 @@ struct WebView: UIViewRepresentable {
         // ユーザーエージェントを設定（モバイル表示のため）
         webView.customUserAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1"
         
+        // バックフォワードナビゲーションを有効化
+        webView.allowsBackForwardNavigationGestures = true
+        
+        // リンクプレビュー機能を有効化
+        webView.allowsLinkPreview = false // プレビューを無効にして即座に遷移
+        
         return webView
     }
     
@@ -175,10 +188,29 @@ struct WebView: UIViewRepresentable {
             // 同一ドメイン内のナビゲーションを許可
             if let url = navigationAction.request.url {
                 print("🔄 [Navigation]: \(url.absoluteString)")
+                print("🔍 [Navigation Type]: \(navigationAction.navigationType.rawValue)")
+                
+                // ナビゲーションタイプのログ出力
+                switch navigationAction.navigationType {
+                case .linkActivated:
+                    print("📎 [Navigation]: リンククリック")
+                case .formSubmitted:
+                    print("📝 [Navigation]: フォーム送信")
+                case .backForward:
+                    print("⬅️ [Navigation]: 戻る/進む")
+                case .reload:
+                    print("🔄 [Navigation]: リロード")
+                case .formResubmitted:
+                    print("📝 [Navigation]: フォーム再送信")
+                case .other:
+                    print("🔀 [Navigation]: その他（JavaScriptなど）")
+                @unknown default:
+                    print("❓ [Navigation]: 不明なタイプ")
+                }
                 
                 // kanjy-web.netlify.app ドメイン内のナビゲーションを許可
                 if url.host == "kanjy-web.netlify.app" || url.host == "localhost" {
-                    print("✅ [Navigation]: 許可されました")
+                    print("✅ [Navigation]: 同一ドメイン内の遷移を許可")
                     decisionHandler(.allow)
                 } else {
                     // 外部リンクは許可しない（セキュリティのため）
@@ -186,6 +218,7 @@ struct WebView: UIViewRepresentable {
                     decisionHandler(.cancel)
                 }
             } else {
+                print("⚠️ [Navigation]: URLが取得できませんでしたが、遷移を許可")
                 decisionHandler(.allow)
             }
         }
