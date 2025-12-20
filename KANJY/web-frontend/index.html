@@ -667,6 +667,8 @@
             
             .responses-table table {
                 display: block;
+                width: 100% !important;
+                table-layout: auto;
             }
             
             .responses-table thead {
@@ -709,6 +711,12 @@
                 padding-bottom: 0.75rem !important;
                 margin-bottom: 0.75rem;
                 border-bottom: 1px solid #E5E7EB !important;
+                cursor: pointer !important;
+            }
+            
+            .responses-table tbody td:first-child > * {
+                pointer-events: auto !important;
+                cursor: pointer !important;
             }
             
             /* 日程回答のスタイル */
@@ -807,6 +815,7 @@
             
             .responses-table table {
                 display: table;
+                table-layout: fixed;
             }
             
             .responses-table thead {
@@ -2269,6 +2278,16 @@
                 console.warn('⚠️ deadlineSection または deadlineText が見つかりません');
             }
             
+            
+            // イベントURLを表示
+            const eventUrlElement = document.getElementById('eventUrl');
+            if (eventUrlElement && event.id) {
+                const fullUrl = `${window.location.origin}${window.location.pathname}?id=${event.id}`;
+                eventUrlElement.textContent = fullUrl;
+                console.log('✅ イベントURL設定完了:', fullUrl);
+            } else {
+                console.warn('⚠️ eventUrl要素またはevent.idが見つかりません');
+            }
             
             // カードの数に応じてグリッドレイアウトを調整
             updateGridLayout();
