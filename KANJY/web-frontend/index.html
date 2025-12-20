@@ -761,6 +761,11 @@
                     <h1 id="event-title" class="notion-heading-2 mb-3">
                         読み込み中...
                     </h1>
+                    <div id="loading-status" style="color: #666; font-size: 14px; margin-top: 8px;">
+                        ステータス: 初期化中...
+                    </div>
+                    <div id="error-display" style="display: none; color: #ef4444; font-size: 14px; margin-top: 8px; padding: 12px; background: #fee; border-radius: 8px; white-space: pre-wrap;">
+                    </div>
                     <p id="event-description" class="notion-body" style="display: none;">
                     </p>
                 </div>
@@ -1056,8 +1061,8 @@
         const SUPABASE_URL = 'https://jvluhjifihiuopqdwjll.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2bHVoamlmaWhpdW9wcWR3amxsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTExNTc5OTEsImV4cCI6MjA2NjczMzk5MX0.WDTzIs73X8NHGFcIYFk4CN-7dH5tQT5l0Bd2uY6H9lc';
         
-        // Supabaseクライアント初期化
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // Supabaseクライアント（初期化はDOMContentLoadedの後）
+        let supabase = null;
         
         // グローバル変数
         let currentEvent = null;
@@ -1422,48 +1427,227 @@
         
         
         // 初期化
+        // Supabaseライブラリの読み込みを待つ
+        function waitForSupabase() {
+            return new Promise((resolve, reject) => {
+                if (typeof window.supabase !== 'undefined') {
+                    resolve();
+                    return;
+                }
+                
+                let attempts = 0;
+                const maxAttempts = 50; // 5秒待機
+                const checkInterval = setInterval(() => {
+                    attempts++;
+                    if (typeof window.supabase !== 'undefined') {
+                        clearInterval(checkInterval);
+                        resolve();
+                    } else if (attempts >= maxAttempts) {
+                        clearInterval(checkInterval);
+                        reject(new Error('Supabaseライブラリの読み込みがタイムアウトしました'));
+                    }
+                }, 100);
+            });
+        }
+        
+        // ステータス表示を更新するヘルパー関数
+        function updateLoadingStatus(message) {
+            const statusElement = document.getElementById('loading-status');
+            if (statusElement) {
+                statusElement.textContent = `ステータス: ${message}`;
+                statusElement.style.display = 'block';
+            }
+            console.log(`📊 ステータス: ${message}`);
+        }
+        
+        // エラー表示を更新するヘルパー関数
+        function showError(message) {
+            const errorElement = document.getElementById('error-display');
+            if (errorElement) {
+                errorElement.textContent = message;
+                errorElement.style.display = 'block';
+            }
+            console.error(`❌ エラー: ${message}`);
+        }
+        
         document.addEventListener('DOMContentLoaded', async function() {
             console.log('🍙 Beautiful KANJY Table初期化開始');
+            updateLoadingStatus('初期化開始');
+            
+            try {
+                // Supabaseライブラリの読み込みを待つ
+                updateLoadingStatus('Supabaseライブラリ読み込み中...');
+                console.log('⏳ Supabaseライブラリの読み込みを待機中...');
+                await waitForSupabase();
+                console.log('✅ Supabaseライブラリ読み込み完了');
+                updateLoadingStatus('Supabaseクライアント初期化中...');
+                
+                // Supabaseクライアント初期化
+                console.log('🔧 Supabaseクライアント初期化開始');
+                console.log('🔧 window.supabase:', typeof window.supabase);
+                if (typeof window.supabase === 'undefined') {
+                    throw new Error('Supabaseライブラリが読み込まれていません');
+                }
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                console.log('✅ Supabaseクライアント初期化完了');
+                updateLoadingStatus('データベース接続テスト中...');
+                
+                // Supabase接続テスト（シンプルなクエリで確認）
+                console.log('🔍 Supabase接続テスト開始');
+                console.log('🔍 Supabase URL:', SUPABASE_URL);
+                console.log('🔍 Supabase Key:', SUPABASE_ANON_KEY.substring(0, 20) + '...');
+                
+                try {
+                    // タイムアウトを設定（10秒）
+                    let timeoutId;
+                    const timeoutPromise = new Promise((_, reject) => {
+                        timeoutId = setTimeout(() => reject(new Error('接続タイムアウト（10秒以内に応答がありませんでした）')), 10000);
+                    });
+                    
+                    const queryPromise = supabase
+                        .from('events')
+                        .select('id')
+                        .limit(1)
+                        .then(result => {
+                            clearTimeout(timeoutId);
+                            return result;
+                        });
+                    
+                    const result = await Promise.race([queryPromise, timeoutPromise]);
+                    const { data: testData, error: testError } = result;
+                    
+                    if (testError) {
+                        console.error('❌ Supabase接続テストエラー:', testError);
+                        console.error('❌ エラー詳細:', JSON.stringify(testError, null, 2));
+                        console.error('❌ エラーコード:', testError.code);
+                        console.error('❌ エラーメッセージ:', testError.message);
+                        
+                        let errorMessage = 'データベースへの接続エラーが発生しました。';
+                        if (testError.message) {
+                            errorMessage += `\n\n詳細: ${testError.message}`;
+                        }
+                        if (testError.code === 'PGRST116' || testError.message?.includes('not found')) {
+                            errorMessage += '\n\nテーブル「events」が見つかりません。データベースのテーブル構造を確認してください。';
+                        } else if (testError.code === '42501' || testError.message?.includes('permission')) {
+                            errorMessage += '\n\nデータベースへのアクセス権限がありません。RLSポリシーを確認してください。';
+                        } else if (testError.message?.includes('network') || testError.message?.includes('fetch')) {
+                            errorMessage += '\n\nネットワークエラーが発生しました。インターネット接続を確認してください。';
+                        }
+                        
+                        throw new Error(errorMessage);
+                    } else {
+                        console.log('✅ Supabase接続テスト成功');
+                        console.log('✅ テストデータ:', testData);
+                        updateLoadingStatus('イベントデータ読み込み中...');
+                    }
+                } catch (testError) {
+                    console.error('❌ Supabase接続テスト失敗:', testError);
+                    if (testError.message?.includes('タイムアウト')) {
+                        throw new Error('データベースへの接続がタイムアウトしました。Supabaseデータベースが起動しているか確認してください。');
+                    }
+                    throw testError;
+                }
+            } catch (error) {
+                console.error('❌ Supabase初期化エラー:', error);
+                console.error('❌ エラースタック:', error.stack);
+                updateLoadingStatus('エラーが発生しました');
+                const titleElement = document.getElementById('event-title');
+                if (titleElement) {
+                    titleElement.textContent = 'データベースへの接続に失敗しました';
+                    titleElement.style.color = '#ef4444';
+                }
+                
+                let errorMessage = 'データベースへの接続に失敗しました。\n\n';
+                if (error.message) {
+                    errorMessage += `詳細: ${error.message}\n\n`;
+                }
+                if (error.stack) {
+                    errorMessage += `スタック:\n${error.stack}\n\n`;
+                }
+                errorMessage += '考えられる原因:\n';
+                errorMessage += '1. インターネット接続を確認してください\n';
+                errorMessage += '2. Supabaseデータベースが起動していない可能性があります\n';
+                errorMessage += '3. ページをリロードして再試行してください';
+                
+                showError(errorMessage);
+                return;
+            }
             
             // URLパラメータからイベントIDを取得
             const urlParams = new URLSearchParams(window.location.search);
-            const eventId = urlParams.get('id');
+            let eventId = urlParams.get('id');
             
             if (!eventId) {
                 alert('イベントIDが指定されていません');
                 return;
             }
             
+            // UUIDを小文字に統一（iOSアプリ側でlowercased()で保存しているため）
+            eventId = eventId.toLowerCase().trim();
+            console.log('🔍 イベントID:', eventId);
+            
             currentEventId = eventId;
             
             try {
-                // Supabaseの接続確認とテーブルの内容を確認
-                await debugSupabaseConnection();
+                // debugSupabaseConnectionは時間がかかる可能性があるためスキップ
+                // console.log('📊 ステップ1: Supabase接続確認を開始');
+                // try {
+                //     await debugSupabaseConnection();
+                //     console.log('✅ ステップ1完了: Supabase接続確認成功');
+                // } catch (debugError) {
+                //     console.warn('⚠️ ステップ1警告: Supabase接続確認でエラー（続行します）:', debugError);
+                // }
                 
+                console.log('📊 ステップ1: イベントデータ読み込みを開始');
+                updateLoadingStatus('イベントデータ読み込み中...');
                 // イベントを最初に読み込み（ヘッダー生成のため）
                 await loadEvent(eventId);
+                console.log('✅ ステップ1完了: イベントデータ読み込み成功');
+                updateLoadingStatus('回答データ読み込み中...');
                 
+                console.log('📊 ステップ2: 回答データ読み込みを開始');
                 // 次に回答を読み込み（ヘッダー生成後）
                 await loadResponses(eventId);
+                console.log('✅ ステップ2完了: 回答データ読み込み成功');
                 
                 console.log('🍙 データ読み込み完了');
+                updateLoadingStatus('読み込み完了');
                 
                 // 表示切り替え機能を初期化
                 initializeViewToggle();
                 
+                // ステータス表示を非表示
+                setTimeout(() => {
+                    const statusElement = document.getElementById('loading-status');
+                    if (statusElement) {
+                        statusElement.style.display = 'none';
+                    }
+                }, 1000);
+                
             } catch (error) {
-                console.error('初期化エラー:', error);
-                console.error('初期化エラー詳細:', error.message);
-                console.error('初期化スタックトレース:', error.stack);
+                console.error('❌ 初期化エラー:', error);
+                console.error('❌ 初期化エラー詳細:', error.message);
+                console.error('❌ 初期化スタックトレース:', error.stack);
+                updateLoadingStatus('エラー: ' + (error.message || '不明なエラー'));
+                
+                // エラー時にタイトルを更新
+                const titleElement = document.getElementById('event-title');
+                if (titleElement) {
+                    titleElement.textContent = 'データの読み込みに失敗しました';
+                    titleElement.style.color = '#ef4444';
+                }
                 
                 // ユーザーフレンドリーなエラーメッセージ
-                let userMessage = 'データの読み込みに失敗しました。';
+                let userMessage = 'データの読み込みに失敗しました。\n\n';
                 if (error.message) {
-                    userMessage += '\n詳細: ' + error.message;
+                    userMessage += `詳細: ${error.message}\n\n`;
                 }
-                userMessage += '\n\nページをリロードして再試行してください。';
+                if (error.stack) {
+                    userMessage += `スタック:\n${error.stack}\n\n`;
+                }
+                userMessage += 'ページをリロードして再試行してください。';
                 
-                alert(userMessage);
+                showError(userMessage);
             }
             
             // アニメーション設定
@@ -1473,40 +1657,57 @@
             displayEventUrl();
             
             console.log('🎉 Beautiful KANJY Table loaded successfully!');
+            } catch (initError) {
+                console.error('❌ 初期化処理エラー:', initError);
+                console.error('❌ 初期化処理エラー詳細:', initError.message);
+                console.error('❌ 初期化処理エラースタック:', initError.stack);
+                showError(`初期化処理でエラーが発生しました:\n\n${initError.message}\n\n${initError.stack}`);
+            }
         });
         
         // イベント情報を読み込み
         async function loadEvent(eventId) {
             try {
-                console.log('イベント読み込み開始:', eventId);
+                console.log('📥 イベント読み込み開始:', eventId);
+                console.log('📥 イベントIDの型:', typeof eventId);
+                console.log('📥 イベントIDの値:', JSON.stringify(eventId));
                 
-                const { data: events, error } = await supabase
-                    .from('events')
-                    .select('*')
-                    .eq('id', eventId);
+                // Supabaseクエリを実行（配列で取得）
+                console.log('📥 Supabaseクエリ実行前');
+                console.log('📥 supabaseオブジェクト:', supabase);
+                console.log('📥 クエリ対象イベントID:', eventId);
+                
+                const queryStartTime = Date.now();
+                let queryResult;
+                try {
+                    console.log('📥 Supabaseクエリ実行中...');
+                    queryResult = await supabase
+                        .from('events')
+                        .select('*')
+                        .eq('id', eventId);
+                    const queryEndTime = Date.now();
+                    console.log(`📥 Supabaseクエリ実行完了（${queryEndTime - queryStartTime}ms）`);
+                } catch (queryError) {
+                    const queryEndTime = Date.now();
+                    console.error(`❌ Supabaseクエリ実行エラー（${queryEndTime - queryStartTime}ms）:`, queryError);
+                    throw queryError;
+                }
+                
+                const { data: events, error } = queryResult;
                 
                 console.log('🔍 Supabaseクエリ結果:');
                 console.log('  - データ:', events);
+                console.log('  - データ型:', typeof events);
                 console.log('  - エラー:', error);
                 console.log('  - データ件数:', events ? events.length : 0);
                 
-                if (events && events.length > 0) {
-                    console.log('🔍 最初のイベント詳細:');
-                    console.log('  - ID:', events[0].id);
-                    console.log('  - タイトル:', events[0].title);
-                    console.log('  - candidate_dates:', events[0].candidate_dates);
-                    console.log('  - candidate_dates型:', typeof events[0].candidate_dates);
-                    console.log('  - candidate_dates長さ:', events[0].candidate_dates ? events[0].candidate_dates.length : 'null');
-                    
-                    if (events[0].candidate_dates && Array.isArray(events[0].candidate_dates)) {
-                        events[0].candidate_dates.forEach((date, index) => {
-                            console.log(`  - 日付${index + 1}:`, date);
-                        });
-                    }
+                if (error) {
+                    console.error('❌ Supabaseエラー:', error);
+                    throw error;
                 }
                 
-                if (error) throw error;
                 if (!events || events.length === 0) {
+                    console.warn('⚠️ イベントが見つかりません。利用可能なイベントを確認中...');
                     // イベントが見つからない場合、利用可能なイベントを表示
                     const { data: availableEvents, error: availableError } = await supabase
                         .from('events')
@@ -1520,7 +1721,7 @@
                     if (availableEvents && availableEvents.length > 0) {
                         errorMessage += '\n\n利用可能なイベント:';
                         availableEvents.forEach(event => {
-                            errorMessage += `\n- ${event.title} (ID: ${event.id})`;
+                            errorMessage += `\n- ${event.title || 'タイトルなし'} (ID: ${event.id})`;
                         });
                     }
                     
@@ -1528,6 +1729,30 @@
                 }
                 
                 const event = events[0];
+                
+                // イベントオブジェクトの検証
+                if (!event) {
+                    throw new Error('イベントデータが不正です');
+                }
+                
+                // タイトルの検証
+                if (!event.title || event.title.trim() === '') {
+                    console.warn('⚠️ イベントタイトルが空です。デフォルト値を設定します。');
+                    event.title = 'イベント名が設定されていません';
+                }
+                
+                console.log('🔍 最初のイベント詳細:');
+                console.log('  - ID:', event.id);
+                console.log('  - タイトル:', event.title);
+                console.log('  - candidate_dates:', event.candidate_dates);
+                console.log('  - candidate_dates型:', typeof event.candidate_dates);
+                console.log('  - candidate_dates長さ:', event.candidate_dates ? event.candidate_dates.length : 'null');
+                
+                if (event.candidate_dates && Array.isArray(event.candidate_dates)) {
+                    event.candidate_dates.forEach((date, index) => {
+                        console.log(`  - 日付${index + 1}:`, date);
+                    });
+                }
                 
                 // 時間データを修正（19:00 UTC → 10:00 UTC に変換して19:00 JSTで表示）
                 if (event.candidate_dates) {
@@ -1562,10 +1787,28 @@
                         console.log('  - 重複除去後:', uniqueCheck);
                     }
                 }
+                // イベント情報を表示（即座に実行）
+                console.log('✅ イベントデータ取得成功、表示処理を開始');
+                console.log('✅ イベントデータ:', JSON.stringify(event, null, 2));
                 displayEvent(event);
+                console.log('✅ displayEvent呼び出し完了');
                 
             } catch (error) {
-                console.error('イベント読み込みエラー:', error);
+                console.error('❌ イベント読み込みエラー:', error);
+                console.error('❌ エラー詳細:', error.message);
+                console.error('❌ エラースタック:', error.stack);
+                
+                // エラー時にユーザーに分かりやすいメッセージを表示
+                const titleElement = document.getElementById('event-title');
+                if (titleElement) {
+                    titleElement.textContent = 'データの読み込みに失敗しました';
+                    titleElement.style.color = '#ef4444'; // エラー色
+                }
+                
+                // エラーメッセージを表示
+                const errorMessage = error.message || '不明なエラーが発生しました';
+                alert(`データの読み込みに失敗しました:\n\n${errorMessage}\n\nページをリロードして再試行してください。`);
+                
                 throw error;
             }
         }
@@ -1641,10 +1884,26 @@
             console.log('🍙 イベント情報表示開始:', event);
             console.log('🍙 deadline確認:', event.deadline);
             
+            // イベントオブジェクトの検証
+            if (!event) {
+                console.error('❌ イベントオブジェクトがnullまたはundefinedです');
+                const titleElement = document.getElementById('event-title');
+                if (titleElement) {
+                    titleElement.textContent = 'データの読み込みに失敗しました';
+                    titleElement.style.color = '#ef4444';
+                }
+                return;
+            }
+            
             // タイトル
             const titleElement = document.getElementById('event-title');
             if (titleElement) {
-                titleElement.textContent = event.title || 'イベント';
+                const title = event.title || 'イベント名が設定されていません';
+                titleElement.textContent = title;
+                titleElement.style.color = ''; // エラー色をリセット
+                console.log('✅ タイトルを表示:', title);
+            } else {
+                console.error('❌ event-title要素が見つかりません');
             }
             
             // 説明（設定されている場合のみ表示）
@@ -2420,24 +2679,6 @@
             }
         }
 
-        // イベントURLを表示
-        function displayEventUrl() {
-            const urlElement = document.getElementById('eventUrl');
-            if (urlElement) {
-                urlElement.textContent = window.location.href;
-            }
-        }
-        
-
-        
-        // エラー表示
-        function showError(message) {
-            console.error('🚨', message);
-            // 実装は次のステップで
-        }
-        
-
-        
         // アニメーション設定
         function setupAnimations() {
             // 改善されたIntersection Observer for animations

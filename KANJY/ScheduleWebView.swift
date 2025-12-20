@@ -86,11 +86,52 @@ struct WebView: UIViewRepresentable {
     @Binding var isLoading: Bool
     
     func makeUIView(context: Context) -> WKWebView {
-        let webView = WKWebView()
-        webView.navigationDelegate = context.coordinator
+        let configuration = WKWebViewConfiguration()
         
         // WebViewの設定（iOS 14以降の推奨方法）
-        webView.configuration.defaultWebpagePreferences.allowsContentJavaScript = true
+        configuration.defaultWebpagePreferences.allowsContentJavaScript = true
+        
+        // JavaScriptのコンソールログをSwiftのコンソールに出力
+        let userContentController = WKUserContentController()
+        
+        // console.logをインターセプト
+        let logScript = WKUserScript(
+            source: """
+            (function() {
+                var originalLog = console.log;
+                var originalError = console.error;
+                var originalWarn = console.warn;
+                
+                console.log = function(...args) {
+                    window.webkit.messageHandlers.consoleLog.postMessage(args.map(String).join(' '));
+                    originalLog.apply(console, args);
+                };
+                
+                console.error = function(...args) {
+                    window.webkit.messageHandlers.consoleError.postMessage(args.map(String).join(' '));
+                    originalError.apply(console, args);
+                };
+                
+                console.warn = function(...args) {
+                    window.webkit.messageHandlers.consoleWarn.postMessage(args.map(String).join(' '));
+                    originalWarn.apply(console, args);
+                };
+            })();
+            """,
+            injectionTime: .atDocumentStart,
+            forMainFrameOnly: false
+        )
+        userContentController.addUserScript(logScript)
+        
+        // メッセージハンドラを追加
+        userContentController.add(context.coordinator, name: "consoleLog")
+        userContentController.add(context.coordinator, name: "consoleError")
+        userContentController.add(context.coordinator, name: "consoleWarn")
+        
+        configuration.userContentController = userContentController
+        
+        let webView = WKWebView(frame: .zero, configuration: configuration)
+        webView.navigationDelegate = context.coordinator
         
         // ユーザーエージェントを設定（モバイル表示のため）
         webView.customUserAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1"
@@ -109,11 +150,24 @@ struct WebView: UIViewRepresentable {
         Coordinator(self)
     }
     
-    class Coordinator: NSObject, WKNavigationDelegate {
+    class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
         var parent: WebView
         
         init(_ parent: WebView) {
             self.parent = parent
+        }
+        
+        func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+            switch message.name {
+            case "consoleLog":
+                print("🌐 [JS Console Log]: \(message.body)")
+            case "consoleError":
+                print("❌ [JS Console Error]: \(message.body)")
+            case "consoleWarn":
+                print("⚠️ [JS Console Warn]: \(message.body)")
+            default:
+                break
+            }
         }
         
         func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {

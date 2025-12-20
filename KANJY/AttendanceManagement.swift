@@ -155,7 +155,7 @@ private struct EventDTO: Codable {
     let is_active: Bool
     let share_url: String?
     let web_url: String?
-    let created_by: String
+    let created_by: String?  // nullの可能性があるためオプショナルに変更
     let created_at: String
     let updated_at: String
 }
@@ -486,7 +486,7 @@ public class ScheduleManagementViewModel: ObservableObject {
                     isActive: dto.is_active,
                     shareUrl: dto.share_url,
                     webUrl: dto.web_url,
-                    createdBy: dto.created_by,
+                    createdBy: dto.created_by ?? "匿名",  // nilの場合は"匿名"をデフォルト値として使用
                     createdAt: dateFormatter.date(from: dto.created_at) ?? Date(),
                     updatedAt: dateFormatter.date(from: dto.updated_at) ?? Date()
                 )
