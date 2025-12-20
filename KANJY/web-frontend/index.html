@@ -2979,7 +2979,21 @@
             
             console.log('📱 回答フォームに遷移:', fullUrl);
             
-            // window.location.hrefで遷移（WKWebViewでも履歴が正しく管理される）
+            // WKWebViewの場合、Swift側にメッセージを送信（履歴が正しく管理される）
+            if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.navigateToUrl) {
+                console.log('📱 [iOS App内]: Swiftにページ遷移を依頼します');
+                try {
+                    window.webkit.messageHandlers.navigateToUrl.postMessage(fullUrl);
+                    console.log('✅ Swiftへのメッセージ送信成功');
+                    return;
+                } catch (e) {
+                    console.error('❌ Swiftへのメッセージ送信失敗:', e);
+                    // フォールバックとして通常の遷移を試行
+                }
+            }
+            
+            // 通常のブラウザの場合、window.locationで遷移
+            console.log('🌐 [通常のブラウザ]: window.location.hrefで遷移');
             window.location.href = fullUrl;
         }
 

@@ -193,15 +193,25 @@ struct WebView: UIViewRepresentable {
                 if let urlString = message.body as? String,
                    let url = URL(string: urlString) {
                     print("🚀 [Swift]: JavaScriptからのページ遷移リクエスト: \(urlString)")
-                    // WebViewでURLを読み込む
+                    // JavaScriptを評価してwindow.location.hrefを設定（履歴が正しく管理される）
                     if let webView = message.webView {
-                        print("✅ [Swift]: URLを読み込みます")
-                        let request = URLRequest(url: url)
-                        webView.load(request)
-                        
-                        // 親ビューに現在のURLを通知
-                        DispatchQueue.main.async {
-                            self.parent.currentUrl = url
+                        print("✅ [Swift]: JavaScriptでwindow.location.hrefを設定します")
+                        let escapedUrl = urlString.replacingOccurrences(of: "'", with: "\\'")
+                        let script = "window.location.href = '\(escapedUrl)';"
+                        webView.evaluateJavaScript(script) { result, error in
+                            if let error = error {
+                                print("❌ [Swift]: JavaScript実行エラー: \(error)")
+                                // フォールバック: 直接load()を使用
+                                let request = URLRequest(url: url)
+                                webView.load(request)
+                            } else {
+                                print("✅ [Swift]: JavaScript実行成功")
+                            }
+                            
+                            // 親ビューに現在のURLを通知
+                            DispatchQueue.main.async {
+                                self.parent.currentUrl = url
+                            }
                         }
                     }
                 } else {
