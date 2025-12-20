@@ -656,6 +656,85 @@
                 margin-left: 0.5rem;
             }
             
+            /* 回答一覧テーブルのモバイル最適化 */
+            .responses-table-container {
+                padding: 0 1rem;
+            }
+            
+            .responses-table {
+                overflow-x: visible !important;
+            }
+            
+            .responses-table table {
+                display: block;
+            }
+            
+            .responses-table thead {
+                display: none; /* モバイルではヘッダーを非表示 */
+            }
+            
+            .responses-table tbody {
+                display: block;
+            }
+            
+            .responses-table tbody tr {
+                display: block;
+                margin-bottom: 1rem;
+                padding: 1.25rem;
+                background: white;
+                border: 1px solid #E5E7EB;
+                border-radius: 0.75rem;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+                transition: all 0.2s ease;
+            }
+            
+            .responses-table tbody tr:hover {
+                background: #F9FAFB !important;
+                transform: none !important;
+                box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08) !important;
+            }
+            
+            .responses-table tbody td {
+                display: block;
+                padding: 0.5rem 0 !important;
+                border: none !important;
+                text-align: left !important;
+            }
+            
+            /* 参加者名のスタイル */
+            .responses-table tbody td:first-child {
+                font-size: 1.125rem;
+                font-weight: 600;
+                color: #1F2937;
+                padding-bottom: 0.75rem !important;
+                margin-bottom: 0.75rem;
+                border-bottom: 1px solid #E5E7EB !important;
+            }
+            
+            /* 日程回答のスタイル */
+            .responses-table tbody td:not(:first-child) {
+                display: flex !important;
+                justify-content: space-between;
+                align-items: center;
+                padding: 0.625rem 0 !important;
+            }
+            
+            /* 日程情報の前にラベルを追加 */
+            .responses-table tbody td:not(:first-child)::before {
+                content: attr(data-date);
+                font-weight: 500;
+                color: #6B7280;
+                font-size: 0.875rem;
+                flex-shrink: 0;
+                margin-right: 1rem;
+                max-width: 60%;
+            }
+            
+            /* ステータスバッジのモバイル調整 */
+            .responses-table tbody td:not(:first-child) .status-badge {
+                margin-left: auto;
+            }
+            
             /* メインコンテナの余白調整 */
             main {
                 padding-top: 1rem !important;
@@ -712,6 +791,68 @@
             
             .table-row:hover {
                 transform: translateX(2px);
+            }
+        }
+        
+        /* デスクトップでは通常のテーブル表示 */
+        @media (min-width: 769px) {
+            .responses-table-container {
+                padding: 0;
+            }
+            
+            .responses-table {
+                overflow-x: auto !important;
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            .responses-table table {
+                display: table;
+            }
+            
+            .responses-table thead {
+                display: table-header-group;
+            }
+            
+            .responses-table tbody {
+                display: table-row-group;
+            }
+            
+            .responses-table tbody tr {
+                display: table-row;
+                margin-bottom: 0;
+                padding: 0;
+                background: transparent;
+                border: none;
+                border-radius: 0;
+                box-shadow: none;
+            }
+            
+            .responses-table tbody td {
+                display: table-cell;
+                padding: 1rem 0.75rem !important;
+                border-right: 1px solid #E9E5E0 !important;
+                text-align: center !important;
+            }
+            
+            .responses-table tbody td:first-child {
+                font-size: inherit;
+                font-weight: inherit;
+                color: inherit;
+                padding: 1rem 1.5rem !important;
+                margin-bottom: 0;
+                border-bottom: none !important;
+                text-align: left !important;
+            }
+            
+            .responses-table tbody td:not(:first-child) {
+                display: table-cell !important;
+                justify-content: center;
+                align-items: center;
+                padding: 1rem 0.75rem !important;
+            }
+            
+            .responses-table tbody td:not(:first-child)::before {
+                content: none;
             }
         }
         
@@ -1055,8 +1196,9 @@
                         <p class="notion-caption text-stone-600">全参加者の詳細な回答状況を確認・編集できます（名前クリックで編集）</p>
                     </div>
 
-                    <div class="overflow-x-auto responses-table">
-                        <table class="w-full table-fixed notion-table">
+                    <div class="responses-table-container">
+                        <div class="overflow-x-auto responses-table">
+                        <table class="w-full notion-table">
                             <thead>
                                 <tr>
                                     <th class="text-left py-6 px-8 font-semibold text-gray-800 text-sm w-80">
@@ -1071,6 +1213,7 @@
                                 <!-- 動的に生成される回答一覧がここに挿入されます -->
                             </tbody>
                         </table>
+                        </div>
                     </div>
 
                     <!-- Show More Button -->
@@ -2470,6 +2613,11 @@
                     cell.className = 'py-4 px-3 text-center';
                     cell.style.borderRight = '1px solid #E9E5E0';
                     
+                    // モバイル用に日程ラベルを追加
+                    const date = new Date(dateStr);
+                    const dateLabel = `${date.getMonth() + 1}/${date.getDate()}(${['日','月','火','水','木','金','土'][date.getDay()]}) ${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}〜`;
+                    cell.setAttribute('data-date', dateLabel);
+                    
                     const status = getStatusForDate(response, dateStr);
                     cell.innerHTML = createStatusBadge(status);
                     
@@ -2479,7 +2627,8 @@
                 console.warn('⚠️ currentEvent.candidate_datesが存在しません:', currentEvent);
                 // 最低1つの日程セルを作成
                 const cell = document.createElement('td');
-            cell.className = 'py-4 px-3 text-center';
+                cell.className = 'py-4 px-3 text-center';
+                cell.setAttribute('data-date', '日程未定');
                 cell.innerHTML = createStatusBadge('notAttending');
                 tr.appendChild(cell);
             }
