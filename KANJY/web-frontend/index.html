@@ -880,7 +880,7 @@
                         ぜひあなたの都合を教えてください
                     </p>
                     <p class="notion-caption text-white/80 mb-6">フォームに入力すると、下の回答状況にすぐ反映されます。</p>
-                        <button onclick="goToResponseForm()" class="interactive-element micro-transition inline-flex items-center px-6 py-3 bg-white hover:bg-slate-200 text-stone-900 font-semibold rounded-xl shadow-sm hover:shadow-md" aria-label="回答フォームに移動して参加状況を入力する">
+                        <button id="go-to-response-form-btn" class="interactive-element micro-transition inline-flex items-center px-6 py-3 bg-white hover:bg-slate-200 text-stone-900 font-semibold rounded-xl shadow-sm hover:shadow-md" aria-label="回答フォームに移動して参加状況を入力する">
                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                         </svg>
@@ -1727,6 +1727,32 @@
             
             // アニメーション設定
             setupAnimations();
+            
+            // 回答フォームへの遷移ボタンのイベントリスナー設定
+            const goToResponseFormBtn = document.getElementById('go-to-response-form-btn');
+            if (goToResponseFormBtn) {
+                console.log('✅ 回答フォームボタンが見つかりました');
+                
+                // クリックイベント
+                goToResponseFormBtn.addEventListener('click', function(e) {
+                    console.log('🖱️ ボタンがクリックされました（click）');
+                    e.preventDefault();
+                    e.stopPropagation();
+                    goToResponseForm();
+                });
+                
+                // タッチイベント（モバイル対応）
+                goToResponseFormBtn.addEventListener('touchend', function(e) {
+                    console.log('📱 ボタンがタップされました（touchend）');
+                    e.preventDefault();
+                    e.stopPropagation();
+                    goToResponseForm();
+                });
+                
+                console.log('✅ イベントリスナー設定完了');
+            } else {
+                console.warn('⚠️ 回答フォームボタンが見つかりませんでした');
+            }
             
             console.log('🎉 Beautiful KANJY Table loaded successfully!');
         });
@@ -2699,6 +2725,7 @@
         function goToResponseForm() {
             console.log('🔄 回答フォームへの遷移を開始');
             console.log('- currentEventId:', currentEventId);
+            console.log('- currentEvent:', currentEvent);
             
             if (!currentEventId) {
                 console.error('❌ イベントIDが設定されていません');
@@ -2712,9 +2739,16 @@
             const targetUrl = `response-form.html?${urlParams.toString()}`;
             
             console.log('- 遷移先URL:', targetUrl);
-            console.log('✅ 遷移を実行します');
+            console.log('- 完全なURL:', window.location.origin + '/' + targetUrl);
+            console.log('✅ 100ms後に遷移を実行します');
             
-            window.location.href = targetUrl;
+            // WKWebViewでのナビゲーションキャンセルを回避するため、
+            // わずかな遅延を入れてから遷移
+            setTimeout(() => {
+                console.log('⏰ 遷移を実行中...');
+                window.location.href = targetUrl;
+                console.log('✅ window.location.href を設定しました');
+            }, 100);
         }
 
         // イベントURLをコピー
