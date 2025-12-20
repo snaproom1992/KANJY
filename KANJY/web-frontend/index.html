@@ -1657,12 +1657,6 @@
             displayEventUrl();
             
             console.log('🎉 Beautiful KANJY Table loaded successfully!');
-            } catch (initError) {
-                console.error('❌ 初期化処理エラー:', initError);
-                console.error('❌ 初期化処理エラー詳細:', initError.message);
-                console.error('❌ 初期化処理エラースタック:', initError.stack);
-                showError(`初期化処理でエラーが発生しました:\n\n${initError.message}\n\n${initError.stack}`);
-            }
         });
         
         // イベント情報を読み込み
