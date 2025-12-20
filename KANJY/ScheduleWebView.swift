@@ -30,16 +30,12 @@ struct ScheduleWebView: View {
                         shouldGoBack: $shouldGoBack,
                         onGoBack: {
                             dismiss()
+                        },
+                        onGoBackProcessed: {
+                            // フラグをリセット
+                            shouldGoBack = false
                         }
                     )
-                    .onChange(of: shouldGoBack) { newValue in
-                        if newValue {
-                            // フラグをリセット
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                shouldGoBack = false
-                            }
-                        }
-                    }
                 } else {
                     VStack(spacing: 16) {
                         ProgressView()
@@ -108,6 +104,7 @@ struct WebView: UIViewRepresentable {
     @Binding var currentUrl: URL? // 現在のURLを親に通知するためのBinding
     @Binding var shouldGoBack: Bool // 戻るボタンが押された時のフラグ
     var onGoBack: (() -> Void)? // 戻るボタンが押された時のコールバック
+    var onGoBackProcessed: (() -> Void)? // 戻る処理が完了した時のコールバック（フラグリセット用）
     
     func makeUIView(context: Context) -> WKWebView {
         let configuration = WKWebViewConfiguration()
@@ -200,17 +197,33 @@ struct WebView: UIViewRepresentable {
     class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
         var parent: WebView
         weak var webView: WKWebView? // WebViewの参照を保持
+        var isGoingBack = false // 戻る処理中フラグ（重複実行を防ぐ）
         
         init(_ parent: WebView) {
             self.parent = parent
         }
         
         func goBack() {
+            // 既に処理中の場合は何もしない
+            guard !isGoingBack else {
+                print("📱 [Swift]: 既に戻る処理中です")
+                return
+            }
+            
+            isGoingBack = true
+            
             if let webView = webView, webView.canGoBack {
                 print("📱 [Swift]: WebViewの履歴を使用して戻ります")
                 webView.goBack()
+                // ナビゲーションが完了したらフラグをリセット
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    self.isGoingBack = false
+                    self.parent.onGoBackProcessed?()
+                }
             } else {
                 print("📱 [Swift]: WebViewの履歴がないため、親ビューを閉じます")
+                isGoingBack = false
+                parent.onGoBackProcessed?()
                 parent.onGoBack?()
             }
         }
