@@ -7,8 +7,13 @@ struct ScheduleWebView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var isLoading = true
     @State private var webUrl: String = ""
+    @State private var currentUrl: URL? = nil // 現在表示中のURL
     
     private var webUrlOptional: URL? {
+        // currentUrlが設定されていればそれを使用、なければ初期URLを使用
+        if let url = currentUrl {
+            return url
+        }
         let urlString = webUrl.isEmpty ? viewModel.getWebUrl(for: event) : webUrl
         return URL(string: urlString)
     }
@@ -19,7 +24,8 @@ struct ScheduleWebView: View {
                 if let url = webUrlOptional {
                     WebView(
                         url: url,
-                        isLoading: $isLoading
+                        isLoading: $isLoading,
+                        currentUrl: $currentUrl
                     )
                 } else {
                     VStack(spacing: 16) {
@@ -84,6 +90,7 @@ struct ScheduleWebView: View {
 struct WebView: UIViewRepresentable {
     let url: URL
     @Binding var isLoading: Bool
+    @Binding var currentUrl: URL? // 現在のURLを親に通知するためのBinding
     
     func makeUIView(context: Context) -> WKWebView {
         let configuration = WKWebViewConfiguration()
@@ -134,6 +141,7 @@ struct WebView: UIViewRepresentable {
         userContentController.add(context.coordinator, name: "consoleLog")
         userContentController.add(context.coordinator, name: "consoleError")
         userContentController.add(context.coordinator, name: "consoleWarn")
+        userContentController.add(context.coordinator, name: "navigateToUrl") // ページ遷移用
         
         configuration.userContentController = userContentController
         
@@ -153,7 +161,9 @@ struct WebView: UIViewRepresentable {
     }
     
     func updateUIView(_ uiView: WKWebView, context: Context) {
-        if uiView.url != url {
+        // URLが変更された場合のみ再読み込み
+        // ただし、JavaScriptからの遷移（currentUrl経由）の場合は再読み込みしない
+        if uiView.url != url && currentUrl == nil {
             let request = URLRequest(url: url)
             uiView.load(request)
         }
@@ -178,6 +188,25 @@ struct WebView: UIViewRepresentable {
                 print("❌ [JS Console Error]: \(message.body)")
             case "consoleWarn":
                 print("⚠️ [JS Console Warn]: \(message.body)")
+            case "navigateToUrl":
+                // JavaScriptからのページ遷移リクエスト
+                if let urlString = message.body as? String,
+                   let url = URL(string: urlString) {
+                    print("🚀 [Swift]: JavaScriptからのページ遷移リクエスト: \(urlString)")
+                    // WebViewでURLを読み込む
+                    if let webView = message.webView {
+                        print("✅ [Swift]: URLを読み込みます")
+                        let request = URLRequest(url: url)
+                        webView.load(request)
+                        
+                        // 親ビューに現在のURLを通知
+                        DispatchQueue.main.async {
+                            self.parent.currentUrl = url
+                        }
+                    }
+                } else {
+                    print("❌ [Swift]: 無効なURL: \(message.body)")
+                }
             default:
                 break
             }
