@@ -1,0 +1,30 @@
+{
+  "name": "kanjy",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "<div align=\"center\">",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint \"KANJY/web-frontend/**/*.html\"",
+    "lint:fix": "eslint \"KANJY/web-frontend/**/*.html\" --fix",
+    "format": "prettier --write \"KANJY/web-frontend/**/*.{html,js,css}\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/snaproom1992/KANJY.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/snaproom1992/KANJY/issues"
+  },
+  "homepage": "https://github.com/snaproom1992/KANJY#readme",
+  "devDependencies": {
+    "eslint": "^9.39.2",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-html": "^8.1.3",
+    "prettier": "^3.7.4"
+  }
+}
