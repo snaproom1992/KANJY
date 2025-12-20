@@ -1346,13 +1346,21 @@
 
         // 一覧画面に戻る
         function goBack() {
-            const urlParams = new URLSearchParams();
-            if (currentEventId) {
-                urlParams.set('id', currentEventId);
-                urlParams.set('t', Date.now());
-                urlParams.set('v', 'beautiful');
+            // ナビゲーション履歴がある場合は、一つ前に戻る
+            if (window.history.length > 1) {
+                console.log('📱 ナビゲーション履歴を使用して戻ります');
+                window.history.back();
+            } else {
+                // 履歴がない場合（直接アクセスされた場合など）は、index.htmlに遷移
+                console.log('📱 ナビゲーション履歴がないため、index.htmlに遷移します');
+                const urlParams = new URLSearchParams();
+                if (currentEventId) {
+                    urlParams.set('id', currentEventId);
+                    urlParams.set('t', Date.now());
+                    urlParams.set('v', 'beautiful');
+                }
+                window.location.href = `index.html?${urlParams.toString()}`;
             }
-            window.location.href = `index.html?${urlParams.toString()}`;
         }
 
         // エラー表示

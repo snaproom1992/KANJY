@@ -8,6 +8,7 @@ struct ScheduleWebView: View {
     @State private var isLoading = true
     @State private var webUrl: String = ""
     @State private var currentUrl: URL? = nil // 現在表示中のURL
+    @State private var shouldGoBack = false // WebViewの戻るフラグ
     
     private var webUrlOptional: URL? {
         // currentUrlが設定されていればそれを使用、なければ初期URLを使用
@@ -25,8 +26,20 @@ struct ScheduleWebView: View {
                     WebView(
                         url: url,
                         isLoading: $isLoading,
-                        currentUrl: $currentUrl
+                        currentUrl: $currentUrl,
+                        shouldGoBack: $shouldGoBack,
+                        onGoBack: {
+                            dismiss()
+                        }
                     )
+                    .onChange(of: shouldGoBack) { newValue in
+                        if newValue {
+                            // フラグをリセット
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                shouldGoBack = false
+                            }
+                        }
+                    }
                 } else {
                     VStack(spacing: 16) {
                         ProgressView()
@@ -62,7 +75,9 @@ struct ScheduleWebView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("戻る") {
-                        dismiss()
+                        // WebViewの履歴がある場合は、WebViewを戻す
+                        // ない場合は、親ビューを閉じる
+                        shouldGoBack = true
                     }
                 }
                 
@@ -91,6 +106,8 @@ struct WebView: UIViewRepresentable {
     let url: URL
     @Binding var isLoading: Bool
     @Binding var currentUrl: URL? // 現在のURLを親に通知するためのBinding
+    @Binding var shouldGoBack: Bool // 戻るボタンが押された時のフラグ
+    var onGoBack: (() -> Void)? // 戻るボタンが押された時のコールバック
     
     func makeUIView(context: Context) -> WKWebView {
         let configuration = WKWebViewConfiguration()
@@ -147,6 +164,7 @@ struct WebView: UIViewRepresentable {
         
         let webView = WKWebView(frame: .zero, configuration: configuration)
         webView.navigationDelegate = context.coordinator
+        context.coordinator.webView = webView // WebViewの参照をCoordinatorに設定
         
         // ユーザーエージェントを設定（モバイル表示のため）
         webView.customUserAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1"
@@ -167,6 +185,12 @@ struct WebView: UIViewRepresentable {
             let request = URLRequest(url: url)
             uiView.load(request)
         }
+        
+        // 戻るボタンが押された場合
+        if shouldGoBack {
+            context.coordinator.goBack()
+            // フラグをリセット（親ビューで行う）
+        }
     }
     
     func makeCoordinator() -> Coordinator {
@@ -175,9 +199,20 @@ struct WebView: UIViewRepresentable {
     
     class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
         var parent: WebView
+        weak var webView: WKWebView? // WebViewの参照を保持
         
         init(_ parent: WebView) {
             self.parent = parent
+        }
+        
+        func goBack() {
+            if let webView = webView, webView.canGoBack {
+                print("📱 [Swift]: WebViewの履歴を使用して戻ります")
+                webView.goBack()
+            } else {
+                print("📱 [Swift]: WebViewの履歴がないため、親ビューを閉じます")
+                parent.onGoBack?()
+            }
         }
         
         func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
