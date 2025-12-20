@@ -2697,10 +2697,24 @@
         
         // 新規回答フォームに遷移
         function goToResponseForm() {
+            console.log('🔄 回答フォームへの遷移を開始');
+            console.log('- currentEventId:', currentEventId);
+            
+            if (!currentEventId) {
+                console.error('❌ イベントIDが設定されていません');
+                alert('エラー: イベント情報が読み込まれていません。ページを再読み込みしてください。');
+                return;
+            }
+            
             // 回答フォームページに遷移（新規モード）
             const urlParams = new URLSearchParams();
             urlParams.set('id', currentEventId);
-            window.location.href = `response-form.html?${urlParams.toString()}`;
+            const targetUrl = `response-form.html?${urlParams.toString()}`;
+            
+            console.log('- 遷移先URL:', targetUrl);
+            console.log('✅ 遷移を実行します');
+            
+            window.location.href = targetUrl;
         }
 
         // イベントURLをコピー
