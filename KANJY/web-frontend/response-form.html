@@ -338,6 +338,119 @@
                 transform: scale(1);
             }
         }
+
+        /* モバイル最適化 */
+        @media (max-width: 768px) {
+            /* 基本的な横スクロール防止 */
+            body, html {
+                overflow-x: hidden !important;
+                max-width: 100vw;
+            }
+
+            /* ヘッダーの調整 */
+            nav .max-w-4xl {
+                padding-left: 1rem;
+                padding-right: 1rem;
+            }
+
+            nav .text-xl {
+                font-size: 1.125rem;
+            }
+
+            /* タイトルのフォントサイズ調整 */
+            .notion-heading-1 {
+                font-size: 1.875rem !important;
+            }
+
+            .notion-heading-2 {
+                font-size: 1.5rem !important;
+            }
+
+            .notion-heading-4 {
+                font-size: 1.125rem !important;
+            }
+
+            /* カードの余白調整 */
+            .enhanced-card {
+                margin-left: 0.5rem;
+                margin-right: 0.5rem;
+            }
+
+            .card-section {
+                padding-left: 1rem !important;
+                padding-right: 1rem !important;
+            }
+
+            /* テーブルのレスポンシブ対応 */
+            #schedule-options {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .notion-table {
+                min-width: 500px;
+            }
+
+            .notion-table td {
+                padding: 0.75rem 0.5rem !important;
+            }
+
+            .choice-button {
+                padding: 0.5rem 0.25rem !important;
+                font-size: 0.875rem !important;
+            }
+
+            .choice-button span:first-child {
+                font-size: 1.5rem !important;
+            }
+
+            /* ボタンのタッチフレンドリー化 */
+            button {
+                min-height: 44px;
+                min-width: 44px;
+            }
+
+            /* フォーム入力のサイズ調整 */
+            .form-input {
+                font-size: 16px !important; /* iOS zoom 防止 */
+            }
+
+            /* パディング調整 */
+            .px-6 {
+                padding-left: 1rem !important;
+                padding-right: 1rem !important;
+            }
+
+            .px-8 {
+                padding-left: 1rem !important;
+                padding-right: 1rem !important;
+            }
+
+            /* App Storeリンクの調整 */
+            nav a span {
+                display: none;
+            }
+
+            nav a svg {
+                margin-right: 0;
+            }
+        }
+
+        /* 小型モバイル（iPhone SE等）への追加対応 */
+        @media (max-width: 375px) {
+            .notion-heading-1 {
+                font-size: 1.5rem !important;
+            }
+
+            .card-section {
+                padding-left: 0.75rem !important;
+                padding-right: 0.75rem !important;
+            }
+
+            .enhanced-card {
+                border-radius: 0.75rem;
+            }
+        }
     </style>
 </head>
 
@@ -475,8 +588,10 @@
         const SUPABASE_URL = 'https://jvluhjifihiuopqdwjll.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2bHVoamlmaWhpdW9wcWR3amxsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTExNTc5OTEsImV4cCI6MjA2NjczMzk5MX0.WDTzIs73X8NHGFcIYFk4CN-7dH5tQT5l0Bd2uY6H9lc';
         
-        // Supabaseクライアント初期化
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // Supabaseクライアント初期化（グローバル変数を再利用してエラー回避）
+        if (typeof supabase === 'undefined') {
+            var supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        }
         
         // デバッグ用: RLS情報を表示
         console.log('🔑 Supabaseクライアント初期化完了');
