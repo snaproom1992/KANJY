@@ -170,15 +170,41 @@ struct WebView: UIViewRepresentable {
             }
         }
         
+        // ナビゲーションポリシーを決定（ページ遷移を許可）
+        func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+            // 同一ドメイン内のナビゲーションを許可
+            if let url = navigationAction.request.url {
+                print("🔄 [Navigation]: \(url.absoluteString)")
+                
+                // kanjy-web.netlify.app ドメイン内のナビゲーションを許可
+                if url.host == "kanjy-web.netlify.app" || url.host == "localhost" {
+                    print("✅ [Navigation]: 許可されました")
+                    decisionHandler(.allow)
+                } else {
+                    // 外部リンクは許可しない（セキュリティのため）
+                    print("⚠️ [Navigation]: 外部リンクのため拒否: \(url.host ?? "不明")")
+                    decisionHandler(.cancel)
+                }
+            } else {
+                decisionHandler(.allow)
+            }
+        }
+        
         func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
             DispatchQueue.main.async {
                 self.parent.isLoading = true
             }
+            print("📡 [Navigation]: 読み込み開始")
         }
         
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
             DispatchQueue.main.async {
                 self.parent.isLoading = false
+            }
+            
+            // 現在のURLをログに出力
+            if let currentURL = webView.url {
+                print("✅ [Navigation]: 読み込み完了 - \(currentURL.absoluteString)")
             }
         }
         
@@ -186,6 +212,14 @@ struct WebView: UIViewRepresentable {
             DispatchQueue.main.async {
                 self.parent.isLoading = false
             }
+            print("❌ [Navigation]: 読み込み失敗 - \(error.localizedDescription)")
+        }
+        
+        func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+            DispatchQueue.main.async {
+                self.parent.isLoading = false
+            }
+            print("❌ [Navigation]: 暫定的な読み込みに失敗 - \(error.localizedDescription)")
         }
     }
 }
