@@ -585,12 +585,23 @@
             
             /* カードのモバイル表示 */
             .enhanced-card {
-                margin: 0.5rem 0;
+                margin: 0.75rem 0 !important;
                 border-radius: 1rem;
+                padding: 1.25rem !important;
             }
 
             .card-hover:hover {
                 transform: translateY(-2px) scale(1.005);
+            }
+            
+            /* カード内のセクション余白削減 */
+            .card-section {
+                padding: 1rem !important;
+            }
+            
+            /* カードヘッダーのコンパクト化 */
+            .card-header {
+                margin-bottom: 0.75rem !important;
             }
             
             /* フォントサイズの調整 */
@@ -643,6 +654,53 @@
             /* ボタングループのスペース調整 */
             button + button {
                 margin-left: 0.5rem;
+            }
+            
+            /* メインコンテナの余白調整 */
+            main {
+                padding-top: 1rem !important;
+                padding-bottom: 1rem !important;
+            }
+            
+            /* 段落の余白削減 */
+            .notion-caption {
+                margin-top: 0.5rem !important;
+                margin-bottom: 0.5rem !important;
+            }
+            
+            /* テキストの行間調整 */
+            p {
+                line-height: 1.6;
+                margin-bottom: 0.75rem;
+            }
+            
+            /* 大きな余白を持つ要素の調整 */
+            .space-y-8 > * + * {
+                margin-top: 1rem !important;
+            }
+            
+            .space-y-6 > * + * {
+                margin-top: 0.75rem !important;
+            }
+            
+            /* タイトルの余白調整 */
+            .notion-heading-1 {
+                margin-top: 0.5rem !important;
+                margin-bottom: 1rem !important;
+            }
+            
+            .notion-heading-2 {
+                margin-top: 1rem !important;
+                margin-bottom: 0.75rem !important;
+            }
+            
+            /* イベント情報カードのコンパクト化 */
+            #event-info {
+                padding: 1rem !important;
+            }
+            
+            #event-info .space-y-4 > * + * {
+                margin-top: 0.75rem !important;
             }
         }
         

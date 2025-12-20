@@ -372,13 +372,33 @@
 
             /* カードの余白調整 */
             .enhanced-card {
-                margin-left: 0.5rem;
-                margin-right: 0.5rem;
+                margin: 0.75rem 0.5rem !important;
+                padding: 1.25rem !important;
             }
 
             .card-section {
-                padding-left: 1rem !important;
-                padding-right: 1rem !important;
+                padding: 1rem !important;
+            }
+            
+            /* メインコンテナの余白調整 */
+            main {
+                padding-top: 1rem !important;
+                padding-bottom: 1rem !important;
+            }
+            
+            /* セクション間の余白削減 */
+            .space-y-8 > * + * {
+                margin-top: 1rem !important;
+            }
+            
+            .space-y-6 > * + * {
+                margin-top: 0.75rem !important;
+            }
+            
+            /* タイトルの余白調整 */
+            .notion-heading-2 {
+                margin-top: 1rem !important;
+                margin-bottom: 0.75rem !important;
             }
 
             /* テーブルのレスポンシブ対応 */
