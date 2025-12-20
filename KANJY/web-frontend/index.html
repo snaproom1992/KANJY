@@ -1062,7 +1062,8 @@
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2bHVoamlmaWhpdW9wcWR3amxsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTExNTc5OTEsImV4cCI6MjA2NjczMzk5MX0.WDTzIs73X8NHGFcIYFk4CN-7dH5tQT5l0Bd2uY6H9lc';
         
         // Supabaseクライアント（初期化はDOMContentLoadedの後）
-        let supabase = null;
+        // グローバルスコープで宣言を避けるため、varを使用
+        var supabase;
         
         // グローバル変数
         let currentEvent = null;
