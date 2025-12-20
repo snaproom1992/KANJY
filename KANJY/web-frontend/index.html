@@ -1143,6 +1143,7 @@
         let currentEvent = null;
         let currentEventId = null;
         let currentResponses = [];
+        let isNavigating = false; // ナビゲーション中フラグ（重複防止）
         
         // 表示制限機能のための変数
         let displayLimit = 5; // 最初に表示する件数
@@ -1733,7 +1734,19 @@
             if (goToResponseFormBtn) {
                 console.log('✅ 回答フォームボタンが見つかりました');
                 
-                // クリックイベント
+                // タッチイベント（モバイル用）
+                // iOS では touchend → click の順で発火し、両方が goToResponseForm() を呼び出すと
+                // 2つのナビゲーションが競合してエラー -999（キャンセル）が発生するため
+                // isNavigatingフラグで重複実行を防止
+                goToResponseFormBtn.addEventListener('touchend', function(e) {
+                    console.log('📱 ボタンがタップされました（touchend）');
+                    e.preventDefault();
+                    e.stopPropagation();
+                    goToResponseForm();
+                }, { passive: false });
+                
+                // クリックイベント（デスクトップ用）
+                // タッチデバイスでもclickは発火するが、isNavigatingフラグで保護される
                 goToResponseFormBtn.addEventListener('click', function(e) {
                     console.log('🖱️ ボタンがクリックされました（click）');
                     e.preventDefault();
@@ -1741,15 +1754,7 @@
                     goToResponseForm();
                 });
                 
-                // タッチイベント（モバイル対応）
-                goToResponseFormBtn.addEventListener('touchend', function(e) {
-                    console.log('📱 ボタンがタップされました（touchend）');
-                    e.preventDefault();
-                    e.stopPropagation();
-                    goToResponseForm();
-                });
-                
-                console.log('✅ イベントリスナー設定完了');
+                console.log('✅ イベントリスナー設定完了（touchend + click with flag protection）');
             } else {
                 console.warn('⚠️ 回答フォームボタンが見つかりませんでした');
             }
@@ -2724,11 +2729,21 @@
         // 新規回答フォームに遷移
         function goToResponseForm() {
             console.log('🔄 回答フォームへの遷移を開始');
+            
+            // 重複実行を防止（touchendとclickの両方が発火するため）
+            if (isNavigating) {
+                console.log('⚠️ すでにナビゲーション中です。重複実行を防止します。');
+                return;
+            }
+            isNavigating = true;
+            console.log('✅ ナビゲーションフラグをONにしました');
+            
             console.log('- currentEventId:', currentEventId);
             console.log('- currentEvent:', currentEvent);
             
             if (!currentEventId) {
                 console.error('❌ イベントIDが設定されていません');
+                isNavigating = false; // フラグをリセット
                 alert('エラー: イベント情報が読み込まれていません。ページを再読み込みしてください。');
                 return;
             }
