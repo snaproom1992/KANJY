@@ -588,15 +588,33 @@
         const SUPABASE_URL = 'https://jvluhjifihiuopqdwjll.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2bHVoamlmaWhpdW9wcWR3amxsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTExNTc5OTEsImV4cCI6MjA2NjczMzk5MX0.WDTzIs73X8NHGFcIYFk4CN-7dH5tQT5l0Bd2uY6H9lc';
         
-        // Supabaseクライアント初期化（グローバル変数を再利用してエラー回避）
-        if (typeof supabase === 'undefined') {
-            var supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        }
+        // Supabaseクライアントをグローバルスコープで宣言
+        var supabase;
         
-        // デバッグ用: RLS情報を表示
-        console.log('🔑 Supabaseクライアント初期化完了');
-        console.log('- URL:', SUPABASE_URL);
-        console.log('- ANON_KEY:', SUPABASE_ANON_KEY.substring(0, 20) + '...');
+        // Supabaseライブラリの読み込みを待つ
+        function waitForSupabase() {
+            return new Promise((resolve, reject) => {
+                if (typeof window.supabase !== 'undefined') {
+                    resolve();
+                    return;
+                }
+                
+                console.log('⏳ Supabaseライブラリの読み込みを待機中...');
+                let attempts = 0;
+                const maxAttempts = 50; // 5秒待機
+                const checkInterval = setInterval(() => {
+                    attempts++;
+                    if (typeof window.supabase !== 'undefined') {
+                        clearInterval(checkInterval);
+                        console.log('✅ Supabaseライブラリ読み込み完了');
+                        resolve();
+                    } else if (attempts >= maxAttempts) {
+                        clearInterval(checkInterval);
+                        reject(new Error('Supabaseライブラリの読み込みがタイムアウトしました'));
+                    }
+                }, 100);
+            });
+        }
         
         // RLSポリシーテスト関数
         async function testRLSPolicies() {
@@ -638,6 +656,23 @@
         // 初期化
         document.addEventListener('DOMContentLoaded', async function() {
             console.log('🍙 回答フォーム初期化開始');
+            
+            // Supabaseライブラリの読み込みを待つ
+            try {
+                await waitForSupabase();
+                
+                // Supabaseクライアント初期化
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                console.log('🔑 Supabaseクライアント初期化完了');
+                console.log('- URL:', SUPABASE_URL);
+                console.log('- ANON_KEY:', SUPABASE_ANON_KEY.substring(0, 20) + '...');
+                console.log('- supabaseオブジェクト:', typeof supabase);
+                console.log('- supabase.from:', typeof supabase.from);
+            } catch (initError) {
+                console.error('❌ Supabase初期化エラー:', initError);
+                showError('Supabaseの初期化に失敗しました');
+                return;
+            }
             
             // URLパラメータを取得
             const urlParams = new URLSearchParams(window.location.search);
