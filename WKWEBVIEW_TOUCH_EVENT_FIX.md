@@ -161,3 +161,4 @@ Cmd + B (ビルド)
 **作成日**: 2025-12-20  
 **対応ファイル**: `KANJY/web-frontend/index.html`
 
+

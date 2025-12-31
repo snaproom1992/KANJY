@@ -311,3 +311,4 @@ if url.host == "kanjy-web.netlify.app" || url.host == "localhost" {
 **最終更新:** 2025-12-20  
 **作成者:** AI Assistant
 
+
