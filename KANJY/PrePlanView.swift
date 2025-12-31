@@ -213,8 +213,9 @@ struct PrePlanView: View {
     // アコーディオン表示制御用
     @State private var isBreakdownExpanded: Bool = false
     
-    // 絵文字選択ダイアログ用
-    @State private var showEmojiPicker = false
+    // アイコン選択ダイアログ用
+    @State private var showIconPicker = false
+    @State private var showColorPicker = false
     
     // 新しい状態変数を追加
     @State private var showPaymentGenerator = false
@@ -580,9 +581,6 @@ struct PrePlanView: View {
             .sheet(item: $editingAmountItem) { item in
                 EditAmountDialogView(item: item)
             }
-            .sheet(isPresented: $showEmojiPicker) {
-                EmojiPickerView()
-            }
             .sheet(isPresented: $showPaymentGenerator) {
                 NavigationStack {
                     PaymentInfoGenerator(viewModel: viewModel)
@@ -666,6 +664,9 @@ struct PrePlanView: View {
                     scheduleViewModel: scheduleViewModel
                 )
             }
+            .sheet(isPresented: $showIconPicker) {
+                IconPickerView()
+            }
             .onAppear {
                 setupInitialState()
                 loadScheduleEvent()
@@ -707,13 +708,24 @@ struct PrePlanView: View {
             showSwipeHintAnimation()
         }
         
-        // 絵文字の初期化 - より確実に
+        // アイコンと絵文字の初期化 - 新規作成時のみ
+        print("初期化前のアイコン: \(viewModel.selectedIcon ?? "nil")")
         print("初期化前の絵文字: \(viewModel.selectedEmoji)")
-        if viewModel.selectedEmoji.isEmpty {
-            viewModel.selectedEmoji = "🍻"
-            print("絵文字を初期化: 🍻")
+        
+        // 新規作成時のみデフォルトアイコンを設定
+        if viewModel.editingPlanId == nil {
+            if viewModel.selectedIcon == nil && viewModel.selectedEmoji.isEmpty {
+                // デフォルトアイコンを設定
+                viewModel.selectedIcon = "wineglass.fill"
+                print("新規作成: アイコンを初期化: wineglass.fill")
+            }
         } else {
-            print("既存の絵文字を使用: \(viewModel.selectedEmoji)")
+            // 編集時は既存の値をそのまま使用
+            if let icon = viewModel.selectedIcon {
+                print("編集モード: 既存のアイコンを使用: \(icon)")
+            } else {
+                print("編集モード: 既存の絵文字を使用: \(viewModel.selectedEmoji)")
+            }
         }
         
         // 内訳が少ない場合は最初から展開しておく
@@ -838,11 +850,11 @@ struct PrePlanView: View {
                 VStack(spacing: DesignSystem.Spacing.lg) {
                     // ステップタブコントロール
                     MainStepTabControl(selectedStep: $selectedStep)
-                        .padding(.horizontal, DesignSystem.Spacing.lg)
-                    
+                    .padding(.horizontal, DesignSystem.Spacing.lg)
+                
                     // 選択されたステップのコンテンツ
                     MainStepContentView(selectedStep: selectedStep)
-                        .padding(.horizontal, DesignSystem.Spacing.lg)
+                .padding(.horizontal, DesignSystem.Spacing.lg)
                 }
                 .padding(.bottom, DesignSystem.Spacing.xxxl * 3) // 下部ボタン用のスペース
             }
@@ -854,14 +866,22 @@ struct PrePlanView: View {
         }
     }
     
-    // 絵文字ボタン
+    // アイコンボタン
     @ViewBuilder
     private func EmojiButton() -> some View {
         Button(action: {
-            showEmojiPicker = true
+            showIconPicker = true
         }) {
+            Group {
+                if let iconName = viewModel.selectedIcon {
+                    Image(systemName: iconName)
+                        .font(.system(size: 40))
+                        .foregroundColor(colorFromString(viewModel.selectedIconColor) ?? DesignSystem.Colors.primary)
+                } else {
             Text(viewModel.selectedEmoji.isEmpty ? "🍻" : viewModel.selectedEmoji)
                 .font(.system(size: 40))
+                }
+            }
                 .frame(width: 70, height: 70)
                 .background(
                     Circle()
@@ -869,10 +889,7 @@ struct PrePlanView: View {
                 )
         }
         .onAppear {
-            // 初期表示時に絵文字が空の場合はデフォルト値を設定
-            if viewModel.selectedEmoji.isEmpty {
-                viewModel.selectedEmoji = "🍻"
-            }
+            print("現在のアイコン: \(viewModel.selectedIcon ?? "nil")")
             print("現在の絵文字: \(viewModel.selectedEmoji)")
         }
     }
@@ -1404,7 +1421,7 @@ struct PrePlanView: View {
                     confirmedLocation: confirmedLocation.isEmpty ? nil : confirmedLocation,
                     confirmedParticipants: confirmedParticipants,
                     planName: localPlanName.isEmpty ? planName : localPlanName,
-                    planEmoji: viewModel.selectedEmoji.isEmpty ? "🍻" : viewModel.selectedEmoji
+                    planEmoji: viewModel.selectedIcon ?? (viewModel.selectedEmoji.isEmpty ? "🍻" : viewModel.selectedEmoji)
                 )
             }
         }
@@ -1745,7 +1762,7 @@ struct PrePlanView: View {
                                 }
                                 
                                 Text(response.participantName)
-                                    .font(DesignSystem.Typography.body)
+                        .font(DesignSystem.Typography.body)
                                     .foregroundColor(DesignSystem.Colors.black)
                                 
                                 Spacer()
@@ -1986,7 +2003,9 @@ struct PrePlanView: View {
     @ViewBuilder
     private func SaveButton() -> some View {
         Button {
-            // 既に自動保存されているので、トップに戻る
+            // 最終保存を確実に実行
+            autoSavePlan()
+            // トップに戻る
             onFinish?()
         } label: {
             Label("保存して閉じる", systemImage: "checkmark")
@@ -2108,99 +2127,62 @@ struct PrePlanView: View {
         .presentationDragIndicator(.visible)
     }
     
-    // 絵文字選択ダイアログビュー
+    // アイコン選択ダイアログビュー
     @ViewBuilder
-    private func EmojiPickerView() -> some View {
+    private func IconPickerView() -> some View {
         NavigationStack {
-            Form {
-                Section {
-                    // ランダム絵文字ボタン
-                    Button(action: {
-                        viewModel.selectedEmoji = availableEmojis.randomElement() ?? "🍻"
-                        showEmojiPicker = false
-                    }) {
-                        HStack {
-                            Image(systemName: "dice")
-                                .font(.system(size: 20))
-                                .foregroundColor(.blue)
-                            Text("ランダムな絵文字を使用")
-                                .foregroundColor(.blue)
-                        }
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .padding(.vertical, 8)
+            ZStack {
+                ScrollView {
+                    VStack(spacing: 24) {
+                        // 絵文字セクション
+                        SimpleEmojiGridRow(emojis: availableEmojis)
+                            .padding(.top, DesignSystem.Spacing.md)
+                        
+                        // 現在選択されている色を1つだけ表示（補助的な機能）
+                        CurrentColorButton()
+                        
+                        // アイコンセクション
+                        SimpleIconGridRow(icons: availableIcons.map { $0.name })
                     }
-                } header: {
-                    Text("ランダム")
+                    .padding(.horizontal, DesignSystem.Spacing.lg)
+                    .padding(.bottom, DesignSystem.Spacing.xl)
                 }
                 
-                // 絵文字キーボードからの入力セクション
-                Section {
-                    TextField("タップして絵文字を入力", text: $viewModel.selectedEmoji)
-                        .font(.system(size: 36))
-                        .multilineTextAlignment(.center)
-                        .keyboardType(.default) // 標準キーボード（絵文字切り替え可能）
-                        .submitLabel(.done)
-                        .onChange(of: viewModel.selectedEmoji) { _, newValue in
-                            if newValue.count > 1 {
-                                // 最初の絵文字だけを取り出す
-                                if let firstChar = newValue.first {
-                                    viewModel.selectedEmoji = String(firstChar)
-                                }
+                // ポップオーバー外をタップしたら閉じる背景
+                Color.black.opacity(0.001)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        if showColorPicker {
+                            withAnimation(.spring(.snappy)) {
+                                showColorPicker = false
                             }
                         }
-                        .onSubmit {
-                            if !viewModel.selectedEmoji.isEmpty {
-                                showEmojiPicker = false
-                            }
-                        }
-                        .padding(.vertical, 8)
-                } header: {
-                    Text("絵文字キーボードから入力")
-                } footer: {
-                    Text("キーボードの🌐または😀ボタンをタップして絵文字キーボードに切り替えてください")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
+                    }
+                    .zIndex(998)
+                    .opacity(showColorPicker ? 1.0 : 0.0)
+                    .allowsHitTesting(showColorPicker)
                 
-                Section {
-                    SimpleEmojiGridRow(emojis: ["🍻", "🍺", "🥂", "🍷"])
-                    SimpleEmojiGridRow(emojis: ["🍸", "🍹", "🍾", "🥃"])
-                } header: {
-                    Text("飲み物")
+                // カスタムポップオーバーメニュー（最上位に配置）
+                VStack(spacing: 0) {
+                    HStack(spacing: 0) {
+                        Spacer()
+                        ColorPickerPopover()
+                            .scaleEffect(showColorPicker ? 1.0 : 0.001, anchor: .bottomTrailing)
+                            .opacity(showColorPicker ? 1.0 : 0.0)
+                            .padding(.trailing, 24)
+                    }
+                    .padding(.top, 140)
+                    Spacer()
                 }
-                
-                Section {
-                    SimpleEmojiGridRow(emojis: ["🍴", "🍖", "🍗", "🍣"])
-                    SimpleEmojiGridRow(emojis: ["🍕", "🍔", "🍙", "🍱"])
-                } header: {
-                    Text("食べ物")
-                }
-                
-                Section {
-                    SimpleEmojiGridRow(emojis: ["🤮", "🤢", "🥴", "🤪"])
-                    SimpleEmojiGridRow(emojis: ["😵‍💫", "💸", "💰", "💯"])
-                    SimpleEmojiGridRow(emojis: ["😂", "😆", "😅", "😬"])
-                    SimpleEmojiGridRow(emojis: ["😇", "😍", "😎", "😤"])
-                    SimpleEmojiGridRow(emojis: ["😳", "🤭", "😈", "🙈"])
-                    SimpleEmojiGridRow(emojis: ["💀", "🤡", "🐒", "🦛"])
-                    SimpleEmojiGridRow(emojis: ["😹", "😵", "🥳", "😶‍🌫️"])
-                } header: {
-                    Text("エモーション")
-                }
-                
-                Section {
-                    SimpleEmojiGridRow(emojis: ["🎉", "🎊", "✨", "🎵"])
-                    SimpleEmojiGridRow(emojis: ["🎤", "🕺", "💃", "👯‍♂️"])
-                } header: {
-                    Text("パーティー")
-                }
+                .zIndex(999)
+                .allowsHitTesting(showColorPicker)
             }
-            .navigationTitle("絵文字を選択")
+            .navigationTitle("アイコンを選択")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("キャンセル") {
-                        showEmojiPicker = false
+                        showIconPicker = false
                     }
                 }
             }
@@ -2209,24 +2191,212 @@ struct PrePlanView: View {
         .presentationDragIndicator(.visible)
     }
     
-    // シンプルな絵文字グリッド行
+    // 現在選択されている色を表示するボタン
     @ViewBuilder
-    private func SimpleEmojiGridRow(emojis: [String]) -> some View {
-        HStack(spacing: 0) {
-            ForEach(emojis, id: \.self) { emoji in
+    private func CurrentColorButton() -> some View {
+        HStack {
+            Text("色")
+                .font(DesignSystem.Typography.subheadline)
+                .foregroundColor(DesignSystem.Colors.secondary)
+            
+            Spacer()
+            
+            Button(action: {
+                withAnimation(.spring(.snappy)) {
+                    showColorPicker.toggle()
+                }
+            }) {
+                Circle()
+                    .fill(
+                        colorFromString(viewModel.selectedIconColor) ?? DesignSystem.Colors.primary
+                    )
+                    .frame(width: 32, height: 32)
+                    .overlay(
+                        Circle()
+                            .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                    )
+            }
+            .buttonStyle(PlainButtonStyle())
+        }
+        .padding(.horizontal, DesignSystem.Spacing.lg)
+        .padding(.vertical, DesignSystem.Spacing.sm)
+    }
+    
+    // シンプルなアイコングリッド行
+    @ViewBuilder
+    private func SimpleIconGridRow(icons: [String]) -> some View {
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 6), spacing: 12) {
+            ForEach(icons, id: \.self) { iconName in
                 Button(action: {
-                    viewModel.selectedEmoji = emoji
-                    showEmojiPicker = false
+                    viewModel.selectedIcon = iconName
+                    viewModel.selectedEmoji = ""
+                    // 色が設定されていない場合はデフォルト色を設定
+                    if viewModel.selectedIconColor == nil {
+                        viewModel.selectedIconColor = "0.067,0.094,0.157" // プライマリカラー
+                    }
+                    showIconPicker = false
+                    // アイコン選択後に自動保存
+                    autoSavePlan()
                 }) {
-                    Text(emoji)
-                        .font(.system(size: 30))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 10)
+                    Image(systemName: iconName)
+                        .font(.system(size: 28))
+                        .foregroundColor(
+                            colorFromString(viewModel.selectedIconColor) ?? DesignSystem.Colors.primary
+                        )
+                        .frame(width: 50, height: 50)
+                        .background(
+                            Circle()
+                                .fill(Color.gray.opacity(0.1))
+                        )
                 }
                 .buttonStyle(PlainButtonStyle())
             }
         }
+        .padding(.horizontal, DesignSystem.Spacing.lg)
     }
+    
+    // シンプルな絵文字グリッド行
+    @ViewBuilder
+    private func SimpleEmojiGridRow(emojis: [String]) -> some View {
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 6), spacing: 12) {
+            ForEach(emojis, id: \.self) { emoji in
+                Button(action: {
+                    viewModel.selectedEmoji = emoji
+                    viewModel.selectedIcon = nil
+                    showIconPicker = false
+                    // 絵文字選択後に自動保存
+                    autoSavePlan()
+                }) {
+                    Text(emoji)
+                        .font(.system(size: 32))
+                        .frame(width: 50, height: 50)
+                        .background(
+                            Circle()
+                                .fill(Color.gray.opacity(0.1))
+                        )
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
+        }
+        .padding(.horizontal, DesignSystem.Spacing.lg)
+    }
+    
+    // 色選択ポップオーバー
+    @ViewBuilder
+    private func ColorPickerPopover() -> some View {
+        VStack(spacing: 12) {
+            // ヘッダー（バツボタン）
+            HStack {
+                Spacer()
+                Button(action: {
+                    withAnimation(.spring(.snappy)) {
+                        showColorPicker = false
+                    }
+                }) {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 20))
+                        .foregroundColor(DesignSystem.Colors.secondary)
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
+            .padding(.top, DesignSystem.Spacing.xs)
+            .padding(.horizontal, DesignSystem.Spacing.xs)
+            
+            // プレビューアイコン（現在選択されているアイコンがある場合）
+            if let iconName = viewModel.selectedIcon {
+                Image(systemName: iconName)
+                    .font(.system(size: 40))
+                    .foregroundColor(
+                        colorFromString(viewModel.selectedIconColor) ?? DesignSystem.Colors.primary
+                    )
+            }
+            
+            // 色選択セクション
+            ColorPickerSection()
+        }
+        .padding(DesignSystem.Spacing.md)
+        .frame(width: 280)
+        .background(.regularMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 20))
+        .shadow(color: .black.opacity(0.2), radius: 20, x: 0, y: 10)
+        .allowsHitTesting(true)
+    }
+    
+    // 色選択セクション
+    @ViewBuilder
+    private func ColorPickerSection() -> some View {
+        let colors: [(String, Color)] = [
+            ("0.067,0.094,0.157", DesignSystem.Colors.primary), // プライマリ
+            ("0.937,0.267,0.267", Color(red: 0.937, green: 0.267, blue: 0.267)), // 赤
+            ("0.976,0.451,0.086", DesignSystem.Colors.orangeAccent), // オレンジ
+            ("0.063,0.725,0.506", Color(red: 0.063, green: 0.725, blue: 0.506)), // 緑
+            ("0.259,0.522,0.957", Color(red: 0.259, green: 0.522, blue: 0.957)), // 青
+            ("0.647,0.318,0.580", Color(red: 0.647, green: 0.318, blue: 0.580)), // 紫
+            ("0.5,0.5,0.5", Color.gray), // グレー
+            ("0.0,0.0,0.0", Color.black), // 黒
+        ]
+        
+        VStack(spacing: 16) {
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 16), count: 8), spacing: 16) {
+                ForEach(colors, id: \.0) { colorData in
+                    Button(action: {
+                        viewModel.selectedIconColor = colorData.0
+                        // 色選択後に自動保存
+                        autoSavePlan()
+                        // 色選択時はメニューを閉じない
+                    }) {
+                        ZStack {
+                            Circle()
+                                .fill(colorData.1)
+                                .frame(width: 36, height: 36)
+                            
+                            // 選択状態の表示
+                            if viewModel.selectedIconColor == colorData.0 {
+                                Circle()
+                                    .stroke(Color.white, lineWidth: 3)
+                                    .frame(width: 36, height: 36)
+                                Circle()
+                                    .stroke(colorData.1, lineWidth: 2)
+                                    .frame(width: 40, height: 40)
+                            } else {
+                                Circle()
+                                    .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                                    .frame(width: 36, height: 36)
+                            }
+                        }
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                }
+            }
+        }
+        .padding(.horizontal, DesignSystem.Spacing.lg)
+        .padding(.vertical, DesignSystem.Spacing.md)
+    }
+    
+    // 文字列からColorを生成するヘルパー関数
+    private func colorFromString(_ colorString: String?) -> Color? {
+        guard let colorString = colorString, !colorString.isEmpty else { return nil }
+        let components = colorString.split(separator: ",").compactMap { Double($0.trimmingCharacters(in: .whitespaces)) }
+        guard components.count == 3 else { return nil }
+        return Color(red: components[0], green: components[1], blue: components[2])
+    }
+    
+    // 利用可能なアイコンのリスト
+    private let availableIcons: [(name: String, label: String)] = [
+        ("wineglass.fill", "ワイン"),
+        ("cup.and.saucer.fill", "ビール"),
+        ("drop.fill", "カクテル"),
+        ("heart.fill", "乾杯"),
+        ("fork.knife", "食事"),
+        ("building.2.fill", "レストラン"),
+        ("takeoutbag.and.cup.and.straw.fill", "テイクアウト"),
+        ("party.popper.fill", "パーティー"),
+        ("sparkles", "お祝い"),
+        ("star.fill", "特別"),
+        ("person.3.fill", "会議"),
+        ("rectangle.3.group.fill", "グループ"),
+        ("briefcase.fill", "ビジネス")
+    ]
     
     // サブビュー：金額セクションの内容
     @ViewBuilder
@@ -3360,4 +3530,5 @@ struct SimpleInfoRow: View {
         PrePlanView(viewModel: PrePlanViewModel(), planName: "Sample Plan", planDate: Date())
     }
 }
+
 

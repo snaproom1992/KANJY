@@ -70,8 +70,16 @@ struct EventInvitationGenerator: View {
     private var eventInfoSection: some View {
         Section(header: Text("イベント情報")) {
             HStack {
-                Text(planEmoji)
-                    .font(.system(size: 40))
+                // アイコンまたは絵文字を表示
+                let isIcon = planEmoji.count > 1 && !planEmoji.contains("🍻") && !planEmoji.contains("🍺") && !planEmoji.contains("🥂")
+                if isIcon {
+                    Image(systemName: planEmoji)
+                        .font(.system(size: 40))
+                        .foregroundColor(colorFromStringForSwiftUI(viewModel.selectedIconColor) ?? DesignSystem.Colors.primary)
+                } else {
+                    Text(planEmoji)
+                        .font(.system(size: 40))
+                }
                 Text(planName)
                     .font(DesignSystem.Typography.headline)
                 Spacer()
@@ -278,12 +286,30 @@ struct EventInvitationGenerator: View {
             
             var currentY: CGFloat = padding + 40
             
-            // 絵文字とタイトル
-            let emojiAttributes: [NSAttributedString.Key: Any] = [
-                .font: UIFont.systemFont(ofSize: emojiFontSize)
-            ]
-            let emojiRect = CGRect(x: padding + 20, y: currentY, width: cardContentWidth - 40, height: emojiFontSize)
-            planEmoji.draw(in: emojiRect, withAttributes: emojiAttributes)
+            // アイコンまたは絵文字とタイトル
+            // SF Symbolsのアイコン名かどうかを判定（絵文字は通常1文字、アイコン名は複数文字）
+            let isIcon = planEmoji.count > 1 && !planEmoji.contains("🍻") && !planEmoji.contains("🍺") && !planEmoji.contains("🥂")
+            
+            if isIcon, let iconImage = UIImage(systemName: planEmoji) {
+                // SF Symbolsアイコンの場合
+                let iconRect = CGRect(
+                    x: padding + 20 + (cardContentWidth - 40 - emojiFontSize) / 2,
+                    y: currentY,
+                    width: emojiFontSize,
+                    height: emojiFontSize
+                )
+                // アイコンを色付きで描画
+                let iconColor = colorFromString(viewModel.selectedIconColor) ?? primaryColor
+                let tintedIcon = iconImage.withTintColor(iconColor, renderingMode: .alwaysOriginal)
+                tintedIcon.draw(in: iconRect)
+            } else {
+                // 絵文字の場合
+                let emojiAttributes: [NSAttributedString.Key: Any] = [
+                    .font: UIFont.systemFont(ofSize: emojiFontSize)
+                ]
+                let emojiRect = CGRect(x: padding + 20, y: currentY, width: cardContentWidth - 40, height: emojiFontSize)
+                planEmoji.draw(in: emojiRect, withAttributes: emojiAttributes)
+            }
             currentY += emojiFontSize + 20
             
             let titleAttributes: [NSAttributedString.Key: Any] = [
@@ -385,6 +411,25 @@ extension String {
         let constraintRect = CGSize(width: width, height: .greatestFiniteMagnitude)
         let boundingBox = self.boundingRect(with: constraintRect, options: [.usesLineFragmentOrigin, .usesFontLeading], attributes: [NSAttributedString.Key.font: font], context: nil)
         return ceil(boundingBox.height)
+    }
+}
+
+// MARK: - EventInvitationGenerator Extension
+extension EventInvitationGenerator {
+    // 文字列からUIColorを生成するヘルパー関数（UIImage用）
+    private func colorFromString(_ colorString: String?) -> UIColor? {
+        guard let colorString = colorString, !colorString.isEmpty else { return nil }
+        let components = colorString.split(separator: ",").compactMap { Double($0.trimmingCharacters(in: .whitespaces)) }
+        guard components.count == 3 else { return nil }
+        return UIColor(red: CGFloat(components[0]), green: CGFloat(components[1]), blue: CGFloat(components[2]), alpha: 1.0)
+    }
+    
+    // 文字列からColorを生成するヘルパー関数（SwiftUI用）
+    private func colorFromStringForSwiftUI(_ colorString: String?) -> Color? {
+        guard let colorString = colorString, !colorString.isEmpty else { return nil }
+        let components = colorString.split(separator: ",").compactMap { Double($0.trimmingCharacters(in: .whitespaces)) }
+        guard components.count == 3 else { return nil }
+        return Color(red: components[0], green: components[1], blue: components[2])
     }
 }
 

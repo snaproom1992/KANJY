@@ -12,6 +12,8 @@ struct TopView: View {
     @State private var shouldOpenScheduleTab = false
     @State private var isRefreshing = false
     @State private var appearedItems: Set<UUID> = []
+    @State private var selectedPlanForNavigation: Plan? = nil
+    @Namespace private var animation
     
     init(selectedTab: Binding<Int> = .constant(0)) {
         self._selectedTab = selectedTab
@@ -84,24 +86,21 @@ struct TopView: View {
                 shouldOpenScheduleTab = false
                 viewModel.editingPlanId = nil
             }) {
-                // 新規作成の場合はQuickCreatePlanView、編集の場合はPrePlanView
-                if viewModel.editingPlanId == nil {
-                    QuickCreatePlanView(viewModel: viewModel)
-                } else {
-                    NavigationStack {
-                        PrePlanView(
-                            viewModel: viewModel,
-                            planName: viewModel.editingPlanName.isEmpty ? "" : viewModel.editingPlanName,
-                            planDate: viewModel.editingPlanDate,
-                            initialTask: shouldOpenScheduleTab ? .schedule : nil,
-                            onFinish: {
-                                showingPrePlan = false
-                            }
-                        )
+                // 新規作成の場合はQuickCreatePlanView
+                QuickCreatePlanView(viewModel: viewModel)
+            }
+            .navigationDestination(item: $selectedPlanForNavigation) { plan in
+                PrePlanView(
+                    viewModel: viewModel,
+                    planName: viewModel.editingPlanName.isEmpty ? "" : viewModel.editingPlanName,
+                    planDate: viewModel.editingPlanDate,
+                    initialTask: shouldOpenScheduleTab ? .schedule : nil,
+                    onFinish: {
+                        // NavigationStackから戻る
                     }
-                    .presentationDetents([.large])
-                    .presentationDragIndicator(.visible)
-                }
+                )
+                .modifier(NavigationTransitionModifier(planId: plan.id, namespace: animation))
+                .navigationBarTitleDisplayMode(.inline)
             }
             .alert("飲み会の削除", isPresented: $showingDeleteAlert) {
                 Button("キャンセル", role: .cancel) {}
@@ -240,7 +239,7 @@ private extension TopView {
                             onTap: {
                                 hapticImpact(.light)
                                 viewModel.loadPlan(plan)
-                                showingPrePlan = true
+                                selectedPlanForNavigation = plan
                             },
                             onDelete: {
                                 hapticNotification(.warning)
@@ -254,6 +253,7 @@ private extension TopView {
                                 showingPrePlan = true
                             }
                         )
+                        .modifier(NavigationTransitionModifier(planId: plan.id, namespace: animation))
                         .opacity(appearedItems.contains(plan.id) ? 1 : 0)
                         .offset(y: appearedItems.contains(plan.id) ? 0 : 20)
                         .onAppear {
@@ -370,6 +370,14 @@ private struct PlanCard: View {
     let scheduleViewModel: ScheduleManagementViewModel
     let onTap: () -> Void
     let onDelete: () -> Void
+    
+    // 文字列からColorを生成するヘルパー関数
+    private func colorFromString(_ colorString: String?) -> Color? {
+        guard let colorString = colorString, !colorString.isEmpty else { return nil }
+        let components = colorString.split(separator: ",").compactMap { Double($0.trimmingCharacters(in: .whitespaces)) }
+        guard components.count == 3 else { return nil }
+        return Color(red: components[0], green: components[1], blue: components[2])
+    }
     let onCreateSchedule: () -> Void
     @State private var isPressed = false
 
@@ -388,8 +396,16 @@ private struct PlanCard: View {
             VStack(alignment: .leading, spacing: 14) {
                 // ヘッダー：絵文字 + タイトル + 日付
                 HStack(alignment: .top, spacing: 12) {
-                    Text(plan.emoji ?? "🍻")
-                        .font(.system(size: 44))
+                    Group {
+                        if let iconName = plan.icon {
+                            Image(systemName: iconName)
+                                .font(.system(size: 44))
+                                .foregroundColor(colorFromString(plan.iconColor) ?? DesignSystem.Colors.primary)
+                        } else {
+                            Text(plan.emoji ?? "🍻")
+                                .font(.system(size: 44))
+                        }
+                    }
                     
                     VStack(alignment: .leading, spacing: 4) {
                         Text(plan.name)
@@ -569,6 +585,29 @@ struct CollectionProgressBar: View {
             }
         }
         .frame(height: 12)
+    }
+    
+    // 文字列からColorを生成するヘルパー関数
+    private func colorFromString(_ colorString: String?) -> Color? {
+        guard let colorString = colorString, !colorString.isEmpty else { return nil }
+        let components = colorString.split(separator: ",").compactMap { Double($0.trimmingCharacters(in: .whitespaces)) }
+        guard components.count == 3 else { return nil }
+        return Color(red: components[0], green: components[1], blue: components[2])
+    }
+}
+
+// iOS 18のnavigationTransitionを条件付きで適用するためのViewModifier
+struct NavigationTransitionModifier: ViewModifier {
+    let planId: UUID
+    let namespace: Namespace.ID
+    
+    func body(content: Content) -> some View {
+        if #available(iOS 18.0, *) {
+            content
+                .navigationTransition(.zoom(sourceID: planId, in: namespace))
+        } else {
+            content
+        }
     }
 }
 

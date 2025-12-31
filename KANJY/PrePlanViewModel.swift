@@ -2,7 +2,7 @@ import SwiftUI
 import Combine
 
 // 金額内訳項目を表す構造体
-public struct AmountItem: Identifiable, Codable {
+public struct AmountItem: Identifiable, Codable, Hashable {
     public let id: UUID
     public var name: String
     public var amount: Int
@@ -15,7 +15,7 @@ public struct AmountItem: Identifiable, Codable {
 }
 
 // 飲み会を表す構造体（中心オブジェクト）
-public struct Plan: Identifiable, Codable {
+public struct Plan: Identifiable, Codable, Hashable {
     public let id: UUID
     public var name: String
     public var date: Date
@@ -25,6 +25,8 @@ public struct Plan: Identifiable, Codable {
     public var roleNames: [String: String]
     public var amountItems: [AmountItem]?
     public var emoji: String?
+    public var icon: String? // SF Symbolsのアイコン名
+    public var iconColor: String? // アイコンの色（RGB値の文字列、例: "0.067,0.094,0.157"）
     // 基本情報
     public var description: String? // 説明
     public var location: String? // 場所
@@ -35,7 +37,7 @@ public struct Plan: Identifiable, Codable {
     public var confirmedLocation: String?
     public var confirmedParticipants: [UUID]? // 確定参加者のIDリスト
     
-    public init(id: UUID = UUID(), name: String, date: Date, participants: [Participant], totalAmount: String, roleMultipliers: [String: Double], roleNames: [String: String], amountItems: [AmountItem]? = nil, emoji: String? = nil, description: String? = nil, location: String? = nil, scheduleEventId: UUID? = nil, confirmedDate: Date? = nil, confirmedLocation: String? = nil, confirmedParticipants: [UUID]? = nil) {
+    public init(id: UUID = UUID(), name: String, date: Date, participants: [Participant], totalAmount: String, roleMultipliers: [String: Double], roleNames: [String: String], amountItems: [AmountItem]? = nil, emoji: String? = nil, icon: String? = nil, iconColor: String? = nil, description: String? = nil, location: String? = nil, scheduleEventId: UUID? = nil, confirmedDate: Date? = nil, confirmedLocation: String? = nil, confirmedParticipants: [UUID]? = nil) {
         self.id = id
         self.name = name
         self.date = date
@@ -45,6 +47,8 @@ public struct Plan: Identifiable, Codable {
         self.roleNames = roleNames
         self.amountItems = amountItems
         self.emoji = emoji
+        self.icon = icon
+        self.iconColor = iconColor
         self.description = description
         self.location = location
         self.scheduleEventId = scheduleEventId
@@ -69,6 +73,20 @@ public class PrePlanViewModel: ObservableObject {
             print("絵文字を保存: \(selectedEmoji)")
         }
     }
+    @Published public var selectedIcon: String? = nil {
+        didSet {
+            savedIcon = selectedIcon ?? ""
+            print("アイコンを保存: \(selectedIcon ?? "nil")")
+        }
+    }
+    
+    @Published public var selectedIconColor: String? = nil {
+        didSet {
+            savedIconColor = selectedIconColor ?? ""
+            print("アイコン色を保存: \(selectedIconColor ?? "nil")")
+        }
+    }
+    
     @AppStorage("participants") private var participantsData: Data = Data()
     @AppStorage("customRoles") private var customRolesData: Data = Data()
     @AppStorage("totalAmount") private var savedTotalAmount: String = ""
@@ -77,6 +95,8 @@ public class PrePlanViewModel: ObservableObject {
     @AppStorage("savedPlans") private var savedPlansData: Data = Data()
     @AppStorage("amountItems") private var amountItemsData: Data = Data()
     @AppStorage("selectedEmoji") private var savedEmoji: String = "🍻"
+    @AppStorage("selectedIcon") private var savedIcon: String = ""
+    @AppStorage("selectedIconColor") private var savedIconColor: String = ""
     
     private var roleMultipliers: [String: Double] = [:]
     private var roleNames: [String: String] = [:]
@@ -151,7 +171,11 @@ public class PrePlanViewModel: ObservableObject {
         }
         totalAmount = savedTotalAmount
         selectedEmoji = savedEmoji.isEmpty ? "🍻" : savedEmoji
+        selectedIcon = savedIcon.isEmpty ? nil : savedIcon
+        selectedIconColor = savedIconColor.isEmpty ? nil : savedIconColor
         print("絵文字を読み込み: \(selectedEmoji)")
+        print("アイコンを読み込み: \(selectedIcon ?? "nil")")
+        print("アイコン色を読み込み: \(selectedIconColor ?? "nil")")
     }
     
     // データの保存
@@ -438,7 +462,9 @@ public class PrePlanViewModel: ObservableObject {
     
     // プランの保存
     public func savePlan(name: String, date: Date, description: String? = nil, location: String? = nil, confirmedDate: Date? = nil, confirmedLocation: String? = nil, confirmedParticipants: [UUID]? = nil) {
-        let emoji = selectedEmoji.isEmpty ? getRandomEmoji() : selectedEmoji
+        let emoji = selectedIcon == nil ? (selectedEmoji.isEmpty ? getRandomEmoji() : selectedEmoji) : nil
+        let icon = selectedIcon
+        let iconColor = selectedIconColor
         
         if let id = editingPlanId, let idx = savedPlans.firstIndex(where: { $0.id == id }) {
             // 既存プランを上書き（既存の確定情報を保持、新しい値があれば更新）
@@ -456,6 +482,8 @@ public class PrePlanViewModel: ObservableObject {
                 roleNames: roleNames,
                 amountItems: amountItems,
                 emoji: emoji,
+                icon: icon,
+                iconColor: iconColor,
                 description: description ?? savedPlans[idx].description,
                 location: location ?? savedPlans[idx].location,
                 scheduleEventId: existingScheduleEventId,
@@ -474,6 +502,8 @@ public class PrePlanViewModel: ObservableObject {
                 roleNames: roleNames,
                 amountItems: amountItems,
                 emoji: emoji,
+                icon: icon,
+                iconColor: iconColor,
                 description: description,
                 location: location,
                 scheduleEventId: nil,
@@ -486,7 +516,7 @@ public class PrePlanViewModel: ObservableObject {
         }
         editingPlanName = name
         editingPlanDate = date
-        editingPlanEmoji = emoji
+        editingPlanEmoji = emoji ?? ""
         if let description = description {
             editingPlanDescription = description
         }
@@ -518,12 +548,21 @@ public class PrePlanViewModel: ObservableObject {
         editingPlanDescription = plan.description ?? ""
         editingPlanLocation = plan.location ?? ""
         
-        // 絵文字の読み込みを改良
-        if let emoji = plan.emoji, !emoji.isEmpty {
+        // アイコンと絵文字の読み込みを改良
+        if let icon = plan.icon, !icon.isEmpty {
+            selectedIcon = icon
+            selectedIconColor = plan.iconColor
+            selectedEmoji = ""
+            print("プランからアイコンを読み込み: \(icon), 色: \(plan.iconColor ?? "nil")")
+        } else if let emoji = plan.emoji, !emoji.isEmpty {
             selectedEmoji = emoji
+            selectedIcon = nil
+            selectedIconColor = nil
             print("プランから絵文字を読み込み: \(emoji)")
         } else {
             selectedEmoji = "🍻"
+            selectedIcon = nil
+            selectedIconColor = nil
             print("プランに絵文字がないため、デフォルト絵文字を設定: 🍻")
         }
         editingPlanEmoji = selectedEmoji
@@ -557,6 +596,8 @@ public class PrePlanViewModel: ObservableObject {
             roleNames: [:],
             amountItems: nil,
             emoji: emoji ?? selectedEmoji,
+            icon: selectedIcon,
+            iconColor: selectedIconColor,
             scheduleEventId: nil
         )
 
@@ -575,7 +616,8 @@ public class PrePlanViewModel: ObservableObject {
         editingPlanId = nil
         editingPlanName = ""
         editingPlanDate = nil
-        selectedEmoji = getRandomEmoji()
+        selectedIcon = nil
+        selectedEmoji = ""
         editingPlanEmoji = ""
         saveData()
     }
