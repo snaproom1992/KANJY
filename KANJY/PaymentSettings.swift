@@ -15,7 +15,7 @@ struct PaymentSettings: View {
                 TextField("PayPay ID", text: $payPayID)
                 Text("PayPayアプリのプロフィールからIDを確認できます")
                     .font(.caption)
-                    .foregroundColor(.gray)
+                    .foregroundColor(DesignSystem.Colors.gray6)
             }
             
             Section(header: Text("銀行振込情報")) {
@@ -42,15 +42,15 @@ struct PaymentSettings: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("プレビュー")
                             .font(.caption)
-                            .foregroundColor(.gray)
+                            .foregroundColor(DesignSystem.Colors.gray6)
                         
                         Text("\(bankName) \(bankBranch) \(accountType) \(accountNumber) 名義：\(accountHolder)")
                             .font(.subheadline)
-                            .foregroundColor(.blue)
+                            .foregroundColor(DesignSystem.Colors.primary)
                             .padding(8)
                             .background(
                                 RoundedRectangle(cornerRadius: 8)
-                                    .fill(Color.blue.opacity(0.1))
+                                    .fill(DesignSystem.Colors.primary.opacity(0.1))
                             )
                     }
                     .padding(.vertical, 8)
@@ -60,7 +60,7 @@ struct PaymentSettings: View {
             Section(header: Text("情報"), footer: Text("ここで設定した情報は集金案内画像に使用されます。プライバシーに配慮し、個人情報の入力には十分ご注意ください。")) {
                 Text("集金情報は端末内に保存され、集金案内の作成時のみ使用されます。")
                     .font(.footnote)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(DesignSystem.Colors.secondary)
             }
         }
         .navigationTitle("集金情報設定")

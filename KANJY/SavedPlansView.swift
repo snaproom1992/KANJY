@@ -27,15 +27,15 @@ struct SavedPlansView: View {
                         HStack {
                             Text(dateFormatter.string(from: plan.date))
                                 .font(.subheadline)
-                                .foregroundColor(.secondary)
+                                .foregroundColor(DesignSystem.Colors.secondary)
                             Spacer()
                             Text("¥\(viewModel.formatAmount(plan.totalAmount))")
                                 .font(.subheadline)
-                                .foregroundColor(.blue)
+                                .foregroundColor(DesignSystem.Colors.primary)
                         }
                         Text("参加者: \(plan.participants.count)人")
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(DesignSystem.Colors.secondary)
                     }
                 }
                 .swipeActions(edge: .trailing, allowsFullSwipe: true) {

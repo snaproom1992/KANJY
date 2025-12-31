@@ -16,7 +16,7 @@ struct SettingsView: View {
                     } label: {
                         HStack {
                             Image(systemName: "questionmark.circle.fill")
-                                .foregroundColor(.blue)
+                                .foregroundColor(DesignSystem.Colors.primary)
                             Text("使い方ガイド")
                         }
                     }
@@ -27,7 +27,7 @@ struct SettingsView: View {
                         } label: {
                             HStack {
                                 Image(systemName: "book.fill")
-                                    .foregroundColor(.blue)
+                                    .foregroundColor(DesignSystem.Colors.primary)
                                 Text("チュートリアルを再表示")
                             }
                         }
@@ -38,7 +38,7 @@ struct SettingsView: View {
                     NavigationLink(destination: PaymentSettings()) {
                         HStack {
                             Image(systemName: "creditcard")
-                                .foregroundColor(.blue)
+                                .foregroundColor(DesignSystem.Colors.primary)
                             Text("集金情報設定")
                         }
                     }
@@ -48,7 +48,7 @@ struct SettingsView: View {
                     NavigationLink(destination: RoleSettingsView(viewModel: viewModel, selectedRole: $selectedRole)) {
                         HStack {
                             Image(systemName: "person.3")
-                                .foregroundColor(.blue)
+                                .foregroundColor(DesignSystem.Colors.primary)
                             Text("役職と倍率設定")
                         }
                     }
@@ -59,7 +59,7 @@ struct SettingsView: View {
                         Text("バージョン")
                         Spacer()
                         Text("1.0.0")
-                            .foregroundColor(.secondary)
+                            .foregroundColor(DesignSystem.Colors.secondary)
                     }
                     
                     Text("幹事さんのための割り勘アプリ")

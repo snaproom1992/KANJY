@@ -174,31 +174,26 @@ class SplashPlayerViewController: UIViewController {
     
     private func setupPlaceholderBackground() {
         let gradientLayer = CAGradientLayer()
-        gradientLayer.colors = [UIColor.systemBlue.withAlphaComponent(0.2).cgColor, UIColor.white.cgColor]
+        gradientLayer.colors = [UIColor(red: 0.067, green: 0.094, blue: 0.157, alpha: 0.2).cgColor, UIColor.white.cgColor]
         gradientLayer.locations = [0.0, 1.0]
         gradientLayer.frame = view.bounds
         view.layer.addSublayer(gradientLayer)
     }
     
     private func setupTexts() {
-        // アプリ名ラベル
+        // アプリ名ラベル（web版と統一：K A N J Y）
         let titleLabel = UILabel()
-        titleLabel.text = "KANJY"
         
-        // ヒラギノ丸ゴの太いバージョンを最優先で使用
-        if let roundedFont = UIFont(name: "HiraMaruProN-W8", size: 70) {
-            // ヒラギノ丸ゴ太字を使用
-            titleLabel.font = roundedFont
-        } else if let roundedFont = UIFont(name: "HiraMaruProN-W8", size: 70) {
-            // 代替：ヒラギノ丸ゴ標準
-            titleLabel.font = roundedFont
-        } else if let arialRounded = UIFont(name: "ArialRoundedMTBold", size: 70) {
-            // 代替：ArialRoundedMTBold
-            titleLabel.font = arialRounded
-        } else {
-            // 最終フォールバック - システムフォント（太め）
-            titleLabel.font = UIFont.systemFont(ofSize: 70, weight: .black)
-        }
+        // web版のfont-thin（薄いフォント）に合わせる
+        // システムフォントの薄いウェイトを使用
+        titleLabel.font = UIFont.systemFont(ofSize: 56, weight: .ultraLight)  // font-thin相当
+        
+        // web版のtracking-widest（広い文字間隔）に合わせる
+        // NSAttributedStringで文字間隔を設定
+        let titleText = "K A N J Y"  // スペース区切り、大文字
+        let attributedString = NSMutableAttributedString(string: titleText)
+        attributedString.addAttribute(.kern, value: 8.0, range: NSRange(location: 0, length: attributedString.length))
+        titleLabel.attributedText = attributedString
         
         // スタイル設定
         titleLabel.textAlignment = .center
@@ -206,23 +201,21 @@ class SplashPlayerViewController: UIViewController {
         titleLabel.minimumScaleFactor = 0.7 // 必要に応じて最大30%までサイズダウン
         titleLabel.alpha = 0
         
-        // カラーコード「365ECF」を使用
-        titleLabel.textColor = hexStringToUIColor(hex: "365ECF")
+        // web版のtext-gray-900（#111827）に合わせる
+        titleLabel.textColor = UIColor(red: 0.067, green: 0.094, blue: 0.157, alpha: 1.0)  // #111827
         
-        // サブタイトルラベル
+        // サブタイトルラベル（web版と統一）
         let subtitleLabel = UILabel()
-        subtitleLabel.text = "幹事さんのための割り勘アプリ"
+        subtitleLabel.text = "幹事さんの負担を減らし、\n参加者みんなが楽しめる飲み会を。"
         
-        // サブタイトルにもヒラギノ丸ゴを使用
-        if let roundedFont = UIFont(name: "HiraMaruProN-W4", size: 20) {
-            // ヒラギノ丸ゴを使用
-            subtitleLabel.font = roundedFont
-        } else {
-            // フォールバック
-            subtitleLabel.font = UIFont.systemFont(ofSize: 20, weight: .medium)
-        }
-        subtitleLabel.textColor = UIColor.darkGray
+        // web版のtext-lg（18pt相当）に合わせる
+        subtitleLabel.font = UIFont.systemFont(ofSize: 18, weight: .regular)
+        
+        // web版のtext-gray-600（#4B5563相当）に合わせる
+        subtitleLabel.textColor = UIColor(red: 0.294, green: 0.333, blue: 0.388, alpha: 1.0)  // #4B5563
         subtitleLabel.textAlignment = .center
+        subtitleLabel.numberOfLines = 0  // 複数行表示を許可
+        subtitleLabel.lineBreakMode = .byWordWrapping  // 単語単位で改行
         subtitleLabel.alpha = 0
         
         // レイアウト設定
@@ -269,7 +262,7 @@ class SplashPlayerViewController: UIViewController {
         }
         
         if cString.count != 6 {
-            return UIColor.systemBlue // フォールバックカラー
+            return UIColor(red: 0.067, green: 0.094, blue: 0.157, alpha: 1.0) // フォールバックカラー
         }
         
         var rgbValue: UInt64 = 0
@@ -369,7 +362,7 @@ struct ContentView: View {
                 }
                 .tag(1)
         }
-        .accentColor(Color(red: 0.2, green: 0.37, blue: 0.81))
+        .accentColor(Color(red: 0.067, green: 0.094, blue: 0.157))
         .onAppear {
             if !hasCompletedOnboarding {
                 showingOnboarding = true

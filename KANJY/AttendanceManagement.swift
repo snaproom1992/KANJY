@@ -13,10 +13,10 @@ public enum AttendanceStatus: String, CaseIterable, Codable {
     
     var color: Color {
         switch self {
-        case .attending: return Color(red: 0.2, green: 0.7, blue: 0.3)  // 美しい緑
-        case .maybe: return Color(red: 1.0, green: 0.6, blue: 0.0)      // 鮮やかなオレンジ
-        case .notAttending: return Color(red: 0.9, green: 0.3, blue: 0.3) // 洗練された赤
-        case .undecided: return Color(red: 0.6, green: 0.6, blue: 0.6)   // 上品なグレー
+        case .attending: return DesignSystem.Colors.Attendance.attending
+        case .maybe: return DesignSystem.Colors.Attendance.maybe
+        case .notAttending: return DesignSystem.Colors.Attendance.notAttending
+        case .undecided: return DesignSystem.Colors.Attendance.undecided
         }
     }
     
@@ -639,7 +639,7 @@ struct EventUrlSheet: View {
                 VStack(spacing: 12) {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.system(size: 60))
-                        .foregroundColor(.green)
+                        .foregroundColor(DesignSystem.Colors.success)
                     
                     Text("スケジュール調整が作成されました！")
                         .font(.title2)
@@ -675,7 +675,7 @@ struct EventUrlSheet: View {
                                     showingCopyAlert = true
                                 }) {
                                     Image(systemName: "doc.on.clipboard")
-                                        .foregroundColor(.blue)
+                                        .foregroundColor(DesignSystem.Colors.primary)
                                         .padding(.leading, 8)
                                 }
                             }
@@ -713,8 +713,8 @@ struct EventUrlSheet: View {
                         }
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(Color.green)
-                        .foregroundColor(.white)
+                        .background(DesignSystem.Colors.success)
+                        .foregroundColor(DesignSystem.Colors.white)
                         .cornerRadius(12)
                     }
                     
@@ -727,8 +727,8 @@ struct EventUrlSheet: View {
                         }
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(Color.blue)
-                        .foregroundColor(.white)
+                        .background(DesignSystem.Colors.primary)
+                        .foregroundColor(DesignSystem.Colors.white)
                         .cornerRadius(12)
                     }
                     

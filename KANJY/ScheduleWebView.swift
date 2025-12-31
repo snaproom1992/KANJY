@@ -41,7 +41,7 @@ struct ScheduleWebView: View {
                         ProgressView()
                         Text("URLを読み込み中...")
                             .font(.subheadline)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(DesignSystem.Colors.secondary)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
@@ -54,7 +54,7 @@ struct ScheduleWebView: View {
                         
                         Text("読み込み中...")
                             .font(.subheadline)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(DesignSystem.Colors.secondary)
                             .padding(.top, 8)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)

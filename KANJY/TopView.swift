@@ -9,7 +9,6 @@ struct TopView: View {
     @State private var planToDelete: Plan? = nil
     @State private var showingCalendarSheet = false
     @State private var showingHelpGuide = false
-    @State private var showingStyleGuide = false
     @State private var shouldOpenScheduleTab = false
     @State private var isRefreshing = false
     @State private var appearedItems: Set<UUID> = []
@@ -64,25 +63,12 @@ struct TopView: View {
             .navigationTitle("飲み会")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    HStack(spacing: DesignSystem.Spacing.md) {
-                        #if DEBUG
-                        // スタイルガイドボタン（デバッグ時のみ表示）
-                        Button {
-                            hapticImpact(.light)
-                            showingStyleGuide = true
-                        } label: {
-                            Image(systemName: "paintbrush.fill")
-                                .foregroundColor(.accentColor)
-                        }
-                        #endif
-                        
-                        Button {
-                            hapticImpact(.light)
-                            showingHelpGuide = true
-                        } label: {
-                            Image(systemName: "questionmark.circle")
-                                .foregroundColor(.accentColor)
-                        }
+                    Button {
+                        hapticImpact(.light)
+                        showingHelpGuide = true
+                    } label: {
+                        Image(systemName: "questionmark.circle")
+                            .foregroundColor(DesignSystem.Colors.primary)
                     }
                 }
             }
@@ -93,9 +79,6 @@ struct TopView: View {
             }
             .sheet(isPresented: $showingHelpGuide) {
                 HelpGuideView()
-            }
-            .sheet(isPresented: $showingStyleGuide) {
-                StyleGuideView()
             }
             .sheet(isPresented: $showingPrePlan, onDismiss: {
                 shouldOpenScheduleTab = false
@@ -250,7 +233,7 @@ private extension TopView {
             } else {
                 VStack(spacing: DesignSystem.Spacing.md) {
                     ForEach(Array(filteredPlans.enumerated()), id: \.element.id) { index, plan in
-                        SwipeablePlanCard(
+                        PlanCard(
                             plan: plan,
                             viewModel: viewModel,
                             scheduleViewModel: scheduleViewModel,
@@ -377,92 +360,6 @@ extension TopView {
         formatter.locale = Locale(identifier: "ja_JP")
         return formatter
     }()
-}
-
-// MARK: - スワイプ可能なプランカード
-
-private struct SwipeablePlanCard: View {
-    let plan: Plan
-    let viewModel: PrePlanViewModel
-    let scheduleViewModel: ScheduleManagementViewModel
-    let onTap: () -> Void
-    let onDelete: () -> Void
-    let onCreateSchedule: () -> Void
-    
-    @State private var dragOffset: CGFloat = 0
-    @State private var isDeleting: Bool = false
-    @State private var isDragging: Bool = false
-    
-    private let deleteThreshold: CGFloat = -100
-    private let deleteButtonWidth: CGFloat = 80
-    
-    var body: some View {
-        ZStack(alignment: .trailing) {
-            // 削除ボタン（背景）
-            HStack {
-                Spacer()
-                Button(action: {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                        isDeleting = true
-                        dragOffset = 0
-                    }
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                        onDelete()
-                    }
-                }) {
-                    VStack(spacing: 4) {
-                        Image(systemName: "trash.fill")
-                            .font(.system(size: 24, weight: .semibold))
-                            .foregroundColor(.white)
-                        Text("削除")
-                            .font(DesignSystem.Typography.caption)
-                            .foregroundColor(.white)
-                    }
-                    .frame(width: deleteButtonWidth)
-                    .frame(maxHeight: .infinity)
-                    .background(DesignSystem.Colors.alert)
-                }
-                .buttonStyle(.plain)
-            }
-            .opacity(dragOffset < -10 ? min(abs(dragOffset) / deleteButtonWidth, 1.0) : 0)
-            
-            // カード本体
-            PlanCard(
-                plan: plan,
-                viewModel: viewModel,
-                scheduleViewModel: scheduleViewModel,
-                onTap: isDragging ? {} : onTap, // スワイプ中はタップを無効化
-                onDelete: onDelete,
-                onCreateSchedule: onCreateSchedule
-            )
-            .offset(x: dragOffset)
-            .gesture(
-                DragGesture(minimumDistance: 10) // 最小距離を設定してタップとの競合を回避
-                    .onChanged { value in
-                        isDragging = true
-                        // 左にスワイプのみ許可、最大で削除ボタンの幅まで
-                        if value.translation.width < 0 {
-                            dragOffset = max(value.translation.width, -deleteButtonWidth)
-                        }
-                    }
-                    .onEnded { value in
-                        isDragging = false
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                            if value.translation.width < deleteThreshold || dragOffset < -deleteButtonWidth * 0.5 {
-                                // 削除しきい値を超えたら削除ボタンを表示
-                                dragOffset = -deleteButtonWidth
-                            } else {
-                                // 元に戻す
-                                dragOffset = 0
-                            }
-                        }
-                    }
-            )
-        }
-        .opacity(isDeleting ? 0 : 1)
-        .scaleEffect(isDeleting ? 0.9 : 1.0)
-        .clipped() // スワイプ時にはみ出さないように
-    }
 }
 
 // MARK: - プランカード（改良版）

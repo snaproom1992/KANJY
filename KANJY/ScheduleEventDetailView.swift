@@ -44,9 +44,10 @@ struct ScheduleEventDetailView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("完了") {
+                    Button("閉じる") {
                         dismiss()
                     }
+                    .tint(DesignSystem.Colors.primary)
                 }
             }
             .sheet(isPresented: $showingShareSheet) {
@@ -597,9 +598,10 @@ struct ScheduleShareSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("完了") {
+                    Button("閉じる") {
                         dismiss()
                     }
+                    .tint(DesignSystem.Colors.primary)
                 }
             }
             .onAppear {
