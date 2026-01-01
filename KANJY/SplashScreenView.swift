@@ -345,22 +345,30 @@ struct ContentView: View {
     @State private var selectedTab = 0
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @State private var showingOnboarding = false
+    @StateObject private var viewModel = PrePlanViewModel()
     
     var body: some View {
         TabView(selection: $selectedTab) {
-            // ホームタブ（飲み会とスケジュール調整を統合）
+            // ホームタブ
             TopView(selectedTab: $selectedTab)
                 .tabItem {
                     Label("ホーム", systemImage: "house.fill")
                 }
                 .tag(0)
             
+            // 新規作成タブ（中央に配置）
+            QuickCreatePlanView(viewModel: viewModel)
+                .tabItem {
+                    Label("新規作成", systemImage: "plus.circle.fill")
+                }
+                .tag(1)
+            
             // 設定タブ
             SettingsView()
                 .tabItem {
                     Label("設定", systemImage: "gearshape.fill")
                 }
-                .tag(1)
+                .tag(2)
         }
         .accentColor(Color(red: 0.067, green: 0.094, blue: 0.157))
         .onAppear {

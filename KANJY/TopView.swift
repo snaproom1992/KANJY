@@ -4,7 +4,7 @@ struct TopView: View {
     @StateObject private var viewModel = PrePlanViewModel()
     @StateObject private var scheduleViewModel = ScheduleManagementViewModel()
     @Binding var selectedTab: Int
-    @State private var showingPrePlan = false
+    @State private var showingCreateView = false
     @State private var showingDeleteAlert = false
     @State private var planToDelete: Plan? = nil
     @State private var showingCalendarSheet = false
@@ -82,23 +82,20 @@ struct TopView: View {
             .sheet(isPresented: $showingHelpGuide) {
                 HelpGuideView()
             }
-            .sheet(isPresented: $showingPrePlan, onDismiss: {
-                shouldOpenScheduleTab = false
-                viewModel.editingPlanId = nil
-            }) {
-                // 新規作成の場合はQuickCreatePlanView
+            .navigationDestination(isPresented: $showingCreateView) {
                 QuickCreatePlanView(viewModel: viewModel)
+                    .modifier(CreateViewTransitionModifier(sourceID: "createButton", namespace: animation))
             }
             .navigationDestination(item: $selectedPlanForNavigation) { plan in
-                PrePlanView(
-                    viewModel: viewModel,
-                    planName: viewModel.editingPlanName.isEmpty ? "" : viewModel.editingPlanName,
-                    planDate: viewModel.editingPlanDate,
-                    initialTask: shouldOpenScheduleTab ? .schedule : nil,
-                    onFinish: {
+                        PrePlanView(
+                            viewModel: viewModel,
+                            planName: viewModel.editingPlanName.isEmpty ? "" : viewModel.editingPlanName,
+                            planDate: viewModel.editingPlanDate,
+                            initialTask: shouldOpenScheduleTab ? .schedule : nil,
+                            onFinish: {
                         // NavigationStackから戻る
-                    }
-                )
+                            }
+                        )
                 .modifier(NavigationTransitionModifier(planId: plan.id, namespace: animation))
                 .navigationBarTitleDisplayMode(.inline)
             }
@@ -156,7 +153,7 @@ private extension TopView {
             viewModel.editingPlanName = ""
             viewModel.editingPlanDate = nil
             viewModel.selectedEmoji = "🍻"
-            showingPrePlan = true
+            showingCreateView = true
         }) {
             HStack(spacing: DesignSystem.Spacing.md) {
                 Image(systemName: "plus.circle.fill")
@@ -186,6 +183,7 @@ private extension TopView {
                 y: 6
             )
         }
+        .matchedGeometryEffect(id: "createButton", in: animation)
     }
     
     // 飲み会リストセクション
@@ -227,7 +225,7 @@ private extension TopView {
                     viewModel.editingPlanName = ""
                     viewModel.editingPlanDate = nil
                     viewModel.selectedEmoji = "🍻"
-                    showingPrePlan = true
+                    showingCreateView = true
                 }
             } else {
                 VStack(spacing: DesignSystem.Spacing.md) {
@@ -250,7 +248,7 @@ private extension TopView {
                                 hapticImpact(.light)
                                 viewModel.loadPlan(plan)
                                 shouldOpenScheduleTab = true
-                                showingPrePlan = true
+                                selectedPlanForNavigation = plan
                             }
                         )
                         .modifier(NavigationTransitionModifier(planId: plan.id, namespace: animation))
@@ -402,8 +400,8 @@ private struct PlanCard: View {
                                 .font(.system(size: 44))
                                 .foregroundColor(colorFromString(plan.iconColor) ?? DesignSystem.Colors.primary)
                         } else {
-                            Text(plan.emoji ?? "🍻")
-                                .font(.system(size: 44))
+                    Text(plan.emoji ?? "🍻")
+                        .font(.system(size: 44))
                         }
                     }
                     
@@ -605,6 +603,20 @@ struct NavigationTransitionModifier: ViewModifier {
         if #available(iOS 18.0, *) {
             content
                 .navigationTransition(.zoom(sourceID: planId, in: namespace))
+        } else {
+            content
+        }
+    }
+}
+
+struct CreateViewTransitionModifier: ViewModifier {
+    let sourceID: String
+    let namespace: Namespace.ID
+    
+    func body(content: Content) -> some View {
+        if #available(iOS 18.0, *) {
+            content
+                .navigationTransition(.zoom(sourceID: sourceID, in: namespace))
         } else {
             content
         }

@@ -77,8 +77,8 @@ struct EventInvitationGenerator: View {
                         .font(.system(size: 40))
                         .foregroundColor(colorFromStringForSwiftUI(viewModel.selectedIconColor) ?? DesignSystem.Colors.primary)
                 } else {
-                    Text(planEmoji)
-                        .font(.system(size: 40))
+                Text(planEmoji)
+                    .font(.system(size: 40))
                 }
                 Text(planName)
                     .font(DesignSystem.Typography.headline)
@@ -304,11 +304,11 @@ struct EventInvitationGenerator: View {
                 tintedIcon.draw(in: iconRect)
             } else {
                 // 絵文字の場合
-                let emojiAttributes: [NSAttributedString.Key: Any] = [
-                    .font: UIFont.systemFont(ofSize: emojiFontSize)
-                ]
-                let emojiRect = CGRect(x: padding + 20, y: currentY, width: cardContentWidth - 40, height: emojiFontSize)
-                planEmoji.draw(in: emojiRect, withAttributes: emojiAttributes)
+            let emojiAttributes: [NSAttributedString.Key: Any] = [
+                .font: UIFont.systemFont(ofSize: emojiFontSize)
+            ]
+            let emojiRect = CGRect(x: padding + 20, y: currentY, width: cardContentWidth - 40, height: emojiFontSize)
+            planEmoji.draw(in: emojiRect, withAttributes: emojiAttributes)
             }
             currentY += emojiFontSize + 20
             

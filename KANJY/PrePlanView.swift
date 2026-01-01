@@ -1794,8 +1794,8 @@ struct PrePlanView: View {
                 // 確定日時が変更されたら回答を再取得
                 if let scheduleEventId = scheduleEvent?.id {
                     loadScheduleResponses(eventId: scheduleEventId)
+                    }
                 }
-            }
             .onChange(of: scheduleResponses.count) { _, _ in
                 // 回答者が追加されたら、参加者を再反映
             }
@@ -2143,7 +2143,7 @@ struct PrePlanView: View {
                         
                         // アイコンセクション
                         SimpleIconGridRow(icons: availableIcons.map { $0.name })
-                    }
+                        }
                     .padding(.horizontal, DesignSystem.Spacing.lg)
                     .padding(.bottom, DesignSystem.Spacing.xl)
                 }
@@ -2156,8 +2156,8 @@ struct PrePlanView: View {
                             withAnimation(.spring(.snappy)) {
                                 showColorPicker = false
                             }
+                            }
                         }
-                    }
                     .zIndex(998)
                     .opacity(showColorPicker ? 1.0 : 0.0)
                     .allowsHitTesting(showColorPicker)
