@@ -1,0 +1,1672 @@
+<!DOCTYPE html>
+<html lang="ja" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KANJY - 回答フォーム</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Supabase CDN -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'sans': ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+                    },
+                    colors: {
+                        kanjy: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            200: '#bfdbfe',
+                            300: '#93c5fd',
+                            400: '#60a5fa',
+                            500: '#007AFF',
+                            600: '#0056cc',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                        },
+                        // SwiftUIカラーパレット（洗練版）
+                        attending: {
+                            50: '#ecfdf5',
+                            100: '#d1fae5',
+                            500: '#10b981',
+                            600: '#059669',
+                            700: '#047857',
+                        },
+                        maybe: {
+                            50: '#fff7ed',
+                            100: '#ffedd5',
+                            500: '#f97316',
+                            600: '#ea580c',
+                            700: '#c2410c',
+                        },
+                        notAttending: {
+                            50: '#fef2f2',
+                            100: '#fee2e2',
+                            500: '#ef4444',
+                            600: '#dc2626',
+                            700: '#b91c1c',
+                        },
+                        undecided: {
+                            50: '#f9fafb',
+                            100: '#f3f4f6',
+                            500: '#6b7280',
+                            600: '#4b5563',
+                            700: '#374151',
+                        }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-in-out',
+                        'slide-up': 'slideUp 0.6s ease-out',
+                        'scale-in': 'scaleIn 0.3s ease-out',
+                        'float': 'float 3s ease-in-out infinite',
+                        'shimmer': 'shimmer 2s linear infinite',
+                        'bounce-gentle': 'bounceGentle 2s infinite',
+                        'pulse-soft': 'pulseSoft 2s infinite',
+                        'slide-in-right': 'slideInRight 0.3s ease-out',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(20px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        },
+                        scaleIn: {
+                            '0%': { transform: 'scale(0.95)', opacity: '0' },
+                            '100%': { transform: 'scale(1)', opacity: '1' },
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        },
+                        shimmer: {
+                            '0%': { transform: 'translateX(-100%)' },
+                            '100%': { transform: 'translateX(100%)' },
+                        },
+                        bounceGentle: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-5px)' },
+                        },
+                        pulseSoft: {
+                            '0%, 100%': { opacity: '1' },
+                            '50%': { opacity: '0.5' },
+                        },
+                        slideInRight: {
+                            '0%': { transform: 'translateX(100%)', opacity: '0' },
+                            '100%': { transform: 'translateX(0)', opacity: '1' },
+                        }
+                    },
+                    boxShadow: {
+                        'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.37)',
+                        'elegant': '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                        'soft': '0 2px 15px 0 rgba(0, 0, 0, 0.1)',
+                        'floating': '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8fafc;
+            --bg-tertiary: #f1f5f9;
+            --text-primary: #1e293b;
+            --text-secondary: #475569;
+            --text-tertiary: #64748b;
+            --border-primary: #e2e8f0;
+            --border-secondary: #cbd5e1;
+            --card-background: #ffffff;
+            --card-border: #E9E5E0;
+            --card-shadow-soft: 0 1px 3px rgba(15, 23, 42, 0.08);
+            --card-shadow-hover: 0 12px 35px rgba(15, 23, 42, 0.14);
+            --card-shadow-strong: 0 20px 45px rgba(15, 23, 42, 0.2);
+            --section-divider: #E9E5E0;
+        }
+
+        body {
+            background: var(--bg-tertiary);
+        }
+
+        .notion-heading-1 {
+            font-size: 2.5rem;
+            line-height: 1.2;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: #111827;
+        }
+
+        .notion-heading-2 {
+            font-size: 2rem;
+            line-height: 1.3;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            color: #111827;
+        }
+
+        .notion-heading-3 {
+            font-size: 1.5rem;
+            line-height: 1.4;
+            font-weight: 600;
+            letter-spacing: -0.005em;
+            color: #111827;
+        }
+
+        .notion-heading-4 {
+            font-size: 1.25rem;
+            line-height: 1.5;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .notion-body {
+            font-size: 1rem;
+            line-height: 1.6;
+            font-weight: 400;
+            color: #4B5563;
+        }
+
+        .notion-body-medium {
+            font-size: 1rem;
+            line-height: 1.6;
+            font-weight: 500;
+            color: #374151;
+        }
+
+        .notion-caption {
+            font-size: 0.875rem;
+            line-height: 1.5;
+            font-weight: 400;
+            color: #6B7280;
+        }
+
+        .notion-small {
+            font-size: 0.75rem;
+            line-height: 1.4;
+            font-weight: 500;
+            color: #9CA3AF;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .notion-mono {
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+            font-size: 0.875rem;
+            line-height: 1.6;
+            font-weight: 400;
+            color: #374151;
+        }
+
+        .micro-transition {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .notion-section {
+            background: var(--card-background);
+            border-top: 1px solid var(--section-divider);
+            border-bottom: 1px solid var(--section-divider);
+        }
+
+        .card-divider {
+            border-bottom: 1px solid var(--section-divider);
+        }
+
+        .enhanced-card {
+            background: var(--card-background);
+            border: 1px solid var(--card-border);
+            border-radius: 1rem;
+            box-shadow: var(--card-shadow-soft);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card-hover:hover {
+            box-shadow: var(--card-shadow-hover);
+            transform: translateY(-4px);
+        }
+
+        .card-section + .card-section {
+            border-top: 1px solid var(--section-divider);
+            padding-top: 2rem;
+            margin-top: 2rem;
+        }
+
+        .form-input {
+            border-radius: 0.75rem;
+            border: 1px solid var(--border-primary);
+            background: #fff;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #007AFF;
+            box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.15);
+        }
+
+        .choice-cell {
+            cursor: pointer;
+            border-radius: 0.75rem;
+            transition: background 0.2s ease, transform 0.2s ease;
+        }
+
+        .choice-cell:hover {
+            transform: translateY(-1px);
+        }
+
+        .choice-cell .choice-button {
+            border-radius: 0.5rem;
+            padding: 0.75rem 0.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            color: #4B5563;
+        }
+
+        .choice-cell.selected[data-status="attending"] {
+            background: #F0FDF4;
+        }
+
+        .choice-cell.selected[data-status="maybe"] {
+            background: #FFF7ED;
+        }
+
+        .choice-cell.selected[data-status="not_attending"] {
+            background: #F8F9FA;
+        }
+
+        .choice-cell.selected .choice-button {
+            color: #111827;
+        }
+
+        .stat-icon--attending {
+            color: #0F7B0F;
+        }
+
+        .stat-icon--maybe {
+            color: #D97706;
+        }
+
+        .stat-icon--decline {
+            color: #6B7280;
+        }
+
+        .section-helper {
+            color: var(--text-tertiary);
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #007AFF, #5856D6);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, #0056cc, #4c46a6);
+        }
+
+        .animate-scale-in {
+            animation: scaleIn 0.3s ease-out;
+        }
+
+        @keyframes scaleIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        /* モバイル最適化 */
+        @media (max-width: 768px) {
+            /* 基本的な横スクロール防止 */
+            body, html {
+                overflow-x: hidden !important;
+                max-width: 100vw;
+            }
+
+            /* ヘッダーの調整 */
+            nav .max-w-4xl {
+                padding-left: 1rem;
+                padding-right: 1rem;
+            }
+
+            nav .text-xl {
+                font-size: 1.125rem;
+            }
+
+            /* タイトルのフォントサイズ調整 */
+            .notion-heading-1 {
+                font-size: 1.875rem !important;
+            }
+
+            .notion-heading-2 {
+                font-size: 1.5rem !important;
+            }
+
+            .notion-heading-4 {
+                font-size: 1.125rem !important;
+            }
+
+            /* カードの余白調整 */
+            .enhanced-card {
+                margin: 0.75rem 0.5rem !important;
+                padding: 1.25rem !important;
+            }
+
+            .card-section {
+                padding: 1rem !important;
+            }
+            
+            /* メインコンテナの余白調整 */
+            main {
+                padding-top: 1rem !important;
+                padding-bottom: 1rem !important;
+            }
+            
+            /* セクション間の余白削減 */
+            .space-y-8 > * + * {
+                margin-top: 1rem !important;
+            }
+            
+            .space-y-6 > * + * {
+                margin-top: 0.75rem !important;
+            }
+            
+            /* タイトルの余白調整 */
+            .notion-heading-2 {
+                margin-top: 1rem !important;
+                margin-bottom: 0.75rem !important;
+            }
+
+            /* テーブルのレスポンシブ対応 */
+            #schedule-options {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .notion-table {
+                min-width: 500px;
+            }
+
+            .notion-table td {
+                padding: 0.75rem 0.5rem !important;
+            }
+
+            .choice-button {
+                padding: 0.5rem 0.25rem !important;
+                font-size: 0.875rem !important;
+            }
+
+            .choice-button span:first-child {
+                font-size: 1.5rem !important;
+            }
+
+            /* ボタンのタッチフレンドリー化 */
+            button {
+                min-height: 44px;
+                min-width: 44px;
+            }
+
+            /* フォーム入力のサイズ調整 */
+            .form-input {
+                font-size: 16px !important; /* iOS zoom 防止 */
+            }
+
+            /* パディング調整 */
+            .px-6 {
+                padding-left: 1rem !important;
+                padding-right: 1rem !important;
+            }
+
+            .px-8 {
+                padding-left: 1rem !important;
+                padding-right: 1rem !important;
+            }
+
+            /* App Storeリンクの調整 */
+            nav a span {
+                display: none;
+            }
+
+            nav a svg {
+                margin-right: 0;
+            }
+        }
+
+        /* 小型モバイル（iPhone SE等）への追加対応 */
+        @media (max-width: 375px) {
+            .notion-heading-1 {
+                font-size: 1.5rem !important;
+            }
+
+            .card-section {
+                padding-left: 0.75rem !important;
+                padding-right: 0.75rem !important;
+            }
+
+            .enhanced-card {
+                border-radius: 0.75rem;
+            }
+        }
+    </style>
+</head>
+
+<body class="font-sans antialiased text-gray-900 min-h-screen bg-stone-50">
+    <nav class="bg-white shadow-sm backdrop-blur-xl">
+        <div class="max-w-4xl mx-auto px-6 sm:px-8 lg:px-12">
+            <div class="flex justify-between items-center h-20">
+                <div class="flex items-center">
+                    <span class="text-gray-900 font-light text-xl tracking-[0.2em] uppercase">K A N J Y</span>
+                </div>
+                <div class="flex items-center">
+                    <a href="https://apps.apple.com/jp/app/kanjy/id6746665673" target="_blank" 
+                       class="inline-flex items-center space-x-2 bg-gray-100 hover:bg-gray-200 transition-colors duration-200 px-4 py-2 rounded-lg text-sm font-medium text-gray-700">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+                        </svg>
+                        <span>App Storeでダウンロード</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="pb-24">
+        <section class="notion-section py-8">
+            <div class="max-w-4xl mx-auto px-6 sm:px-8 lg:px-12">
+                <div class="mb-8">
+                    <h1 id="event-title" class="notion-heading-2 mb-3">参加回答フォーム</h1>
+                    <p id="event-description" class="notion-body text-stone-500">みんなで楽しい時間を過ごしましょう。あなたの都合をお聞かせください。</p>
+                </div>
+            </div>
+        </section>
+
+        <div class="max-w-4xl mx-auto px-6 sm:px-8 lg:px-12 space-y-12 mt-12">
+            <section>
+                <div class="enhanced-card card-hover p-8">
+                    <form id="response-form" class="space-y-10">
+                        <div class="space-y-6">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-1 h-6 bg-gradient-to-b from-stone-600 to-stone-700 rounded-full"></div>
+                                <h2 class="notion-heading-4">参加者情報</h2>
+                            </div>
+                            <p class="notion-caption section-helper">お名前は他の参加者と共有されます。後から編集も可能です。</p>
+                            <div>
+                                <label for="name" class="notion-small block text-stone-500 mb-2">お名前 *</label>
+                                <input type="text" id="name" name="name" required 
+                                       class="form-input w-full px-4 py-3 notion-body"
+                                       placeholder="例：山田太郎">
+                            </div>
+                        </div>
+
+                        <div class="card-section space-y-6">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-1 h-6 bg-gradient-to-b from-stone-700 to-stone-900 rounded-full"></div>
+                                <h2 class="notion-heading-4">日程ごとの回答</h2>
+                            </div>
+                            <p class="notion-caption section-helper">各候補日時について、参加可否を選択してください。</p>
+                            <div id="schedule-options" class="overflow-x-auto">
+                                <!-- 動的に生成される日程テーブルがここに入ります -->
+                            </div>
+                        </div>
+
+                        <div class="card-section space-y-6">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-1 h-6 bg-gradient-to-b from-stone-500 to-stone-600 rounded-full"></div>
+                                <h2 class="notion-heading-4">コメント</h2>
+                            </div>
+                            <div>
+                                <label for="comment" class="notion-small block text-stone-500 mb-2">コメント（任意）</label>
+                                <textarea id="comment" name="comment" rows="4" 
+                                          class="form-input w-full px-4 py-3 notion-body resize-none"
+                                          placeholder="例：楽しみにしています！"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="card-section space-y-4">
+                            <button type="submit" 
+                                    class="w-full micro-transition inline-flex items-center justify-center px-6 py-4 bg-stone-900 hover:bg-stone-800 text-white font-semibold rounded-xl shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                                </svg>
+                                回答を送信
+                            </button>
+                            
+                            <button type="button" onclick="cancelForm()" 
+                                    class="w-full micro-transition inline-flex items-center justify-center px-6 py-4 bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold rounded-xl border border-stone-200">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                </svg>
+                                キャンセル
+                            </button>
+                            
+                            <button type="button" id="delete-response-btn" onclick="deleteResponse()" 
+                                    class="w-full micro-transition inline-flex items-center justify-center px-6 py-4 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-xl shadow-sm hover:shadow-md hidden">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                </svg>
+                                この回答を削除
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- 通知システム -->
+    <div id="notification-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
+
+    <!-- 確認ダイアログ -->
+    <div id="confirm-dialog" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-2xl shadow-floating p-6 mx-4 max-w-sm w-full animate-scale-in">
+            <div class="text-center">
+                <div class="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16c-.77.833.192 2.5 1.732 2.5z"/>
+                    </svg>
+                </div>
+                <h3 id="confirm-title" class="text-lg font-bold text-gray-900 mb-2">確認</h3>
+                <p id="confirm-message" class="text-gray-600 mb-6 whitespace-pre-line">本当によろしいですか？</p>
+                <div class="flex space-x-3">
+                    <button id="confirm-cancel" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-3 px-4 rounded-xl transition-all duration-200">
+                        キャンセル
+                    </button>
+                    <button id="confirm-ok" class="flex-1 bg-kanjy-500 hover:bg-kanjy-600 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 shadow-md">
+                        実行
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Supabase設定
+        const SUPABASE_URL = 'https://jvluhjifihiuopqdwjll.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2bHVoamlmaWhpdW9wcWR3amxsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTExNTc5OTEsImV4cCI6MjA2NjczMzk5MX0.WDTzIs73X8NHGFcIYFk4CN-7dH5tQT5l0Bd2uY6H9lc';
+        
+        // Supabaseクライアントをグローバルスコープで宣言
+        var supabase;
+        
+        // Supabaseライブラリの読み込みを待つ
+        function waitForSupabase() {
+            return new Promise((resolve, reject) => {
+                if (typeof window.supabase !== 'undefined') {
+                    resolve();
+                    return;
+                }
+                
+                console.log('⏳ Supabaseライブラリの読み込みを待機中...');
+                let attempts = 0;
+                const maxAttempts = 50; // 5秒待機
+                const checkInterval = setInterval(() => {
+                    attempts++;
+                    if (typeof window.supabase !== 'undefined') {
+                        clearInterval(checkInterval);
+                        console.log('✅ Supabaseライブラリ読み込み完了');
+                        resolve();
+                    } else if (attempts >= maxAttempts) {
+                        clearInterval(checkInterval);
+                        reject(new Error('Supabaseライブラリの読み込みがタイムアウトしました'));
+                    }
+                }, 100);
+            });
+        }
+        
+        // RLSポリシーテスト関数
+        async function testRLSPolicies() {
+            try {
+                console.log('🔒 RLSポリシーテスト開始');
+                
+                // 読み取り権限テスト
+                const { data: readTest, error: readError } = await supabase
+                    .from('responses')
+                    .select('id')
+                    .limit(1);
+                
+                console.log('📖 読み取りテスト:', readError ? 'NG' : 'OK');
+                if (readError) console.log('読み取りエラー:', readError);
+                
+                // 削除権限テスト（実際には削除しない、エラーだけ確認）
+                const { error: deleteTestError } = await supabase
+                    .from('responses')
+                    .delete()
+                    .eq('id', '00000000-0000-0000-0000-000000000000'); // 存在しないID
+                
+                console.log('🗑️ 削除権限テスト:', deleteTestError ? '制限あり' : 'OK');
+                if (deleteTestError) {
+                    console.log('削除権限エラー:', deleteTestError);
+                    console.log('RLSによる制限の可能性があります');
+                }
+                
+            } catch (error) {
+                console.error('RLSテストエラー:', error);
+            }
+        }
+        
+        // グローバル変数
+        let currentEvent = null;
+        let currentEventId = null;
+        let editMode = false;
+        let editResponseId = null;
+
+        // 初期化
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('🍙 回答フォーム初期化開始');
+            
+            // Supabaseライブラリの読み込みを待つ
+            try {
+                await waitForSupabase();
+                
+                // Supabaseクライアント初期化
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                console.log('🔑 Supabaseクライアント初期化完了');
+                console.log('- URL:', SUPABASE_URL);
+                console.log('- ANON_KEY:', SUPABASE_ANON_KEY.substring(0, 20) + '...');
+                console.log('- supabaseオブジェクト:', typeof supabase);
+                console.log('- supabase.from:', typeof supabase.from);
+            } catch (initError) {
+                // 技術的詳細を準備
+                const technicalDetails = [
+                    `エラー: ${initError.message || '不明'}`,
+                    `コード: ${initError.code || 'N/A'}`,
+                    `タイムスタンプ: ${new Date().toISOString()}`,
+                    initError.stack ? `\nスタック:\n${initError.stack}` : ''
+                ].filter(Boolean).join('\n');
+                
+                // 新しいエラー表示システムを使用
+                showError(initError, technicalDetails);
+                return;
+            }
+            
+            // URLパラメータを取得
+            const urlParams = new URLSearchParams(window.location.search);
+            currentEventId = urlParams.get('id');
+            editResponseId = urlParams.get('edit');
+            editMode = !!editResponseId;
+            
+            console.log('📋 初期化パラメータ:');
+            console.log('- イベントID:', currentEventId);
+            console.log('- 編集回答ID:', editResponseId);
+            console.log('- 編集モード:', editMode);
+            
+            if (!currentEventId) {
+                const error = new Error('イベントIDが指定されていません');
+                const technicalDetails = 'URLパラメータに"id"が含まれていません。正しいURLでアクセスしているか確認してください。';
+                showError(error, technicalDetails);
+                return;
+            }
+
+            // Supabase接続テスト
+            try {
+                console.log('🔗 Supabase接続テスト');
+                const { data: testData, error: testError } = await supabase
+                    .from('responses')
+                    .select('count', { count: 'exact', head: true });
+                
+                if (testError) {
+                    console.error('Supabase接続エラー:', testError);
+                } else {
+                    console.log('✅ Supabase接続成功 - レスポンス総数:', testData);
+                }
+                
+                // RLSポリシーテストを実行
+                await testRLSPolicies();
+                
+            } catch (testErr) {
+                console.error('Supabase接続テスト失敗:', testErr);
+            }
+
+            try {
+                // イベント情報を読み込み
+                console.log('📊 イベント情報を読み込み中...');
+                await loadEvent(currentEventId);
+                console.log('✅ イベント情報読み込み完了');
+                
+                if (editMode) {
+                    // 編集モードの場合、既存回答を読み込み
+                    console.log('📝 編集モード：既存回答を読み込み中...');
+                    await loadExistingResponse(editResponseId);
+                    console.log('✅ 既存回答読み込み完了');
+                    
+                    // 送信ボタンのテキストを更新
+                    const submitBtn = document.querySelector('button[type="submit"]');
+                    if (submitBtn) {
+                        submitBtn.innerHTML = `
+                            <span class="flex items-center justify-center">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                                </svg>
+                                回答を更新
+                            </span>
+                        `;
+                    }
+                    
+                    // 削除ボタンを表示
+                    const deleteBtn = document.getElementById('delete-response-btn');
+                    if (deleteBtn) {
+                        deleteBtn.classList.remove('hidden');
+                    }
+                }
+                
+                // フォームイベントリスナーを設定
+                setupFormListeners();
+                
+                console.log('🎉 回答フォーム初期化完了');
+                
+            } catch (error) {
+                // 技術的詳細を準備
+                const technicalDetails = [
+                    `エラー: ${error.message || '不明'}`,
+                    `コード: ${error.code || 'N/A'}`,
+                    `タイムスタンプ: ${new Date().toISOString()}`,
+                    error.stack ? `\nスタック:\n${error.stack}` : ''
+                ].filter(Boolean).join('\n');
+                
+                // 新しいエラー表示システムを使用
+                showError(error, technicalDetails);
+            }
+        });
+
+        // イベント情報を読み込み
+        async function loadEvent(eventId) {
+            try {
+                console.log('イベント読み込み開始:', eventId);
+                
+                const { data: events, error } = await supabase
+                    .from('events')
+                    .select('*')
+                    .eq('id', eventId);
+                
+                if (error) throw error;
+                if (!events || events.length === 0) throw new Error('イベントが見つかりません');
+                
+                currentEvent = events[0];
+                displayEvent(currentEvent);
+                
+            } catch (error) {
+                console.error('イベント読み込みエラー:', error);
+                throw error;
+            }
+        }
+
+        // 既存回答を読み込み（編集モード用）
+        async function loadExistingResponse(responseId) {
+            try {
+                console.log('📖 既存回答を読み込み中:', responseId);
+                
+                const { data: responses, error } = await supabase
+                    .from('responses')
+                    .select('*')
+                    .eq('id', responseId);
+                
+                console.log('📊 Supabase回答読み込み結果:', { responses, error });
+                
+                if (error) {
+                    console.error('❌ Supabaseエラー:', error);
+                    throw error;
+                }
+                
+                if (!responses || responses.length === 0) {
+                    console.error('❌ 回答データが見つかりません');
+                    throw new Error('回答が見つかりません');
+                }
+                
+                const response = responses[0];
+                console.log('✅ 回答データ取得成功:', response);
+                
+                populateForm(response);
+                
+            } catch (error) {
+                console.error('❌ 既存回答読み込みエラー:', error);
+                throw error;
+            }
+        }
+
+        // イベント情報を表示
+        function displayEvent(event) {
+            // タイトル
+            const titleElement = document.getElementById('event-title');
+            if (titleElement) {
+                titleElement.textContent = event.title || '新年会への参加をお聞かせください';
+            }
+            
+            // 説明
+            const descElement = document.getElementById('event-description');
+            if (descElement) {
+                if (event.description) {
+                    descElement.innerHTML = event.description.replace(/\n/g, '<br>');
+                } else {
+                    descElement.innerHTML = 'みんなで楽しい時間を過ごしましょう！<br>あなたの都合をお聞かせください。';
+                }
+            }
+            
+            // 日程選択肢を生成
+            if (event.candidate_dates && Array.isArray(event.candidate_dates)) {
+                generateScheduleOptions(event.candidate_dates);
+            }
+        }
+
+        // 日程選択肢を生成
+        function generateScheduleOptions(dates) {
+            const container = document.getElementById('schedule-options');
+            if (!container) return;
+
+            const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+
+            const rowsHtml = dates.map((dateStr, index) => {
+                const date = new Date(dateStr);
+                const weekday = weekdays[date.getDay()];
+                const month = date.getMonth() + 1;
+                const day = date.getDate();
+                const hours = date.getHours().toString().padStart(2, '0');
+                const minutes = date.getMinutes().toString().padStart(2, '0');
+                const weekdayColorClass = (date.getDay() === 0 || date.getDay() === 6) ? 'bg-red-600' : 'bg-stone-600';
+
+                return `
+                    <tr data-date="${dateStr}">
+                        <td class="py-4 px-6">
+                            <div class="flex items-center space-x-4">
+                                <div class="w-10 h-10 ${weekdayColorClass} rounded-lg flex items-center justify-center">
+                                    <span class="text-white font-semibold text-sm">${weekday}</span>
+                                </div>
+                                <div>
+                                    <div class="notion-body-medium text-stone-900">${month}月${day}日（${weekday}）</div>
+                                    <div class="flex items-center space-x-1 notion-caption text-stone-500 mt-1">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                        </svg>
+                                        <span>${hours}:${minutes} 開始</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="py-4 px-4 text-center choice-cell" data-date="${dateStr}" data-status="attending">
+                            <div class="choice-button micro-transition text-stone-600">
+                                <span class="text-2xl font-bold stat-icon--attending">○</span>
+                                <span class="notion-body-medium">参加</span>
+                            </div>
+                        </td>
+                        <td class="py-4 px-4 text-center choice-cell" data-date="${dateStr}" data-status="maybe">
+                            <div class="choice-button micro-transition text-stone-600">
+                                <span class="text-2xl font-bold stat-icon--maybe">?</span>
+                                <span class="notion-body-medium">未定</span>
+                            </div>
+                        </td>
+                        <td class="py-4 px-4 text-center choice-cell" data-date="${dateStr}" data-status="not_attending">
+                            <div class="choice-button micro-transition text-stone-600">
+                                <span class="text-2xl font-bold stat-icon--decline">×</span>
+                                <span class="notion-body-medium">不参加</span>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            container.innerHTML = `
+                <table class="w-full notion-table">
+                    <thead>
+                        <tr>
+                            <th class="text-left py-3 px-6 notion-small text-stone-500">候補日時</th>
+                            <th class="text-center py-3 px-4 notion-small text-stone-500">参加</th>
+                            <th class="text-center py-3 px-4 notion-small text-stone-500">未定</th>
+                            <th class="text-center py-3 px-4 notion-small text-stone-500">不参加</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rowsHtml}
+                    </tbody>
+                </table>
+            `;
+
+            setupChoiceButtons();
+
+            if (!editMode) {
+                dates.forEach(dateStr => {
+                    const defaultCell = container.querySelector(`[data-date="${dateStr}"][data-status="maybe"]`);
+                    if (defaultCell) {
+                        selectChoice(defaultCell);
+                    }
+                });
+            }
+        }
+
+        // 選択ボタンのイベントリスナーを設定
+        function setupChoiceButtons() {
+            document.querySelectorAll('.choice-cell').forEach(cell => {
+                cell.addEventListener('click', function() {
+                    selectChoice(this);
+                });
+            });
+        }
+
+        // フォームを既存データで埋める（編集モード用）
+        function populateForm(response) {
+            console.log('📝 フォームにデータを入力中:', response);
+            
+            // 基本情報を設定
+            const nameInput = document.getElementById('name');
+            const commentInput = document.getElementById('comment');
+            
+            if (nameInput) {
+                nameInput.value = response.participant_name || '';
+            } else {
+                console.warn('⚠️ 名前入力フィールドが見つかりません');
+            }
+            
+            if (commentInput) {
+                commentInput.value = response.comment || '';
+            } else {
+                console.warn('⚠️ コメント入力フィールドが見つかりません');
+            }
+            
+            // 日程選択を復元
+            if (currentEvent && currentEvent.candidate_dates) {
+                currentEvent.candidate_dates.forEach(dateStr => {
+                    let status = 'not_attending';
+                    
+                    if (response.available_dates && response.available_dates.includes(dateStr)) {
+                        status = 'attending';
+                    } else if (response.status === 'undecided') {
+                        // 全体ステータスが未定の場合で、参加でない日程は未定として表示
+                        status = 'maybe';
+                    }
+                    
+                    const targetCell = document.querySelector(`[data-date="${dateStr}"][data-status="${status}"]`);
+                    if (targetCell) {
+                        selectChoice(targetCell);
+                        console.log(`✅ 日程選択復元: ${dateStr} -> ${status}`);
+                    } else {
+                        console.warn(`⚠️ 選択ボタンが見つかりません: ${dateStr}, ${status}`);
+                    }
+                });
+            } else {
+                console.warn('⚠️ イベントまたは候補日程が見つかりません');
+            }
+            
+            console.log('✅ フォームデータ入力完了');
+        }
+
+        // フォームイベントリスナーを設定
+        function setupFormListeners() {
+            // フォーム送信
+            document.getElementById('response-form').addEventListener('submit', handleSubmit);
+        }
+
+        // 選択肢を選択状態にする
+        function selectChoice(button) {
+            const dateStr = button.dataset.date;
+            document.querySelectorAll(`[data-date="${dateStr}"]`).forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            button.classList.add('selected');
+        }
+
+        // フォーム送信処理
+        async function handleSubmit(event) {
+            event.preventDefault();
+            
+            const submitBtn = event.target.querySelector('button[type="submit"]');
+            
+            // ローディング状態に変更
+            submitBtn.disabled = true;
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = `
+                <span class="flex items-center justify-center">
+                    <svg class="animate-spin w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    ${editMode ? '更新中...' : '送信中...'}
+                </span>
+            `;
+            
+            try {
+                // フォームデータを収集
+                const formData = collectFormData();
+                
+                if (editMode) {
+                    // 更新用にresponse_dateを除外
+                    const updateData = { ...formData };
+                    delete updateData.response_date;
+                    
+                    await updateResponse(editResponseId, updateData);
+                    showSuccessNotification('回答を更新しました！', '変更内容が正常に保存されました。');
+                } else {
+                    // 新規作成
+                    await createResponse(formData);
+                    showSuccessNotification('回答を送信しました！', 'ご回答いただき、ありがとうございました。');
+                }
+                
+                // 通知を表示してから0.5秒後に一覧画面に戻る
+                console.log('⏱️ 0.5秒後にトップページに戻ります...');
+                setTimeout(() => {
+                    console.log('⏱️ setTimeoutが実行されました');
+                    console.log('🔙 トップに戻ります');
+                    
+                    if (!currentEventId) {
+                        console.error('❌ イベントIDが不明です');
+                        console.error('❌ currentEventId:', currentEventId);
+                        return;
+                    }
+                    
+                    // タイムスタンプを追加して強制リロード
+                    const timestamp = Date.now();
+                    const targetUrl = `index.html?id=${currentEventId}&_t=${timestamp}`;
+                    console.log('🚀 遷移先:', targetUrl);
+                    console.log('📝 タイムスタンプ:', timestamp);
+                    
+                    window.location.replace(targetUrl);
+                }, 500);
+                
+            } catch (error) {
+                // 技術的詳細を準備
+                const technicalDetails = [
+                    `エラー: ${error.message || '不明'}`,
+                    `コード: ${error.code || 'N/A'}`,
+                    `タイムスタンプ: ${new Date().toISOString()}`,
+                    error.stack ? `\nスタック:\n${error.stack}` : ''
+                ].filter(Boolean).join('\n');
+                
+                // 新しいエラー表示システムを使用
+                showError(error, technicalDetails);
+            } finally {
+                // ローディング状態を解除
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+        }
+
+        // フォームデータを収集
+        function collectFormData() {
+            const participantName = document.getElementById('name').value.trim();
+            const comment = document.getElementById('comment').value.trim();
+            
+            if (!participantName) {
+                throw new Error('お名前を入力してください');
+            }
+            
+            // 日程選択を収集
+            const availableDates = [];
+            const dateStatuses = {};
+            
+            document.querySelectorAll('.choice-cell.selected').forEach(cell => {
+                const dateStr = cell.dataset.date;
+                const status = cell.dataset.status;
+                
+                dateStatuses[dateStr] = status;
+                
+                // 参加のみをavailable_datesに追加（既存のテーブル構造に合わせる）
+                if (status === 'attending') {
+                    availableDates.push(dateStr);
+                }
+            });
+            
+            // 全体の参加状況を判定
+            const statusValues = Object.values(dateStatuses);
+            let overallStatus = 'not_attending';
+            
+            if (statusValues.includes('attending')) {
+                overallStatus = 'attending';
+            } else if (statusValues.includes('maybe')) {
+                overallStatus = 'undecided';
+            }
+            
+            // 少なくとも1つの日程に回答しているかチェック
+            if (statusValues.length === 0) {
+                throw new Error('少なくとも1つの日程について回答してください');
+            }
+            
+            console.log('📋 収集したフォームデータ:', {
+                participantName,
+                availableDates,
+                overallStatus,
+                dateStatuses,
+                comment
+            });
+            
+            return {
+                event_id: currentEventId,
+                participant_name: participantName,
+                comment: comment || null,
+                available_dates: availableDates,
+                status: overallStatus,
+                response_date: new Date().toISOString()
+            };
+        }
+
+        // キャンセル処理
+        async function cancelForm() {
+            const confirmed = await showConfirmDialog(
+                '入力内容の確認',
+                '入力した変更内容が失われますが、\n入力画面に戻りますか？',
+                '入力画面に戻る',
+                'このまま続ける'
+            );
+            
+            if (confirmed) {
+                goBack();
+            }
+        }
+
+        // 新規回答を作成
+        async function createResponse(formData) {
+            console.log('📤 新規回答を作成中:', formData);
+            
+            const { data, error } = await supabase
+                .from('responses')
+                .insert([formData])
+                .select();
+            
+            console.log('📥 Supabase回答結果:', { data, error });
+            
+            if (error) {
+                console.error('❌ 新規回答作成エラー:', error);
+                throw error;
+            }
+            
+            console.log('✅ 新規回答作成成功');
+            return data;
+        }
+
+        // 回答を更新
+        async function updateResponse(responseId, updateData) {
+            console.log('📤 回答を更新中:', { responseId, updateData });
+            
+            const { data, error } = await supabase
+                .from('responses')
+                .update(updateData)
+                .eq('id', responseId)
+                .select();
+            
+            console.log('📥 Supabase更新結果:', { data, error });
+            
+            if (error) {
+                console.error('❌ 回答更新エラー:', error);
+                throw error;
+            }
+            
+            console.log('✅ 回答更新成功');
+            return data;
+        }
+
+        // 回答を削除
+        async function deleteResponse() {
+            console.log('🗑️ 削除機能開始');
+            console.log('編集モード:', editMode);
+            console.log('編集回答ID:', editResponseId);
+            
+            if (!editMode || !editResponseId) {
+                console.error('❌ 削除条件が満たされていません');
+                showErrorNotification('削除できません', '編集モードではないか、回答IDが無効です。');
+                return;
+            }
+            
+            // 参加者名を取得（確認用）
+            const participantName = document.getElementById('name').value.trim() || '参加者';
+            
+            // 確認ダイアログ
+            const confirmed = await showConfirmDialog(
+                '回答削除の確認',
+                `「${participantName}」さんの回答を削除します。\n\nこの操作は取り消せません。\n本当に削除しますか？`,
+                '削除する',
+                '削除しない'
+            );
+            
+            if (!confirmed) {
+                console.log('削除がキャンセルされました');
+                return;
+            }
+            
+            try {
+                console.log('🔄 削除処理開始 - ID:', editResponseId);
+                
+                // 削除ボタンをローディング状態に
+                const deleteBtn = document.getElementById('delete-response-btn');
+                deleteBtn.disabled = true;
+                deleteBtn.innerHTML = `
+                    <svg class="animate-spin w-5 h-5 mr-2 inline" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    削除中...
+                `;
+                
+                // まず削除前にレコードが存在するかを確認
+                console.log('📋 削除前のレコード確認');
+                const { data: beforeCheck, error: checkError } = await supabase
+                    .from('responses')
+                    .select('id, participant_name')
+                    .eq('id', editResponseId);
+                
+                if (checkError) {
+                    console.error('レコード確認エラー:', checkError);
+                    throw new Error('削除前の確認に失敗: ' + checkError.message);
+                }
+                
+                console.log('削除前のレコード:', beforeCheck);
+                
+                if (!beforeCheck || beforeCheck.length === 0) {
+                    throw new Error('削除対象のレコードが見つかりません');
+                }
+                
+                // RLS制限により物理削除ができないため、論理削除を実行
+                console.log('🗑️ 論理削除を実行（RLS制限回避）');
+                console.log('削除対象ID:', editResponseId);
+                console.log('イベントID:', currentEventId);
+                
+                // まず物理削除を試行
+                const { data: deleteResult, error: deleteError } = await supabase
+                    .from('responses')
+                    .delete()
+                    .eq('id', editResponseId)
+                    .select();
+                
+                console.log('物理削除結果:', deleteResult);
+                console.log('物理削除エラー:', deleteError);
+                
+                // 物理削除が失敗した場合は論理削除を実行
+                if (deleteError || !deleteResult || deleteResult.length === 0) {
+                    console.log('⚠️ 物理削除に失敗。論理削除を実行します...');
+                    
+                    // 論理削除: 制約に準拠して削除済みマークを付ける
+                    const originalName = beforeCheck[0]?.participant_name || 'ユーザー';
+                    const { data: updateResult, error: updateError } = await supabase
+                        .from('responses')
+                        .update({ 
+                            status: 'not_attending', // 制約に準拠した値を使用
+                            participant_name: '[削除済み] ' + originalName,
+                            comment: (beforeCheck[0]?.comment || '') + '\n[削除日時: ' + new Date().toLocaleString('ja-JP') + ']',
+                            available_dates: [] // 参加可能日程をクリア
+                        })
+                        .eq('id', editResponseId)
+                        .select();
+                    
+                    console.log('論理削除結果:', updateResult);
+                    console.log('論理削除エラー:', updateError);
+                    
+                    if (updateError) {
+                        console.error('論理削除もエラー:', updateError);
+                        throw new Error('削除に失敗しました: ' + updateError.message);
+                    }
+                    
+                    if (!updateResult || updateResult.length === 0) {
+                        throw new Error('論理削除に失敗しました。対象レコードが見つかりません。');
+                    }
+                    
+                    console.log('✅ 論理削除成功。削除マークを付けました。');
+                } else {
+                    console.log('✅ 物理削除成功。削除されたレコード数:', deleteResult.length);
+                }
+                
+                // 削除後の確認（物理削除または論理削除の確認）
+                console.log('📋 削除処理の確認');
+                const { data: afterCheck, error: afterCheckError } = await supabase
+                    .from('responses')
+                    .select('id, participant_name, status, comment')
+                    .eq('id', editResponseId);
+                
+                console.log('削除後のレコード状態:', afterCheck);
+                console.log('削除後の確認エラー:', afterCheckError);
+                
+                if (afterCheckError) {
+                    console.error('削除後確認エラー:', afterCheckError);
+                    // エラーがある場合は、物理削除が成功した可能性もある
+                    console.log('✅ 物理削除が成功した可能性があります');
+                } else if (afterCheck && afterCheck.length > 0) {
+                    // レコードが残っている場合
+                    const record = afterCheck[0];
+                    
+                    if (record.participant_name.startsWith('[削除済み]')) {
+                        console.log('✅ 論理削除が完了しています');
+                        console.log('削除マーク詳細:', {
+                            status: record.status,
+                            participant_name: record.participant_name,
+                            comment: record.comment
+                        });
+                    } else {
+                        console.error('⚠️ 削除処理が完了していません');
+                        console.error('レコード詳細:', record);
+                        throw new Error('削除処理に失敗しました');
+                    }
+                } else {
+                    console.log('✅ 物理削除が完了しています（レコードが完全に削除されました）');
+                }
+                
+                console.log('✅ 削除成功');
+                showSuccessNotification('回答を削除しました', '回答が正常に削除されました。');
+                
+                // 通知を表示してから0.5秒後に一覧画面に戻る
+                console.log('⏱️ 0.5秒後にトップページに戻ります...');
+                setTimeout(() => {
+                    console.log('⏱️ setTimeoutが実行されました（削除後）');
+                    console.log('🔙 トップに戻ります');
+                    
+                    if (!currentEventId) {
+                        console.error('❌ イベントIDが不明です');
+                        console.error('❌ currentEventId:', currentEventId);
+                        return;
+                    }
+                    
+                    // タイムスタンプを追加して強制リロード
+                    const timestamp = Date.now();
+                    const targetUrl = `index.html?id=${currentEventId}&_t=${timestamp}`;
+                    console.log('🚀 遷移先:', targetUrl);
+                    console.log('📝 タイムスタンプ:', timestamp);
+                    
+                    window.location.replace(targetUrl);
+                }, 500);
+                
+            } catch (error) {
+                console.error('❌ 削除エラー:', error);
+                console.error('エラー詳細:', {
+                    name: error.name,
+                    message: error.message,
+                    stack: error.stack
+                });
+                
+                // 技術的詳細を準備
+                const technicalDetails = [
+                    `エラー: ${error.message || '不明'}`,
+                    `コード: ${error.code || 'N/A'}`,
+                    `タイムスタンプ: ${new Date().toISOString()}`,
+                    error.stack ? `\nスタック:\n${error.stack}` : ''
+                ].filter(Boolean).join('\n');
+                
+                // 新しいエラー表示システムを使用
+                showError(error, technicalDetails);
+                
+                // ボタンを元に戻す
+                const deleteBtn = document.getElementById('delete-response-btn');
+                deleteBtn.disabled = false;
+                deleteBtn.innerHTML = `
+                    <svg class="w-5 h-5 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                    この回答を削除
+                `;
+            }
+        }
+
+        // 一覧画面に戻る
+        function goBack() {
+            console.log('🔙 トップに戻ります');
+            
+            if (!currentEventId) {
+                console.error('❌ イベントIDが不明です');
+                return;
+            }
+            
+            // refresh=1 パラメータを追加して戻る（データ再取得のため）
+            const targetUrl = `index.html?id=${currentEventId}&refresh=1`;
+            console.log('🚀 遷移先:', targetUrl);
+            console.log('📝 データ再取得フラグ: refresh=1');
+            
+            window.location.href = targetUrl;
+        }
+
+        // ========================================
+        // エラーハンドリングシステム（index.htmlと統一）
+        // ========================================
+        
+        // エラー分類
+        const ErrorType = {
+            NETWORK: 'network',
+            PERMISSION: 'permission',
+            DATA_NOT_FOUND: 'data_not_found',
+            VALIDATION: 'validation',
+            TIMEOUT: 'timeout',
+            SYSTEM: 'system',
+            UNKNOWN: 'unknown'
+        };
+        
+        // エラー分類関数
+        function classifyError(error) {
+            const errorMessage = error?.message?.toLowerCase() || '';
+            const errorCode = error?.code?.toLowerCase() || '';
+            
+            // ネットワークエラー
+            if (errorMessage.includes('network') || 
+                errorMessage.includes('fetch') || 
+                errorMessage.includes('connection') ||
+                errorMessage.includes('タイムアウト') ||
+                errorMessage.includes('timeout')) {
+                return ErrorType.NETWORK;
+            }
+            
+            // 権限エラー
+            if (errorCode === '42501' || 
+                errorMessage.includes('permission') ||
+                errorMessage.includes('権限') ||
+                errorMessage.includes('unauthorized')) {
+                return ErrorType.PERMISSION;
+            }
+            
+            // データが見つからない
+            if (errorCode === 'pgrst116' || 
+                errorMessage.includes('not found') ||
+                errorMessage.includes('見つかりません') ||
+                errorMessage.includes('does not exist')) {
+                return ErrorType.DATA_NOT_FOUND;
+            }
+            
+            // タイムアウト
+            if (errorMessage.includes('timeout') || 
+                errorMessage.includes('タイムアウト')) {
+                return ErrorType.TIMEOUT;
+            }
+            
+            // バリデーションエラー
+            if (errorMessage.includes('validation') ||
+                errorMessage.includes('invalid') ||
+                errorMessage.includes('入力してください')) {
+                return ErrorType.VALIDATION;
+            }
+            
+            // システムエラー
+            if (errorMessage.includes('supabase') ||
+                errorMessage.includes('database') ||
+                errorMessage.includes('データベース')) {
+                return ErrorType.SYSTEM;
+            }
+            
+            return ErrorType.UNKNOWN;
+        }
+        
+        // ユーザーフレンドリーなエラーメッセージを取得
+        function getUserFriendlyErrorMessage(errorType) {
+            const messages = {
+                [ErrorType.NETWORK]: {
+                    title: 'インターネット接続エラー',
+                    message: 'インターネット接続を確認してください。Wi-Fiやモバイルデータ通信が有効になっているか確認し、再度お試しください。'
+                },
+                [ErrorType.PERMISSION]: {
+                    title: 'アクセス権限エラー',
+                    message: 'このデータへのアクセス権限がありません。イベント作成者に確認するか、正しいURLでアクセスしているか確認してください。'
+                },
+                [ErrorType.DATA_NOT_FOUND]: {
+                    title: 'データが見つかりません',
+                    message: 'イベント情報が見つかりませんでした。URLが正しいか確認するか、イベント作成者に連絡してください。'
+                },
+                [ErrorType.VALIDATION]: {
+                    title: '入力エラー',
+                    message: '入力内容に問題があります。必須項目がすべて入力されているか確認してください。'
+                },
+                [ErrorType.TIMEOUT]: {
+                    title: '接続タイムアウト',
+                    message: 'サーバーへの接続に時間がかかりすぎています。しばらく待ってから再度お試しください。'
+                },
+                [ErrorType.SYSTEM]: {
+                    title: 'システムエラー',
+                    message: '一時的なシステムエラーが発生しました。しばらく待ってから再度お試しください。'
+                },
+                [ErrorType.UNKNOWN]: {
+                    title: '予期しないエラー',
+                    message: '予期しないエラーが発生しました。問題が解決しない場合は、サポートまでご連絡ください。'
+                }
+            };
+            
+            return messages[errorType] || messages[ErrorType.UNKNOWN];
+        }
+        
+        // エラー表示関数（改善版）
+        function showError(error, technicalDetails = null) {
+            // エラー分類
+            const errorType = classifyError(error);
+            const errorInfo = getUserFriendlyErrorMessage(errorType);
+            
+            // 通知システムを使用して表示
+            showErrorNotification(errorInfo.title, errorInfo.message);
+            
+            // コンソールに詳細ログ（開発者向け）
+            console.error('❌ エラー発生:', {
+                type: errorType,
+                userMessage: errorInfo.message,
+                originalError: error,
+                technicalDetails: technicalDetails,
+                timestamp: new Date().toISOString()
+            });
+        }
+
+        // 成功通知を表示
+        function showSuccessNotification(title, message) {
+            showNotification(title, message, 'success');
+        }
+
+        // エラー通知を表示
+        function showErrorNotification(title, message) {
+            showNotification(title, message, 'error');
+        }
+
+        // カスタム確認ダイアログを表示
+        function showConfirmDialog(title, message, okText = '実行', cancelText = 'キャンセル') {
+            return new Promise((resolve) => {
+                const dialog = document.getElementById('confirm-dialog');
+                const titleElement = document.getElementById('confirm-title');
+                const messageElement = document.getElementById('confirm-message');
+                const okButton = document.getElementById('confirm-ok');
+                const cancelButton = document.getElementById('confirm-cancel');
+                
+                // テキストを設定
+                titleElement.textContent = title;
+                messageElement.textContent = message;
+                okButton.textContent = okText;
+                cancelButton.textContent = cancelText;
+                
+                // ボタンの色を設定（削除の場合は赤、それ以外はブルー）
+                if (okText.includes('削除')) {
+                    okButton.className = 'flex-1 bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 shadow-md';
+                } else {
+                    okButton.className = 'flex-1 bg-kanjy-500 hover:bg-kanjy-600 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 shadow-md';
+                }
+                
+                // ダイアログを表示
+                dialog.classList.remove('hidden');
+                
+                // イベントリスナーを設定
+                const handleOk = () => {
+                    dialog.classList.add('hidden');
+                    okButton.removeEventListener('click', handleOk);
+                    cancelButton.removeEventListener('click', handleCancel);
+                    resolve(true);
+                };
+                
+                const handleCancel = () => {
+                    dialog.classList.add('hidden');
+                    okButton.removeEventListener('click', handleOk);
+                    cancelButton.removeEventListener('click', handleCancel);
+                    resolve(false);
+                };
+                
+                okButton.addEventListener('click', handleOk);
+                cancelButton.addEventListener('click', handleCancel);
+                
+                // ESCキーでキャンセル
+                const handleEsc = (e) => {
+                    if (e.key === 'Escape') {
+                        handleCancel();
+                        document.removeEventListener('keydown', handleEsc);
+                    }
+                };
+                document.addEventListener('keydown', handleEsc);
+            });
+        }
+
+        // 通知を表示
+        function showNotification(title, message, type = 'success') {
+            console.log('📢 通知表示:', { title, message, type });
+            
+            const container = document.getElementById('notification-container');
+            if (!container) {
+                console.error('❌ 通知コンテナが見つかりません');
+                return;
+            }
+            
+            const notification = document.createElement('div');
+            
+            const bgColor = type === 'success' ? 'bg-green-500' : 'bg-red-500';
+            const icon = type === 'success' ? 
+                '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>' :
+                '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>';
+            
+            notification.className = `${bgColor} text-white px-6 py-4 rounded-xl shadow-lg transform translate-x-full transition-all duration-300 ease-in-out max-w-sm`;
+            notification.innerHTML = `
+                <div class="flex items-start space-x-3">
+                    <div class="flex-shrink-0 mt-0.5">
+                        ${icon}
+                    </div>
+                    <div class="flex-1">
+                        <h4 class="font-semibold text-sm">${title}</h4>
+                        <p class="text-sm opacity-90 mt-1">${message}</p>
+                    </div>
+                    <button onclick="this.parentElement.parentElement.remove()" class="flex-shrink-0 text-white/80 hover:text-white">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+            `;
+            
+            container.appendChild(notification);
+            
+            // アニメーションで表示
+            setTimeout(() => {
+                notification.classList.remove('translate-x-full');
+            }, 100);
+            
+            // 5秒後に自動削除
+            setTimeout(() => {
+                notification.classList.add('translate-x-full');
+                setTimeout(() => {
+                    if (notification.parentElement) {
+                        notification.remove();
+                    }
+                }, 300);
+            }, 5000);
+        }
+    </script>
+</body>
+</html> 
