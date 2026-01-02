@@ -391,9 +391,8 @@ public class ScheduleManagementViewModel: ObservableObject {
     }
     
     private func generateWebUrl(eventId: UUID? = nil) -> String {
-        // ローカル開発用URL（デバッグ用）
-        // 本番環境では https://kanjy.vercel.app/?id= を使用してください
-        let baseUrl = "http://localhost:8080/?id="
+        // 本番環境のURL（Vercel）
+        let baseUrl = "https://kanjy.vercel.app/?id="
         let uniqueId = eventId?.uuidString.lowercased() ?? UUID().uuidString.lowercased()
         return baseUrl + uniqueId
     }
@@ -403,18 +402,17 @@ public class ScheduleManagementViewModel: ObservableObject {
     }
     
     public func getWebUrl(for event: ScheduleEvent) -> String {
-        // ローカル開発用: 常に最新のローカルホストURLを生成
-        // 本番環境では、保存されているURLを優先してください
+        // 古いNetlifyのURLが保存されている場合は無視して、常に最新のVercel URLを生成
+        if let webUrl = event.webUrl, webUrl.contains("kanjy-web.netlify.app") {
+            // 古いNetlify URLの場合は、新しいVercel URLを生成
+            return generateWebUrl(eventId: event.id)
+        }
+        // webUrlがVercelのURLの場合はそれを使用、それ以外は新しく生成
+        if let webUrl = event.webUrl, webUrl.contains("kanjy.vercel.app") {
+            return webUrl
+        }
+        // webUrlがnilまたは予期しないURLの場合は新しく生成
         return generateWebUrl(eventId: event.id)
-        
-        // 本番環境用のコード（コメントアウト）:
-        // if let webUrl = event.webUrl, webUrl.contains("kanjy-web.netlify.app") {
-        //     return generateWebUrl(eventId: event.id)
-        // }
-        // if let webUrl = event.webUrl, webUrl.contains("kanjy.vercel.app") {
-        //     return webUrl
-        // }
-        // return generateWebUrl(eventId: event.id)
     }
     
     // MARK: - 統計情報
