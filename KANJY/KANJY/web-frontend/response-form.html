@@ -1044,6 +1044,8 @@
                 </span>
             `;
             
+            let isSubmitted = false; // 送信成功フラグ
+            
             try {
                 // フォームデータを収集
                 const formData = collectFormData();
@@ -1054,15 +1056,23 @@
                     delete updateData.response_date;
                     
                     await updateResponse(editResponseId, updateData);
-                    showSuccessNotification('回答を更新しました！', '変更内容が正常に保存されました。');
+                    isSubmitted = true;
+                    // フォーム全体を無効化
+                    disableForm();
+                    // 送信成功メッセージを大きく表示
+                    showLargeSuccessMessage('回答を更新しました！', '変更内容が正常に保存されました。');
                 } else {
                     // 新規作成
                     await createResponse(formData);
-                    showSuccessNotification('回答を送信しました！', 'ご回答いただき、ありがとうございました。');
+                    isSubmitted = true;
+                    // フォーム全体を無効化
+                    disableForm();
+                    // 送信成功メッセージを大きく表示
+                    showLargeSuccessMessage('回答を送信しました！', 'ご回答いただき、ありがとうございました。');
                 }
                 
-                // 通知を表示してから0.5秒後に一覧画面に戻る
-                console.log('⏱️ 0.5秒後にトップページに戻ります...');
+                // 通知を表示してから2秒後に一覧画面に戻る（ユーザーが確認できるように）
+                console.log('⏱️ 2秒後にトップページに戻ります...');
                 setTimeout(() => {
                     console.log('⏱️ setTimeoutが実行されました');
                     console.log('🔙 トップに戻ります');
@@ -1080,9 +1090,13 @@
                     console.log('📝 タイムスタンプ:', timestamp);
                     
                     window.location.replace(targetUrl);
-                }, 500);
+                }, 2000);
                 
             } catch (error) {
+                // エラー時のみボタンを再度有効化
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+                
                 // 技術的詳細を準備
                 const technicalDetails = [
                     `エラー: ${error.message || '不明'}`,
@@ -1093,10 +1107,6 @@
                 
                 // 新しいエラー表示システムを使用
                 showError(error, technicalDetails);
-            } finally {
-                // ローディング状態を解除
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = originalText;
             }
         }
 
@@ -1666,6 +1676,64 @@
                     }
                 }, 300);
             }, 5000);
+        }
+        
+        // フォーム全体を無効化
+        function disableForm() {
+            const form = document.getElementById('response-form');
+            if (!form) return;
+            
+            // すべての入力フィールドを無効化
+            const inputs = form.querySelectorAll('input, textarea, button');
+            inputs.forEach(input => {
+                input.disabled = true;
+            });
+            
+            // 選択ボタンも無効化
+            document.querySelectorAll('.choice-cell').forEach(cell => {
+                cell.style.pointerEvents = 'none';
+                cell.style.opacity = '0.6';
+            });
+            
+            console.log('✅ フォームを無効化しました（重複送信防止）');
+        }
+        
+        // 大きな成功メッセージを表示（画面中央）
+        function showLargeSuccessMessage(title, message) {
+            // 既存の大きなメッセージがあれば削除
+            const existingMessage = document.getElementById('large-success-message');
+            if (existingMessage) {
+                existingMessage.remove();
+            }
+            
+            // 大きなメッセージコンテナを作成
+            const messageContainer = document.createElement('div');
+            messageContainer.id = 'large-success-message';
+            messageContainer.className = 'fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50';
+            messageContainer.innerHTML = `
+                <div class="bg-white rounded-2xl shadow-floating p-8 mx-4 max-w-md w-full animate-scale-in">
+                    <div class="text-center">
+                        <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <svg class="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-900 mb-3">${title}</h3>
+                        <p class="text-gray-600 mb-6 text-lg">${message}</p>
+                        <div class="text-sm text-gray-500">
+                            自動的に一覧画面に戻ります...
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(messageContainer);
+            
+            // 2秒後にフェードアウト（ページ遷移と同時に）
+            setTimeout(() => {
+                messageContainer.classList.add('opacity-0');
+                messageContainer.style.transition = 'opacity 0.3s ease-out';
+            }, 1500);
         }
     </script>
 </body>

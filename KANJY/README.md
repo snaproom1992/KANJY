@@ -163,10 +163,10 @@ KANJYは**飲み会の幹事業務に特化**することで、汎用的なイ�
 
 ### Web フロントエンド
 
-- **ホスティング**: Netlify
+- **ホスティング**: Vercel
 - **技術**: Vanilla HTML/CSS/JavaScript
 - **スタイリング**: Tailwind CSS (CDN)
-- **URL**: https://kanjy-web.netlify.app/
+- **URL**: https://kanjy.vercel.app/
 
 ### アーキテクチャ
 
@@ -180,7 +180,7 @@ KANJYは**飲み会の幹事業務に特化**することで、汎用的なイ�
        │     ├─ events テーブル
        │     └─ responses テーブル
        │
-       └─── Netlify (Web Frontend)
+       └─── Vercel (Web Frontend)
              ├─ index.html (閲覧)
              └─ response-form.html (回答)
 ```
