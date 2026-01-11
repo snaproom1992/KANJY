@@ -1084,10 +1084,12 @@
                     }
                     
                     // タイムスタンプを追加して強制リロード
+                    // refresh=1パラメータを追加してデータを再取得させる
                     const timestamp = Date.now();
-                    const targetUrl = `/?id=${currentEventId}&_t=${timestamp}`;
+                    const targetUrl = `/?id=${currentEventId}&refresh=1&_t=${timestamp}`;
                     console.log('🚀 遷移先:', targetUrl);
                     console.log('📝 タイムスタンプ:', timestamp);
+                    console.log('🔄 refresh=1 パラメータを追加してデータを再取得します');
                     
                     window.location.replace(targetUrl);
                 }, 2000);
@@ -1382,10 +1384,12 @@
                     }
                     
                     // タイムスタンプを追加して強制リロード
+                    // refresh=1パラメータを追加してデータを再取得させる
                     const timestamp = Date.now();
-                    const targetUrl = `/?id=${currentEventId}&_t=${timestamp}`;
+                    const targetUrl = `/?id=${currentEventId}&refresh=1&_t=${timestamp}`;
                     console.log('🚀 遷移先:', targetUrl);
                     console.log('📝 タイムスタンプ:', timestamp);
+                    console.log('🔄 refresh=1 パラメータを追加してデータを再取得します');
                     
                     window.location.replace(targetUrl);
                 }, 500);
