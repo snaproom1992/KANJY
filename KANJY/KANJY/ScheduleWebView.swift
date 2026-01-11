@@ -204,6 +204,7 @@ struct WebView: UIViewRepresentable {
         var parent: WebView
         weak var webView: WKWebView? // WebViewの参照を保持
         var isGoingBack = false // 戻る処理中フラグ（重複実行を防ぐ）
+        var isReloadingForCache = false // キャッシュ回避のための再読み込み中フラグ（無限ループ防止）
         
         init(_ parent: WebView) {
             self.parent = parent
@@ -293,6 +294,50 @@ struct WebView: UIViewRepresentable {
                 // ドメインチェック
                 if let host = url.host, allowedHosts.contains(host) {
                     print("✅ [Navigation]: 許可 - \(host)")
+                    
+                    // index.htmlとresponse-form.htmlへの遷移時は、キャッシュを無視して最新のコードを読み込む
+                    // ただし、既に再読み込み中の場合は無限ループを防ぐため通常の読み込みを許可
+                    let shouldBypassCache = (url.path.contains("index.html") || url.path.contains("response-form.html") || url.path == "/") && !isReloadingForCache
+                    
+                    if shouldBypassCache {
+                        // タイムスタンプが既に含まれているかチェック
+                        let hasTimestamp = url.query?.contains("_t=") ?? false
+                        
+                        if !hasTimestamp {
+                            // URLにタイムスタンプを追加してキャッシュを回避
+                            var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+                            var queryItems = components?.queryItems ?? []
+                            // 新しいタイムスタンプを追加
+                            queryItems.append(URLQueryItem(name: "_t", value: String(Int(Date().timeIntervalSince1970 * 1000))))
+                            components?.queryItems = queryItems
+                            
+                            if let newUrl = components?.url {
+                                print("🔄 [Navigation]: キャッシュを回避して最新コードを読み込み: \(newUrl.absoluteString)")
+                                isReloadingForCache = true
+                                var request = URLRequest(url: newUrl)
+                                request.cachePolicy = .reloadIgnoringLocalCacheData
+                                webView.load(request)
+                                DispatchQueue.main.async {
+                                    self.parent.currentUrl = newUrl
+                                }
+                                decisionHandler(.cancel) // 元のリクエストをキャンセル
+                                return
+                            }
+                        } else {
+                            // タイムスタンプが既にある場合でも、キャッシュを無視して読み込む
+                            print("🔄 [Navigation]: タイムスタンプ付きURL - キャッシュを無視して読み込み")
+                            isReloadingForCache = true
+                            var request = URLRequest(url: url)
+                            request.cachePolicy = .reloadIgnoringLocalCacheData
+                            webView.load(request)
+                            DispatchQueue.main.async {
+                                self.parent.currentUrl = url
+                            }
+                            decisionHandler(.cancel)
+                            return
+                        }
+                    }
+                    
                     // 全て許可（キャッシュ処理はJavaScript側で行う）
                     DispatchQueue.main.async {
                         self.parent.currentUrl = url
@@ -324,6 +369,10 @@ struct WebView: UIViewRepresentable {
                     print("✅ [Navigation]: 読み込み完了 - \(webViewUrl.absoluteString)")
                     self.parent.currentUrl = webViewUrl
                     print("🔄 [Navigation]: currentUrlを更新: \(webViewUrl.absoluteString)")
+                    
+                    // 再読み込みフラグをリセット（読み込み完了時）
+                    self.isReloadingForCache = false
+                    print("🔄 [Navigation]: キャッシュ回避フラグをリセット")
                 }
             }
         }
