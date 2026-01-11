@@ -2111,10 +2111,10 @@
                 // refreshフラグがある場合、データを再取得（編集後の更新反映用）
                 if (shouldRefresh) {
                     console.log('🔄 データを再取得します（編集後の更新反映）');
-                    console.log('⏱️  少し待ってから再取得します（レンダリング完了を待機）');
+                    console.log('⏱️  データベースへの反映を待ってから再取得します');
                     
-                    // 少し待ってから再取得（初回レンダリング完了を確実にする）
-                    await new Promise(resolve => setTimeout(resolve, 100));
+                    // データベースへの反映を待つ（Supabaseの反映遅延を考慮）
+                    await new Promise(resolve => setTimeout(resolve, 500));
                     
                     // データを再取得
                     console.log('📊 データ再取得: イベントデータ');

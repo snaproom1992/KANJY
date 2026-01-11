@@ -1071,6 +1071,10 @@
                     showLargeSuccessMessage('回答を送信しました！', 'ご回答いただき、ありがとうございました。');
                 }
                 
+                // データベースへの反映を待つ（Supabaseの反映遅延を考慮）
+                console.log('⏱️ データベースへの反映を待機中...');
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
                 // 通知を表示してから2秒後に一覧画面に戻る（ユーザーが確認できるように）
                 console.log('⏱️ 2秒後にトップページに戻ります...');
                 setTimeout(() => {
