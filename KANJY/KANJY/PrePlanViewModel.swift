@@ -1,62 +1,8 @@
 import SwiftUI
 import Combine
 
-// 金額内訳項目を表す構造体
-public struct AmountItem: Identifiable, Codable, Hashable {
-    public let id: UUID
-    public var name: String
-    public var amount: Int
-    
-    public init(id: UUID = UUID(), name: String, amount: Int) {
-        self.id = id
-        self.name = name
-        self.amount = amount
-    }
-}
+// Plan and AmountItem moved to their own files
 
-// 飲み会を表す構造体（中心オブジェクト）
-public struct Plan: Identifiable, Codable, Hashable {
-    public let id: UUID
-    public var name: String
-    public var date: Date
-    public var participants: [Participant]
-    public var totalAmount: String
-    public var roleMultipliers: [String: Double]
-    public var roleNames: [String: String]
-    public var amountItems: [AmountItem]?
-    public var emoji: String?
-    public var icon: String? // SF Symbolsのアイコン名
-    public var iconColor: String? // アイコンの色（RGB値の文字列、例: "0.067,0.094,0.157"）
-    // 基本情報
-    public var description: String? // 説明
-    public var location: String? // 場所
-    // スケジュール調整との関係（オプショナル）
-    public var scheduleEventId: UUID?
-    // 開催確定情報
-    public var confirmedDate: Date?
-    public var confirmedLocation: String?
-    public var confirmedParticipants: [UUID]? // 確定参加者のIDリスト
-    
-    public init(id: UUID = UUID(), name: String, date: Date, participants: [Participant], totalAmount: String, roleMultipliers: [String: Double], roleNames: [String: String], amountItems: [AmountItem]? = nil, emoji: String? = nil, icon: String? = nil, iconColor: String? = nil, description: String? = nil, location: String? = nil, scheduleEventId: UUID? = nil, confirmedDate: Date? = nil, confirmedLocation: String? = nil, confirmedParticipants: [UUID]? = nil) {
-        self.id = id
-        self.name = name
-        self.date = date
-        self.participants = participants
-        self.totalAmount = totalAmount
-        self.roleMultipliers = roleMultipliers
-        self.roleNames = roleNames
-        self.amountItems = amountItems
-        self.emoji = emoji
-        self.icon = icon
-        self.iconColor = iconColor
-        self.description = description
-        self.location = location
-        self.scheduleEventId = scheduleEventId
-        self.confirmedDate = confirmedDate
-        self.confirmedLocation = confirmedLocation
-        self.confirmedParticipants = confirmedParticipants
-    }
-}
 
 public class PrePlanViewModel: ObservableObject {
     public static let shared = PrePlanViewModel()
@@ -69,34 +15,29 @@ public class PrePlanViewModel: ObservableObject {
     @Published public var amountItems: [AmountItem] = []
     @Published public var selectedEmoji: String = "🍻" {
         didSet {
-            savedEmoji = selectedEmoji
+            PlanRepository.shared.saveSelectedEmoji(selectedEmoji)
             print("絵文字を保存: \(selectedEmoji)")
         }
     }
     @Published public var selectedIcon: String? = nil {
         didSet {
-            savedIcon = selectedIcon ?? ""
+            PlanRepository.shared.saveSelectedIcon(selectedIcon ?? "")
             print("アイコンを保存: \(selectedIcon ?? "nil")")
         }
     }
     
     @Published public var selectedIconColor: String? = nil {
         didSet {
-            savedIconColor = selectedIconColor ?? ""
+            PlanRepository.shared.saveSelectedIconColor(selectedIconColor ?? "")
             print("アイコン色を保存: \(selectedIconColor ?? "nil")")
         }
     }
     
-    @AppStorage("participants") private var participantsData: Data = Data()
-    @AppStorage("customRoles") private var customRolesData: Data = Data()
-    @AppStorage("totalAmount") private var savedTotalAmount: String = ""
-    @AppStorage("roleMultipliers") private var roleMultipliersData: Data = Data()
-    @AppStorage("roleNames") private var roleNamesData: Data = Data()
-    @AppStorage("savedPlans") private var savedPlansData: Data = Data()
-    @AppStorage("amountItems") private var amountItemsData: Data = Data()
-    @AppStorage("selectedEmoji") private var savedEmoji: String = "🍻"
-    @AppStorage("selectedIcon") private var savedIcon: String = ""
-    @AppStorage("selectedIconColor") private var savedIconColor: String = ""
+    // @AppStorage properties replaced with PlanRepository
+
+    
+    // PlanRepository instances
+    private let repository = PlanRepository.shared
     
     private var roleMultipliers: [String: Double] = [:]
     private var roleNames: [String: String] = [:]
@@ -113,7 +54,7 @@ public class PrePlanViewModel: ObservableObject {
     // 合計金額
     @Published public var totalAmount: String = "" {
         didSet {
-            savedTotalAmount = totalAmount
+            repository.saveTotalAmount(totalAmount)
         }
     }
     
@@ -143,7 +84,6 @@ public class PrePlanViewModel: ObservableObject {
     
     @objc private func userDefaultsDidChange() {
         // 倍率が変更された可能性があるため、画面を更新
-        // SwiftUIの警告を回避するためメインスレッドの次の更新サイクルで実行
         DispatchQueue.main.async {
             self.objectWillChange.send()
         }
@@ -151,28 +91,17 @@ public class PrePlanViewModel: ObservableObject {
     
     // データの読み込み
     public func loadData() {
-        if let decoded = try? JSONDecoder().decode([Participant].self, from: participantsData) {
-            participants = decoded
-        }
-        if let decodedRoles = try? JSONDecoder().decode([CustomRole].self, from: customRolesData) {
-            customRoles = decodedRoles
-        }
-        if let decodedMultipliers = try? JSONDecoder().decode([String: Double].self, from: roleMultipliersData) {
-            roleMultipliers = decodedMultipliers
-        }
-        if let decodedNames = try? JSONDecoder().decode([String: String].self, from: roleNamesData) {
-            roleNames = decodedNames
-        }
-        if let decodedPlans = try? JSONDecoder().decode([Plan].self, from: savedPlansData) {
-            savedPlans = decodedPlans
-        }
-        if let decodedItems = try? JSONDecoder().decode([AmountItem].self, from: amountItemsData) {
-            amountItems = decodedItems
-        }
-        totalAmount = savedTotalAmount
-        selectedEmoji = savedEmoji.isEmpty ? "🍻" : savedEmoji
-        selectedIcon = savedIcon.isEmpty ? nil : savedIcon
-        selectedIconColor = savedIconColor.isEmpty ? nil : savedIconColor
+        participants = repository.loadParticipants()
+        customRoles = repository.loadCustomRoles()
+        roleMultipliers = repository.loadRoleMultipliers()
+        roleNames = repository.loadRoleNames()
+        savedPlans = repository.loadSavedPlans()
+        amountItems = repository.loadAmountItems()
+        totalAmount = repository.loadTotalAmount()
+        selectedEmoji = repository.loadSelectedEmoji()
+        selectedIcon = repository.loadSelectedIcon()
+        selectedIconColor = repository.loadSelectedIconColor()
+        
         print("絵文字を読み込み: \(selectedEmoji)")
         print("アイコンを読み込み: \(selectedIcon ?? "nil")")
         print("アイコン色を読み込み: \(selectedIconColor ?? "nil")")
@@ -180,27 +109,13 @@ public class PrePlanViewModel: ObservableObject {
     
     // データの保存
     public func saveData() {
-        // 途中保存も許可するため、空でも保存
-        if let encoded = try? JSONEncoder().encode(participants) {
-            participantsData = encoded
-        }
-        // 合計金額が空でも保存
-        savedTotalAmount = totalAmount
-        if let encodedRoles = try? JSONEncoder().encode(customRoles) {
-            customRolesData = encodedRoles
-        }
-        if let encodedMultipliers = try? JSONEncoder().encode(roleMultipliers) {
-            roleMultipliersData = encodedMultipliers
-        }
-        if let encodedNames = try? JSONEncoder().encode(roleNames) {
-            roleNamesData = encodedNames
-        }
-        if let encodedPlans = try? JSONEncoder().encode(savedPlans) {
-            savedPlansData = encodedPlans
-        }
-        if let encodedItems = try? JSONEncoder().encode(amountItems) {
-            amountItemsData = encodedItems
-        }
+        repository.saveParticipants(participants)
+        repository.saveTotalAmount(totalAmount)
+        repository.saveCustomRoles(customRoles)
+        repository.saveRoleMultipliers(roleMultipliers)
+        repository.saveRoleNames(roleNames)
+        repository.saveSavedPlans(savedPlans)
+        repository.saveAmountItems(amountItems)
     }
     
     // 内訳項目の追加
@@ -473,6 +388,10 @@ public class PrePlanViewModel: ObservableObject {
         case .manager: return 1.5
         case .staff: return 1.0
         case .newbie: return 0.5
+        case .male: return 1.2
+        case .female: return 0.8
+        case .late: return 0.8
+        case .nonDrinker: return 0.7
         }
     }
     

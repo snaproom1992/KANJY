@@ -24,6 +24,14 @@ struct RoleSettingsView: View {
             return "一般社員。標準的な支払い倍率となります。"
         case .newbie:
             return "新入社員。支払い倍率を抑えめに設定しています。"
+        case .male:
+            return "男性参加者。標準より少し高めの支払い倍率となります。"
+        case .female:
+            return "女性参加者。標準より少し低めの支払い倍率となります。"
+        case .late:
+            return "遅刻参加者。参加時間が短いため低めの倍率となります。"
+        case .nonDrinker:
+            return "お酒を飲まない参加者。安めの設定となります。"
         }
     }
     
