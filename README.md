@@ -170,6 +170,13 @@ KANJYは**飲み会の幹事業務に特化**することで、汎用的なイ�
 
 ### アーキテクチャ
 
+**モバイルアプリ内部設計:**
+- **デザインパターン**: MVVM (Model-View-ViewModel) + Repository
+- **データ管理**: `PlanRepository` を介した単一責任の原則に基づくデータ操作
+- **View構成**: 機能ごとのコンポーネント分割による責務の分離
+
+**システム全体図:**
+
 ```
 ┌─────────────┐
 │  iOS App    │ ← SwiftUI
@@ -214,8 +221,18 @@ KANJYは**飲み会の幹事業務に特化**することで、汎用的なイ�
 KANJY/
 ├── KANJY/
 │   ├── TopView.swift                 # ホーム画面
-│   ├── PrePlanView.swift            # 飲み会編集画面
-│   ├── PrePlanViewModel.swift       # データ管理
+│   ├── PrePlanView.swift            # 飲み会編集画面（統括）
+│   │   ├── PrePlanBasicInfoView.swift  # 基本情報入力
+│   │   ├── PrePlanScheduleView.swift   # スケジュール設定
+│   │   ├── PrePlanParticipantListView.swift # 参加者リスト
+│   │   └── PrePlanHeaderView.swift     # ヘッダー
+│   ├── PrePlanViewModel.swift       # 画面ロジック（UI状態管理）
+│   ├── PlanRepository.swift         # データ永続化層
+│   ├── Plan.swift                   # データモデル
+│   ├── Participant.swift            # 参加者モデル
+│   ├── Role.swift                   # 役職モデル
+│   ├── CustomRole.swift             # カスタム役職モデル
+│   ├── AmountItem.swift             # 金額項目モデル
 │   ├── AttendanceManagement.swift   # スケジュール調整
 │   ├── ScheduleManagementView.swift # スケジュール一覧
 │   ├── DesignSystem.swift           # デザインシステム
