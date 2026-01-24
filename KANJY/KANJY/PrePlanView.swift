@@ -1066,14 +1066,8 @@ struct PrePlanView: View {
     private func MainStepContentView(selectedStep: MainStep) -> some View {
         switch selectedStep {
         case .before:
-            // 飲み会前（企画）：日程調整・参加者・基本情報
-            VStack(spacing: DesignSystem.Spacing.xl) {
-                // 📅👥 日程調整用Web・参加者カード
-                ScheduleAndParticipantsCardView()
-                
-                // 📋 基本情報カード
-                BasicInfoCardView()
-            }
+            // 飲み会前（企画）：日程調整・参加者・基本情報（統合済み）
+            ScheduleAndParticipantsCardView()
         case .after:
             // 飲み会後（集金）：金額設定・集金管理
             CollectionStepContent()
@@ -1420,7 +1414,7 @@ struct PrePlanView: View {
     private func ScheduleAndParticipantsCardView() -> some View {
         VStack(spacing: DesignSystem.Spacing.xxl) {
             
-            // 🔗 URL・プレビュー・編集カード（一番上）
+            // 🔗 URL・プレビュー・編集カード（一番上、独立）
             if hasScheduleEvent, let event = scheduleEvent {
                 ScheduleUrlAndActionsCardView(
                     event: event,
@@ -1439,111 +1433,153 @@ struct PrePlanView: View {
                 )
             }
             
-            // 📅 候補日時セクション（開催日程を選択）
-            VStack(alignment: .leading, spacing: DesignSystem.Spacing.lg) {
-                // セクションヘッダー
-                HStack {
-                    Image(systemName: "calendar")
-                        .font(.system(size: 20, weight: .semibold))
-                        .foregroundColor(DesignSystem.Colors.primary)
-                    Text("候補日時")
-                        .font(DesignSystem.Typography.headline)
-                        .foregroundColor(DesignSystem.Colors.black)
-                    
-                    Spacer()
-                    
-                    // 編集アイコンボタン（右上、候補日程を変更）
-                    Button(action: {
-                        if hasScheduleEvent, let event = scheduleEvent {
-                            startEditingScheduleForSheet(event: event)
-                            showScheduleEditSheet = true
-                        } else {
-                            prepareScheduleForEditing()
-                            showScheduleEditSheet = true
-                        }
-                    }) {
-                        Image(systemName: "pencil")
-                            .font(.system(size: DesignSystem.Icon.Size.large, weight: .medium))
+            // 📊 統合情報カード（候補日時・回答者・基本情報を1つに）
+            VStack(spacing: 0) {
+                // 📅 候補日時セクション
+                VStack(alignment: .leading, spacing: DesignSystem.Spacing.lg) {
+                    // セクションヘッダー
+                    HStack {
+                        Image(systemName: "calendar")
+                            .font(.system(size: DesignSystem.Icon.Size.medium, weight: DesignSystem.Typography.FontWeight.medium))
                             .foregroundColor(DesignSystem.Colors.primary)
-                            .frame(width: DesignSystem.Button.Size.medium, height: DesignSystem.Button.Size.medium)
-                    }
-                }
-                
-                // 候補日時リストのみ表示
-                if hasScheduleEvent, let event = scheduleEvent {
-                    CandidateDatesListView(
-                        event: event,
-                        scheduleViewModel: scheduleViewModel,
-                        confirmedDate: $confirmedDate
-                    )
-                } else {
-                    // 未作成の状態：プレビュー・編集可能な表示
-                    PrePlanScheduleEmptyStateView(
-                        candidateDatesCount: scheduleCandidateDates.count,
-                        onEdit: {
-                            prepareScheduleForEditing()
-                            showScheduleEditSheet = true
-                        },
-                        onPreview: {
-                            createPreviewEvent()
-                        }
-                    )
-                }
-            }
-            .padding(DesignSystem.Spacing.lg)
-            .background(Color(.systemBackground))
-            .cornerRadius(DesignSystem.Card.cornerRadius)
-            .shadow(color: DesignSystem.Colors.black.opacity(0.05), radius: 8, x: 0, y: 2)
-            
-            // 👥 回答者一覧セクション（飲み会前）
-            VStack(alignment: .leading, spacing: DesignSystem.Spacing.lg) {
-                // セクションヘッダー
-                HStack {
-                    Image(systemName: "person.3.fill")
-                        .font(.system(size: 20, weight: .semibold))
-                        .foregroundColor(DesignSystem.Colors.primary)
-                    Text("回答者一覧")
-                        .font(DesignSystem.Typography.headline)
-                        .foregroundColor(DesignSystem.Colors.black)
-                    
-                    Spacer()
-                    
-                    // 回答者数
-                    Text("\(scheduleResponses.count)人")
-                        .font(DesignSystem.Typography.caption)
-                        .foregroundColor(DesignSystem.Colors.secondary)
-                }
-                
-                // 回答者リスト（開催日程が決まっている場合、参加可能な回答者にチェックがつく）
-                if scheduleResponses.isEmpty {
-                    Text("まだ回答がありません")
-                        .font(DesignSystem.Typography.subheadline)
-                        .foregroundColor(DesignSystem.Colors.secondary)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, DesignSystem.Spacing.lg)
-                } else {
-                    VStack(spacing: DesignSystem.Spacing.sm) {
-                        ForEach(scheduleResponses) { response in
-                            HStack {
-                                // 開催日程が決まっている場合、参加可能な回答者にチェックを表示
-                                if let confirmedDate = confirmedDate {
-                                    let isAvailable = attendingResponsesForDate(confirmedDate).contains { $0.id == response.id }
-                                    Image(systemName: isAvailable ? "checkmark.circle.fill" : "circle")
-                                        .foregroundColor(isAvailable ? DesignSystem.Colors.success : DesignSystem.Colors.gray4)
-                                }
-                                
-                                Text(response.participantName)
-                        .font(DesignSystem.Typography.body)
-                                    .foregroundColor(DesignSystem.Colors.black)
-                                
-                                Spacer()
+                        Text("候補日時")
+                            .font(DesignSystem.Typography.headline)
+                            .foregroundColor(DesignSystem.Colors.black)
+                        
+                        Spacer()
+                        
+                        // 編集アイコンボタン
+                        Button(action: {
+                            if hasScheduleEvent, let event = scheduleEvent {
+                                startEditingScheduleForSheet(event: event)
+                                showScheduleEditSheet = true
+                            } else {
+                                prepareScheduleForEditing()
+                                showScheduleEditSheet = true
                             }
-                            .padding(.vertical, DesignSystem.Spacing.sm)
+                        }) {
+                            Image(systemName: "pencil")
+                                .font(.system(size: DesignSystem.Icon.Size.large, weight: .medium))
+                                .foregroundColor(DesignSystem.Colors.primary)
+                                .frame(width: DesignSystem.Button.Size.medium, height: DesignSystem.Button.Size.medium)
+                        }
+                    }
+                    
+                    // 候補日時リスト
+                    if hasScheduleEvent, let event = scheduleEvent {
+                        CandidateDatesListView(
+                            event: event,
+                            scheduleViewModel: scheduleViewModel,
+                            confirmedDate: $confirmedDate
+                        )
+                    } else {
+                        PrePlanScheduleEmptyStateView(
+                            candidateDatesCount: scheduleCandidateDates.count,
+                            onEdit: {
+                                prepareScheduleForEditing()
+                                showScheduleEditSheet = true
+                            },
+                            onPreview: {
+                                createPreviewEvent()
+                            }
+                        )
+                    }
+                }
+                .padding(DesignSystem.Spacing.lg)
+                
+                // ──── 罫線 ────
+                Divider()
+                    .padding(.vertical, DesignSystem.Spacing.md)
+                
+                // 👥 回答者一覧セクション
+                VStack(alignment: .leading, spacing: DesignSystem.Spacing.lg) {
+                    // セクションヘッダー
+                    HStack {
+                        Image(systemName: "person.2")
+                            .font(.system(size: DesignSystem.Icon.Size.medium, weight: DesignSystem.Typography.FontWeight.medium))
+                            .foregroundColor(DesignSystem.Colors.primary)
+                        Text("回答者一覧")
+                            .font(DesignSystem.Typography.headline)
+                            .foregroundColor(DesignSystem.Colors.black)
+                        
+                        Spacer()
+                        
+                        // 回答者数
+                        Text("\(scheduleResponses.count)人")
+                            .font(DesignSystem.Typography.caption)
+                            .foregroundColor(DesignSystem.Colors.secondary)
+                    }
+                    
+                    // 回答者リスト
+                    if scheduleResponses.isEmpty {
+                        Text("まだ回答がありません")
+                            .font(DesignSystem.Typography.subheadline)
+                            .foregroundColor(DesignSystem.Colors.secondary)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, DesignSystem.Spacing.lg)
+                    } else {
+                        VStack(spacing: DesignSystem.Spacing.sm) {
+                            ForEach(scheduleResponses) { response in
+                                HStack {
+                                    // 開催日程が決まっている場合、参加可能な回答者にチェックを表示
+                                    if let confirmedDate = confirmedDate {
+                                        let isAvailable = attendingResponsesForDate(confirmedDate).contains { $0.id == response.id }
+                                        Image(systemName: isAvailable ? "checkmark.circle.fill" : "circle")
+                                            .foregroundColor(isAvailable ? DesignSystem.Colors.success : DesignSystem.Colors.gray4)
+                                    }
+                                    
+                                    Text(response.participantName)
+                                        .font(DesignSystem.Typography.body)
+                                        .foregroundColor(DesignSystem.Colors.black)
+                                    
+                                    Spacer()
+                                }
+                                .padding(.vertical, DesignSystem.Spacing.sm)
+                            }
                         }
                     }
                 }
+                .padding(DesignSystem.Spacing.lg)
+                
+                // ──── 罫線 ────
+                Divider()
+                    .padding(.vertical, DesignSystem.Spacing.md)
+                
+                // 📋 基本情報セクション
+                VStack(alignment: .leading, spacing: DesignSystem.Spacing.lg) {
+                    // セクションヘッダー
+                    HStack {
+                        Image(systemName: "info.circle")
+                            .font(.system(size: DesignSystem.Icon.Size.medium, weight: DesignSystem.Typography.FontWeight.medium))
+                            .foregroundColor(DesignSystem.Colors.primary)
+                        Text("基本情報")
+                            .font(DesignSystem.Typography.headline)
+                            .foregroundColor(DesignSystem.Colors.black)
+                    }
+                    
+                    // 場所
+                    SimpleInfoRow(
+                        icon: "location.fill",
+                        value: $viewModel.editingPlanLocation,
+                        placeholder: "場所を追加"
+                    )
+                    .onChange(of: viewModel.editingPlanLocation) {
+                        autoSavePlan()
+                    }
+                    
+                    // 説明
+                    SimpleInfoRow(
+                        icon: "text.alignleft",
+                        value: $viewModel.editingPlanDescription,
+                        placeholder: "メモを追加",
+                        isMultiline: true
+                    )
+                    .onChange(of: viewModel.editingPlanDescription) {
+                        autoSavePlan()
+                    }
+                }
+                .padding(DesignSystem.Spacing.lg)
             }
-            .padding(DesignSystem.Spacing.lg)
             .background(Color(.systemBackground))
             .cornerRadius(DesignSystem.Card.cornerRadius)
             .shadow(color: DesignSystem.Colors.black.opacity(0.05), radius: 8, x: 0, y: 2)
@@ -1565,8 +1601,8 @@ struct PrePlanView: View {
                 // 確定日時が変更されたら回答を再取得
                 if let scheduleEventId = scheduleEvent?.id {
                     loadScheduleResponses(eventId: scheduleEventId)
-                    }
                 }
+            }
             .onChange(of: scheduleResponses.count) { _, _ in
                 // 回答者が追加されたら、参加者を再反映
             }
@@ -2786,7 +2822,7 @@ struct PrePlanView: View {
             // セクションヘッダー
             HStack {
                 Image(systemName: "link")
-                    .font(.system(size: 20, weight: .semibold))
+                    .font(.system(size: DesignSystem.Icon.Size.medium, weight: DesignSystem.Typography.FontWeight.medium))
                     .foregroundColor(DesignSystem.Colors.primary)
                 Text("スケジュール調整URL")
                     .font(DesignSystem.Typography.headline)
@@ -2842,8 +2878,8 @@ struct PrePlanView: View {
                                 }
                             }
                         }) {
-                            Image(systemName: "doc.on.doc.fill")
-                                .font(.system(size: DesignSystem.Icon.Size.xlarge, weight: .medium))
+                            Image(systemName: "doc.on.doc")
+                                .font(.system(size: DesignSystem.Icon.Size.medium, weight: DesignSystem.Typography.FontWeight.medium))
                                 .foregroundColor(DesignSystem.Colors.primary)
                                 .frame(width: DesignSystem.Button.Size.medium, height: DesignSystem.Button.Size.medium)
                                 .background(
