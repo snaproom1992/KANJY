@@ -1292,8 +1292,8 @@ struct PrePlanView: View {
         VStack(spacing: DesignSystem.Spacing.lg) {
             // 金額設定セクション
             InfoCard(
-                title: "金額設定",
-                icon: "yensign.circle.fill"
+                title: "支払金額",
+                icon: "yensign.circle"
             ) {
                 VStack(spacing: DesignSystem.Spacing.md) {
                     AmountSectionContent()
@@ -1309,7 +1309,7 @@ struct PrePlanView: View {
             if !viewModel.participants.isEmpty {
                 InfoCard(
                     title: "集金管理",
-                    icon: "creditcard.fill",
+                    icon: "creditcard",
                     isOptional: true
                 ) {
                     PrePlanParticipantListView(
@@ -2117,9 +2117,7 @@ struct PrePlanView: View {
         VStack(alignment: .leading, spacing: DesignSystem.Spacing.sm) {
             // ヘッダーと説明文
             VStack(alignment: .leading, spacing: DesignSystem.Spacing.xs) {
-                Text("合計金額")
-                    .font(DesignSystem.Typography.subheadline)
-                    .foregroundColor(DesignSystem.Colors.black)
+
                 
                 Text("お店に支払う合計金額を入力してください。\nこの金額を元に割り勘を計算します。")
                     .font(DesignSystem.Typography.caption)
