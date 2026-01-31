@@ -690,14 +690,24 @@ struct QuickCreatePlanView: View {
                 }
             
             VStack(spacing: DesignSystem.Spacing.sm) {
-                Text("作成完了！")
-                    .font(DesignSystem.Typography.largeTitle)
+                Text("インビテーションURLが\n作成されました")
+                    .font(DesignSystem.Typography.title2)
                     .fontWeight(.bold)
-                
-                Text("このURLを参加者と共有しましょう")
-                    .font(DesignSystem.Typography.body)
-                    .foregroundColor(DesignSystem.Colors.secondary)
                     .multilineTextAlignment(.center)
+                
+                VStack(spacing: DesignSystem.Spacing.xs) {
+                    Text("飲み会に招待したい人にインビテーションのURLを共有しましょう。")
+                        .font(DesignSystem.Typography.body)
+                        .foregroundColor(DesignSystem.Colors.black)
+                        .multilineTextAlignment(.center)
+                    
+                    Text("インビテーションを受け取った人は出席可能な日を回答することができます。")
+                        .font(DesignSystem.Typography.caption)
+                        .foregroundColor(DesignSystem.Colors.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.top, 4)
+                }
+                .padding(.horizontal, DesignSystem.Spacing.md)
             }
             
             // URL表示（モダンなデザイン）
@@ -705,7 +715,7 @@ struct QuickCreatePlanView: View {
                 VStack(spacing: DesignSystem.Spacing.lg) {
                     // URLカード
                     VStack(spacing: DesignSystem.Spacing.sm) {
-                        Text("スケジュール調整URL")
+                        Text("インビテーションURL")
                             .font(DesignSystem.Typography.subheadline)
                             .fontWeight(.semibold)
                             .foregroundColor(DesignSystem.Colors.black)

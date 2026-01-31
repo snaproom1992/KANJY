@@ -2824,7 +2824,7 @@ struct PrePlanView: View {
                 Image(systemName: "link")
                     .font(.system(size: DesignSystem.Icon.Size.medium, weight: DesignSystem.Typography.FontWeight.medium))
                     .foregroundColor(DesignSystem.Colors.primary)
-                Text("スケジュール調整URL")
+                Text("インビテーションURL")
                     .font(DesignSystem.Typography.headline)
                     .foregroundColor(DesignSystem.Colors.black)
                 
@@ -2895,6 +2895,11 @@ struct PrePlanView: View {
                     )
                 }
             }
+            
+            Text("集まった回答は、参加者リストから確認することができます。")
+                .font(DesignSystem.Typography.caption)
+                .foregroundColor(DesignSystem.Colors.secondary)
+                .padding(.top, -DesignSystem.Spacing.md)
         }
         .padding(DesignSystem.Spacing.lg)
         .background(Color(.systemBackground))
