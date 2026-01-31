@@ -1,4 +1,6 @@
 import SwiftUI
+import CoreImage.CIFilterBuiltins
+import CoreImage.CIFilterBuiltins
 
 // 新規飲み会作成の簡単モード（3ステップ）
 struct QuickCreatePlanView: View {
@@ -51,6 +53,8 @@ struct QuickCreatePlanView: View {
     @State private var isCreating = false
     @State private var showingError = false
     @State private var errorMessage = ""
+    @State private var showingCopyToast = false
+    @State private var showTicketAnimation = false
     
     enum CreateStep: Int, CaseIterable {
         case name = 1
@@ -102,7 +106,7 @@ struct QuickCreatePlanView: View {
                                 case .details:
                                     step3DetailsView
                                 case .completed:
-                                    step4CompletedView
+                                    step4CompletedViewNew
                                 }
                             }
                             .transition(.asymmetric(
@@ -136,6 +140,23 @@ struct QuickCreatePlanView: View {
             }
             .sheet(isPresented: $showIconPicker) {
                 IconPickerSheet()
+            }
+        }
+        .overlay(alignment: .bottom) {
+            if showingCopyToast {
+                HStack(spacing: DesignSystem.Spacing.sm) {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 16, weight: .semibold))
+                    Text("URLをコピーしました")
+                        .font(DesignSystem.Typography.body)
+                }
+                .foregroundColor(.white)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 12)
+                .background(Color.black.opacity(0.8))
+                .cornerRadius(30)
+                .padding(.bottom, 60)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
     }
@@ -679,9 +700,9 @@ struct QuickCreatePlanView: View {
             Spacer()
             
             // 成功アイコン（アニメーション付き）
-            Image(systemName: "checkmark.circle.fill")
+            Image(systemName: "envelope.circle.fill")
                 .font(.system(size: 80))
-                .foregroundColor(DesignSystem.Colors.success)
+                .foregroundColor(DesignSystem.Colors.primary)
                 .scaleEffect(1.0)
                 .onAppear {
                     withAnimation(.spring(response: 0.6, dampingFraction: 0.6)) {
@@ -710,117 +731,133 @@ struct QuickCreatePlanView: View {
                 .padding(.horizontal, DesignSystem.Spacing.md)
             }
             
-            // URL表示（モダンなデザイン）
+            // URL表示＆アクション（チケットデザイン）
             if let event = createdEvent {
-                VStack(spacing: DesignSystem.Spacing.lg) {
-                    // URLカード
-                    VStack(spacing: DesignSystem.Spacing.sm) {
-                        Text("インビテーションURL")
-                            .font(DesignSystem.Typography.subheadline)
-                            .fontWeight(.semibold)
-                            .foregroundColor(DesignSystem.Colors.black)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        
-                        Text(scheduleViewModel.getWebUrl(for: event))
-                            .font(DesignSystem.Typography.body)
-                            .foregroundColor(DesignSystem.Colors.primary)
-                            .padding(DesignSystem.Spacing.md)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(
-                                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                    .fill(DesignSystem.Colors.primary.opacity(0.1))
-                            )
-                            .lineLimit(3)
-                    }
-                    
-                    // ボタン（共有を強調）
-                    VStack(spacing: DesignSystem.Spacing.sm) {
-                        Button(action: {
-                            hapticImpact(.medium)
-                            shareUrl(scheduleViewModel.getShareUrl(for: event))
-                        }) {
-                            HStack {
-                                Image(systemName: "square.and.arrow.up")
-                                Text("共有")
-                            }
-                            .font(DesignSystem.Typography.headline)
-                            .fontWeight(.semibold)
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 16)
-                            .background(
-                                LinearGradient(
-                                    colors: [
-                                        DesignSystem.Colors.primary,
-                                        DesignSystem.Colors.primary.opacity(0.85)
-                                    ],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
-                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                            .shadow(
-                                color: DesignSystem.Colors.primary.opacity(0.3),
-                                radius: 8,
-                                x: 0,
-                                y: 4
-                            )
-                        }
-                        
-                        Button(action: {
-                            hapticImpact(.light)
-                            UIPasteboard.general.string = scheduleViewModel.getWebUrl(for: event)
-                            // コピー完了のフィードバック
-                            let generator = UINotificationFeedbackGenerator()
-                            generator.notificationOccurred(.success)
-                        }) {
-                            HStack {
-                                Image(systemName: "doc.on.doc")
-                                Text("コピー")
-                            }
-                            .font(DesignSystem.Typography.subheadline)
-                            .fontWeight(.medium)
-                            .foregroundColor(DesignSystem.Colors.primary)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
-                            .background(
-                                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                    .stroke(DesignSystem.Colors.primary, lineWidth: 1.5)
-                            )
-                        }
-                    }
-                }
-                .padding(DesignSystem.Spacing.xl)
-                .background(
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                ZStack {
+                    // チケット背景
+                    TicketShape(notchOffset: 0.6)
                         .fill(DesignSystem.Colors.white)
                         .shadow(
-                            color: Color.black.opacity(0.05),
-                            radius: 10,
+                            color: DesignSystem.Colors.primary.opacity(0.15),
+                            radius: 15,
                             x: 0,
-                            y: 4
+                            y: 8
                         )
+                    
+                    VStack(spacing: 0) {
+                        // 上部：イベント情報とURL
+                        VStack(spacing: DesignSystem.Spacing.lg) {
+                            HStack {
+                                Image(systemName: "envelope.fill")
+                                    .foregroundColor(DesignSystem.Colors.primary)
+                                Text("INVITATION")
+                                    .font(DesignSystem.Typography.subheadline)
+                                    .fontWeight(.bold)
+                                    .tracking(2)
+                                    .foregroundColor(DesignSystem.Colors.primary)
+                            }
+                            .padding(.top, DesignSystem.Spacing.lg)
+                            
+                            VStack(spacing: DesignSystem.Spacing.sm) {
+                                Text("インビテーションURL")
+                                    .font(DesignSystem.Typography.caption)
+                                    .foregroundColor(DesignSystem.Colors.secondary)
+                                
+                                Text(scheduleViewModel.getWebUrl(for: event))
+                                    .font(DesignSystem.Typography.body)
+                                    .fontWeight(.medium)
+                                    .foregroundColor(DesignSystem.Colors.primary)
+                                    .lineLimit(1)
+                                    .truncationMode(.middle)
+                                    .padding()
+                                    .frame(maxWidth: .infinity)
+                                    .background(DesignSystem.Colors.gray1)
+                                    .cornerRadius(8)
+                            }
+                        }
+                        .padding(DesignSystem.Spacing.lg)
+                        .padding(.bottom, DesignSystem.Spacing.md)
+                        
+                        // ミシン目
+                        HStack {
+                            Circle()
+                                .fill(Color(.systemGroupedBackground))
+                                .frame(width: 20, height: 20)
+                                .offset(x: -10)
+                            
+                            DashedLine()
+                                .stroke(style: StrokeStyle(lineWidth: 1.5, dash: [6, 4]))
+                                .foregroundColor(DesignSystem.Colors.gray3)
+                                .frame(height: 1)
+                            
+                            Circle()
+                                .fill(Color(.systemGroupedBackground))
+                                .frame(width: 20, height: 20)
+                                .offset(x: 10)
+                        }
+                        
+                        // 下部：アクションボタン
+                        VStack(spacing: DesignSystem.Spacing.md) {
+                            // シェアボタン（Primary）
+                            Button(action: {
+                                hapticImpact(.medium)
+                                shareUrl(scheduleViewModel.getShareUrl(for: event))
+                            }) {
+                                Label("招待状を送る", systemImage: "square.and.arrow.up")
+                                    .font(DesignSystem.Typography.body.weight(.semibold))
+                                    .frame(maxWidth: .infinity)
+                            }
+                            .primaryButtonStyle()
+                            .controlSize(DesignSystem.Button.Control.large)
+                            
+                            // コピーボタン（Secondary）
+                            Button(action: {
+                                hapticImpact(.light)
+                                UIPasteboard.general.string = scheduleViewModel.getWebUrl(for: event)
+                                let generator = UINotificationFeedbackGenerator()
+                                generator.notificationOccurred(.success)
+                                withAnimation {
+                                    showingCopyToast = true
+                                }
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                                    withAnimation {
+                                        showingCopyToast = false
+                                    }
+                                }
+                            }) {
+                                Label("URLをコピー", systemImage: "doc.on.doc")
+                                    .font(DesignSystem.Typography.body)
+                                    .frame(maxWidth: .infinity)
+                            }
+                            .secondaryButtonStyle()
+                            .controlSize(DesignSystem.Button.Control.large)
+                            .tint(DesignSystem.Colors.primary)
+                        }
+                        .padding(DesignSystem.Spacing.lg)
+                    }
+                }
+                .padding(.horizontal, DesignSystem.Spacing.lg)
+                // アニメーション設定
+                .offset(y: showTicketAnimation ? 0 : 200)
+                .opacity(showTicketAnimation ? 1 : 0)
+                .rotation3DEffect(
+                    .degrees(showTicketAnimation ? 0 : 10),
+                    axis: (x: 1, y: 0, z: 0)
                 )
             }
-            
             Spacer()
             
-            // 閉じるボタン
+            // ホームに戻る（Tertiary）
             Button(action: {
                 hapticImpact(.medium)
                 dismiss()
             }) {
                 Text("ホームに戻る")
-                    .font(DesignSystem.Typography.headline)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .fill(DesignSystem.Colors.primary)
-                    )
+                    .font(DesignSystem.Typography.body)
+                    .foregroundColor(DesignSystem.Colors.secondary)
+                    .padding(.vertical, DesignSystem.Spacing.md)
             }
+            .padding(.bottom, DesignSystem.Spacing.lg)
         }
         .padding(.horizontal, DesignSystem.Spacing.lg)
     }
@@ -1223,6 +1260,336 @@ struct QuickCreatePlanView: View {
             }
         }
     }
+    // MARK: - New Ticket UI Completion View
+    
+    private var step4CompletedViewNew: some View {
+        VStack(spacing: DesignSystem.Spacing.xl) {
+            Spacer()
+            
+            // 成功アイコン（アニメーション付き）
+            Image(systemName: "envelope.circle.fill")
+                .font(.system(size: 80))
+                .foregroundColor(DesignSystem.Colors.primary)
+                .scaleEffect(1.0)
+                .onAppear {
+                    withAnimation(.spring(response: 0.6, dampingFraction: 0.6)) {
+                        // アニメーション効果が必要な場合はここに記述
+                    }
+                }
+            
+            VStack(spacing: DesignSystem.Spacing.sm) {
+                Text("インビテーションURLが\n作成されました")
+                    .font(DesignSystem.Typography.title2)
+                    .fontWeight(.bold)
+                    .multilineTextAlignment(.center)
+                
+                VStack(spacing: DesignSystem.Spacing.xs) {
+                    Text("飲み会に招待したい人にインビテーションのURLを共有しましょう。")
+                        .font(DesignSystem.Typography.body)
+                        .foregroundColor(DesignSystem.Colors.black)
+                        .multilineTextAlignment(.center)
+                    
+                    Text("インビテーションを受け取った人は出席可能な日を回答することができます。")
+                        .font(DesignSystem.Typography.caption)
+                        .foregroundColor(DesignSystem.Colors.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.top, 4)
+                }
+                .padding(.horizontal, DesignSystem.Spacing.md)
+            }
+            
+            // URL表示＆アクション（チケットデザイン V3）
+            if let event = createdEvent {
+                VStack(spacing: 0) {
+                    // 上部：ヘッダーエリア（ブランドカラー）
+                    ZStack {
+                        Rectangle()
+                            .fill(DesignSystem.Colors.primary)
+                            .frame(height: 70)
+                        
+                        HStack(spacing: 12) {
+                            Image(systemName: "envelope.fill")
+                                .font(.system(size: 20))
+                                .foregroundColor(.white)
+                            Text("INVITATION")
+                                .font(DesignSystem.Typography.headline)
+                                .fontWeight(.bold)
+                                .tracking(4)
+                                .foregroundColor(.white)
+                        }
+                        .padding(.top, 4)
+                    }
+                    // TicketShapeの上部角丸に合わせてクリッピング
+                    .mask(
+                        TicketTopShape(cornerRadius: 16)
+                    )
+                    
+                    // イベント情報（V3追加）
+                    VStack(spacing: 8) {
+                        Text(event.title)
+                            .font(DesignSystem.Typography.title3)
+                            .fontWeight(.bold)
+                            .foregroundColor(DesignSystem.Colors.black)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, DesignSystem.Spacing.md)
+                        
+                        HStack(spacing: 16) {
+                            Label("\(event.candidateDates.count)つの候補日", systemImage: "calendar")
+                                .font(DesignSystem.Typography.caption)
+                                .foregroundColor(DesignSystem.Colors.gray6)
+                            
+                            if let location = event.location, !location.isEmpty {
+                                Label(location, systemImage: "mappin.and.ellipse")
+                                    .font(DesignSystem.Typography.caption)
+                                    .foregroundColor(DesignSystem.Colors.gray6)
+                            }
+                        }
+                    }
+                    .padding(.top, DesignSystem.Spacing.lg)
+                    
+                    // 中盤：QRコードとURL
+                    VStack(spacing: DesignSystem.Spacing.lg) {
+                        Image(uiImage: generateQRCode(from: scheduleViewModel.getWebUrl(for: event)))
+                            .interpolation(.none)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 140, height: 140)
+                            .padding(DesignSystem.Spacing.md)
+                            .background(Color.white)
+                            .cornerRadius(12)
+                            .shadow(color: .black.opacity(0.05), radius: 5, x: 0, y: 2)
+                        
+                        VStack(spacing: 4) {
+                            Text("SCAN TO JOIN")
+                                .font(.system(size: 10, weight: .bold))
+                                .tracking(2)
+                                .foregroundColor(DesignSystem.Colors.secondary)
+                            
+                            Text(scheduleViewModel.getWebUrl(for: event))
+                                .font(.system(.caption, design: .monospaced))
+                                .foregroundColor(DesignSystem.Colors.gray6)
+                                .lineLimit(1)
+                                .truncationMode(.middle)
+                                .padding(.horizontal, DesignSystem.Spacing.lg)
+                        }
+                    }
+                    .padding(.vertical, DesignSystem.Spacing.lg)
+                    
+                    // ミシン目（位置計測）
+                    DashedLine()
+                        .stroke(style: StrokeStyle(lineWidth: 1.5, dash: [6, 4]))
+                        .foregroundColor(DesignSystem.Colors.gray3)
+                        .frame(height: 1)
+                        .anchorPreference(key: TicketDividerAnchorKey.self, value: .bounds) { $0 }
+                        .padding(.horizontal, DesignSystem.Spacing.md)
+                    
+                    // 下部：アクションボタンエリア
+                    VStack(spacing: DesignSystem.Spacing.md) {
+                        // シェアボタン（Primary）
+                        Button(action: {
+                            hapticImpact(.medium)
+                            shareUrl(scheduleViewModel.getShareUrl(for: event))
+                        }) {
+                            Label("招待状を送る", systemImage: "square.and.arrow.up")
+                                .font(DesignSystem.Typography.body.weight(.semibold))
+                                .frame(maxWidth: .infinity)
+                        }
+                        .primaryButtonStyle()
+                        .controlSize(DesignSystem.Button.Control.large)
+                        
+                        // コピーボタン（Secondary）
+                        Button(action: {
+                            hapticImpact(.light)
+                            UIPasteboard.general.string = scheduleViewModel.getWebUrl(for: event)
+                            let generator = UINotificationFeedbackGenerator()
+                            generator.notificationOccurred(.success)
+                            withAnimation {
+                                showingCopyToast = true
+                            }
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                                withAnimation {
+                                    showingCopyToast = false
+                                }
+                            }
+                        }) {
+                            Label("URLをコピー", systemImage: "doc.on.doc")
+                                .font(DesignSystem.Typography.body)
+                                .frame(maxWidth: .infinity)
+                        }
+                        .secondaryButtonStyle()
+                        .controlSize(DesignSystem.Button.Control.large)
+                        .tint(DesignSystem.Colors.primary)
+                    }
+                    .padding(DesignSystem.Spacing.lg)
+                    .padding(.bottom, DesignSystem.Spacing.sm)
+                }
+
+                .backgroundPreferenceValue(TicketDividerAnchorKey.self) { anchor in
+                    GeometryReader { geo in
+                        if let anchor = anchor {
+                            let dividerY = geo[anchor].midY
+                            TicketShape(notchYPosition: dividerY)
+                                .fill(DesignSystem.Colors.white)
+                                .shadow(
+                                    color: DesignSystem.Colors.primary.opacity(0.2),
+                                    radius: 20,
+                                    x: 0,
+                                    y: 10
+                                )
+                        } else {
+                            // フォールバック（アンカー取得前）
+                            TicketShape(notchOffset: 0.75)
+                                .fill(DesignSystem.Colors.white)
+                                .shadow(
+                                    color: DesignSystem.Colors.primary.opacity(0.2),
+                                    radius: 20,
+                                    x: 0,
+                                    y: 10
+                                )
+                        }
+                    }
+                }
+                .padding(.horizontal, DesignSystem.Spacing.lg)
+                // アニメーション設定
+                .offset(y: showTicketAnimation ? 0 : 200)
+                .opacity(showTicketAnimation ? 1 : 0)
+                .rotation3DEffect(
+                    .degrees(showTicketAnimation ? 0 : 10),
+                    axis: (x: 1, y: 0, z: 0)
+                )
+            }
+            Spacer()
+            
+            // ホームに戻る（Tertiary）
+            Button(action: {
+                hapticImpact(.medium)
+                dismiss()
+            }) {
+                Text("ホームに戻る")
+                    .font(DesignSystem.Typography.body)
+                    .foregroundColor(DesignSystem.Colors.secondary)
+                    .padding(.vertical, DesignSystem.Spacing.md)
+            }
+            .padding(.bottom, DesignSystem.Spacing.lg)
+            .opacity(showTicketAnimation ? 1 : 0) // チケット表示後にフェードイン
+            .animation(.easeIn(duration: 0.5).delay(0.6), value: showTicketAnimation)
+        }
+        .padding(.vertical, DesignSystem.Spacing.xl)
+        .onAppear {
+            withAnimation(.spring(response: 0.6, dampingFraction: 0.7, blendDuration: 0)) {
+                showTicketAnimation = true
+            }
+        }
+    }
+    
+    // QRコード生成
+    private func generateQRCode(from string: String) -> UIImage {
+        let context = CIContext()
+        let filter = CIFilter.qrCodeGenerator()
+        filter.message = Data(string.utf8)
+        
+        if let outputImage = filter.outputImage {
+            // 解像度を上げて鮮明にする
+            let transform = CGAffineTransform(scaleX: 10, y: 10)
+            let scaledImage = outputImage.transformed(by: transform)
+            
+            if let cgImage = context.createCGImage(scaledImage, from: scaledImage.extent) {
+                return UIImage(cgImage: cgImage)
+            }
+        }
+        
+        return UIImage(systemName: "xmark.circle") ?? UIImage()
+    }
 }
 
+// MARK: - Ticket UI Components
 
+struct TicketShape: Shape {
+    var cornerRadius: CGFloat = 16
+    var notchRadius: CGFloat = 10
+    var notchOffset: CGFloat = 0.75 // デフォルト（使用されない場合や初期表示用）
+    var notchYPosition: CGFloat? = nil // 絶対座標での位置指定（優先）
+    
+    var animatableData: CGFloat {
+        get { notchYPosition ?? 0 }
+        set { notchYPosition = newValue }
+    }
+    
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        
+        let w = rect.width
+        let h = rect.height
+        
+        // notchYPosition（絶対座標）があればそれを使用、なければ相対位置を使用
+        let notchY: CGFloat
+        if let yPos = notchYPosition, yPos > 0 {
+            notchY = yPos
+        } else {
+            notchY = h * notchOffset
+        }
+        
+        // 左上からスタート
+        path.move(to: CGPoint(x: 0, y: cornerRadius))
+        path.addArc(center: CGPoint(x: cornerRadius, y: cornerRadius), radius: cornerRadius, startAngle: .degrees(180), endAngle: .degrees(270), clockwise: false)
+        
+        // 右上
+        path.addLine(to: CGPoint(x: w - cornerRadius, y: 0))
+        path.addArc(center: CGPoint(x: w - cornerRadius, y: cornerRadius), radius: cornerRadius, startAngle: .degrees(270), endAngle: .degrees(0), clockwise: false)
+        
+        // 右側のノッチ（半円の切り欠き）
+        path.addLine(to: CGPoint(x: w, y: notchY - notchRadius))
+        path.addArc(center: CGPoint(x: w, y: notchY), radius: notchRadius, startAngle: .degrees(270), endAngle: .degrees(90), clockwise: true)
+        
+        // 右下
+        path.addLine(to: CGPoint(x: w, y: h - cornerRadius))
+        path.addArc(center: CGPoint(x: w - cornerRadius, y: h - cornerRadius), radius: cornerRadius, startAngle: .degrees(0), endAngle: .degrees(90), clockwise: false)
+        
+        // 左下
+        path.addLine(to: CGPoint(x: cornerRadius, y: h))
+        path.addArc(center: CGPoint(x: cornerRadius, y: h - cornerRadius), radius: cornerRadius, startAngle: .degrees(90), endAngle: .degrees(180), clockwise: false)
+        
+        // 左側のノッチ（半円の切り欠き）
+        path.addLine(to: CGPoint(x: 0, y: notchY + notchRadius))
+        path.addArc(center: CGPoint(x: 0, y: notchY), radius: notchRadius, startAngle: .degrees(90), endAngle: .degrees(270), clockwise: true)
+        
+        path.closeSubpath()
+        return path
+    }
+}
+
+// 位置計測用キー（Anchor）
+struct TicketDividerAnchorKey: PreferenceKey {
+    static var defaultValue: Anchor<CGRect>? = nil
+    static func reduce(value: inout Anchor<CGRect>?, nextValue: () -> Anchor<CGRect>?) {
+        if let next = nextValue() {
+            value = next
+        }
+    }
+}
+
+struct DashedLine: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: 0, y: rect.midY)) // Y軸の中心に線を引く
+        path.addLine(to: CGPoint(x: rect.width, y: rect.midY))
+        return path
+    }
+}
+
+// ヘッダー用シェイプ（上部の角丸のみ）
+struct TicketTopShape: Shape {
+    var cornerRadius: CGFloat
+    
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: 0, y: cornerRadius))
+        path.addArc(center: CGPoint(x: cornerRadius, y: cornerRadius), radius: cornerRadius, startAngle: .degrees(180), endAngle: .degrees(270), clockwise: false)
+        path.addLine(to: CGPoint(x: rect.width - cornerRadius, y: 0))
+        path.addArc(center: CGPoint(x: rect.width - cornerRadius, y: cornerRadius), radius: cornerRadius, startAngle: .degrees(270), endAngle: .degrees(0), clockwise: false)
+        path.addLine(to: CGPoint(x: rect.width, y: rect.height))
+        path.addLine(to: CGPoint(x: 0, y: rect.height))
+        path.closeSubpath()
+        return path
+    }
+}
