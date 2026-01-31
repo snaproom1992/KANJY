@@ -93,7 +93,8 @@ struct TopView: View {
                             planDate: viewModel.editingPlanDate,
                             initialTask: shouldOpenScheduleTab ? .schedule : nil,
                             onFinish: {
-                        // NavigationStackから戻る
+                            // NavigationStackから戻る
+                            selectedPlanForNavigation = nil
                             }
                         )
                 .modifier(NavigationTransitionModifier(planId: plan.id, namespace: animation))
