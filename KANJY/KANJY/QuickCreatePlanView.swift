@@ -1312,7 +1312,7 @@ struct QuickCreatePlanView: View {
                                 .font(.system(size: 20))
                                 .foregroundColor(.white)
                             Text("INVITATION")
-                                .font(DesignSystem.Typography.headline)
+                                .font(.system(.headline, design: .serif))
                                 .fontWeight(.bold)
                                 .tracking(4)
                                 .foregroundColor(.white)
@@ -1324,114 +1324,161 @@ struct QuickCreatePlanView: View {
                         TicketTopShape(cornerRadius: 16)
                     )
                     
-                    // イベント情報（V3追加）
-                    VStack(spacing: 8) {
-                        Text(event.title)
-                            .font(DesignSystem.Typography.title3)
-                            .fontWeight(.bold)
-                            .foregroundColor(DesignSystem.Colors.black)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal, DesignSystem.Spacing.md)
+                    // イベント情報（Reference Style Refined）
+                    VStack(alignment: .leading, spacing: 16) {
                         
+                        // 1. ヘッダー: ロゴ & タイトル & 候補日カプセル
                         VStack(alignment: .leading, spacing: 12) {
-                            // 候補日リスト
-                            if !event.candidateDates.isEmpty {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    ForEach(event.candidateDates.prefix(4), id: \.self) { date in
-                                        HStack(spacing: 8) {
-                                            Image(systemName: "calendar")
-                                                .font(.system(size: 12))
-                                                .foregroundColor(DesignSystem.Colors.gray6)
-                                            Text(formatDateForTicket(date))
-                                                .font(.system(.subheadline, design: .monospaced)) // システムフォント(Monospaced)
-                                                .foregroundColor(DesignSystem.Colors.black)
-                                        }
-                                    }
-                                    if event.candidateDates.count > 4 {
-                                        Text("+ 他 \(event.candidateDates.count - 4)日")
-                                            .font(.caption)
+                            // ロゴアイコン (左上)
+                            // ロゴアイコン (ユーザー選択の絵文字/アイコン)
+                            ZStack {
+                                if let iconName = selectedIcon {
+                                    Image(systemName: iconName)
+                                        .font(.system(size: 28))
+                                        .foregroundColor(
+                                            colorFromString(selectedIconColor) ?? DesignSystem.Colors.primary
+                                        )
+                                } else if !selectedEmoji.isEmpty {
+                                    Text(selectedEmoji)
+                                        .font(.system(size: 32))
+                                } else {
+                                    // Fallback Icon
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .fill(DesignSystem.Colors.primary)
+                                        .frame(width: 40, height: 40)
+                                        .overlay(
+                                            Text("K")
+                                                .font(.system(size: 24, weight: .heavy, design: .serif))
+                                                .foregroundColor(.white)
+                                        )
+                                }
+                            }
+                            .frame(width: 44, height: 44)
+                            
+                            // タイトル
+                            // タイトル (Gothic)
+                            Text(event.title)
+                                .font(.system(size: 32, weight: .heavy, design: .default))
+                                .foregroundColor(DesignSystem.Colors.black)
+                                .lineLimit(2)
+                                .fixedSize(horizontal: false, vertical: true)
+                            
+                            // 候補日カプセル (FlowLayoutで折り返し)
+                            FlowLayout(spacing: 8) {
+                                ForEach(event.candidateDates.prefix(6), id: \.self) { date in
+                                    Text(formatDateForTicket(date))
+                                        .font(.system(size: 11, weight: .bold, design: .monospaced))
+                                        .foregroundColor(DesignSystem.Colors.primary)
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 6)
+                                        .background(
+                                            Capsule()
+                                                .strokeBorder(DesignSystem.Colors.primary.opacity(0.3), lineWidth: 1)
+                                        )
+                                }
+                                if event.candidateDates.count > 6 {
+                                    Text("+\(event.candidateDates.count - 6)")
+                                        .font(.system(size: 11, weight: .bold, design: .monospaced))
+                                        .foregroundColor(DesignSystem.Colors.primary)
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 6)
+                                        .background(
+                                            Capsule()
+                                                .strokeBorder(DesignSystem.Colors.primary.opacity(0.3), lineWidth: 1)
+                                        )
+                                }
+                            }
+                            .padding(.vertical, 4)
+                        }
+                        .padding(.horizontal, DesignSystem.Spacing.lg)
+                        
+                        Divider()
+                            .background(DesignSystem.Colors.gray3)
+                            .padding(.horizontal, DesignSystem.Spacing.lg)
+                            .padding(.vertical, 4)
+                        
+                        // 2. 詳細情報 & QRコード (2カラム)
+                        HStack(alignment: .top, spacing: 16) {
+                            // 左カラム: 詳細情報
+                            VStack(alignment: .leading, spacing: 16) {
+                                // CANDIDATES (リスト表示はバッジで十分なら省略、または詳細として残す)
+                                // ここではReferenceに合わせてロケーションやメモを優先
+                                
+                                // LOCATION
+                                if let location = event.location, !location.isEmpty {
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text("LOCATION")
+                                            .font(.system(size: 9, weight: .bold))
+                                            .tracking(1.5)
                                             .foregroundColor(DesignSystem.Colors.gray6)
-                                            .padding(.leading, 24)
+                                        
+                                        Text(location)
+                                            .font(.system(size: 13, weight: .medium))
+                                            .foregroundColor(DesignSystem.Colors.black)
+                                            .fixedSize(horizontal: false, vertical: true)
                                     }
                                 }
-                            }
-                            
-                            Divider()
-                                .background(DesignSystem.Colors.gray3)
-                            
-                            // 場所
-                            if let location = event.location, !location.isEmpty {
-                                HStack(alignment: .top, spacing: 8) {
-                                    Image(systemName: "mappin.and.ellipse")
-                                        .font(.system(size: 12))
-                                        .foregroundColor(DesignSystem.Colors.gray6)
-                                        .frame(width: 16)
-                                    Text(location)
-                                        .font(.subheadline)
-                                        .foregroundColor(DesignSystem.Colors.black)
-                                        .fixedSize(horizontal: false, vertical: true)
+                                
+                                // MEMO
+                                if let description = event.description, !description.isEmpty {
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text("MEMO")
+                                            .font(.system(size: 9, weight: .bold))
+                                            .tracking(1.5)
+                                            .foregroundColor(DesignSystem.Colors.gray6)
+                                        
+                                        Text(description)
+                                            .font(.system(size: 13, weight: .regular))
+                                            .foregroundColor(DesignSystem.Colors.gray6)
+                                            .lineLimit(3)
+                                            .fixedSize(horizontal: false, vertical: true)
+                                    }
+                                }
+                                
+                                // DEADLINE
+                                if let deadline = event.deadline {
+                                    VStack(alignment: .leading, spacing: 6) {
+                                        Text("DEADLINE")
+                                            .font(.system(size: 9, weight: .bold))
+                                            .tracking(1.5)
+                                            .foregroundColor(DesignSystem.Colors.Attendance.notAttending)
+                                        
+                                        Text(formatDateForTicket(deadline))
+                                            .font(.system(size: 11, weight: .bold, design: .monospaced))
+                                            .foregroundColor(DesignSystem.Colors.Attendance.notAttending)
+                                            .padding(.horizontal, 10)
+                                            .padding(.vertical, 4)
+                                            .background(
+                                                Capsule()
+                                                    .fill(DesignSystem.Colors.Attendance.notAttending.opacity(0.1))
+                                            )
+                                    }
+                                    .padding(.bottom, 8) // 余白追加
                                 }
                             }
+                            .frame(maxWidth: .infinity, alignment: .leading)
                             
-                            // メモ（詳細）
-                            if let description = event.description, !description.isEmpty {
-                                HStack(alignment: .top, spacing: 8) {
-                                    Image(systemName: "text.alignleft")
-                                        .font(.system(size: 12)) // アイコンサイズ統一
-                                        .foregroundColor(DesignSystem.Colors.gray6)
-                                        .frame(width: 16)
-                                    Text(description)
-                                        .font(.caption)
-                                        .foregroundColor(DesignSystem.Colors.gray6)
-                                        .fixedSize(horizontal: false, vertical: true)
-                                        .lineLimit(3)
-                                }
-                            }
-                            
-                            // 締切日
-                            if let deadline = event.deadline {
-                                HStack(alignment: .top, spacing: 8) {
-                                    Image(systemName: "flag.fill")
-                                        .font(.system(size: 12))
-                                        .foregroundColor(DesignSystem.Colors.primary) // アクセントカラー
-                                        .frame(width: 16)
-                                    Text("回答期限: \(formatDateForTicket(deadline))")
-                                        .font(.system(.caption, design: .monospaced))
-                                        .foregroundColor(DesignSystem.Colors.black)
-                                }
-                            }
+                             // 右カラム: QRコード (小さく配置)
+                             VStack(alignment: .center, spacing: 4) {
+                                 Spacer() // 上下中央揃え用
+                                 Image(uiImage: generateQRCode(from: scheduleViewModel.getWebUrl(for: event)))
+                                     .interpolation(.none)
+                                     .resizable()
+                                     .scaledToFit()
+                                     .frame(width: 80, height: 80) // サイズ縮小
+                                     .background(Color.white)
+                                     .cornerRadius(8)
+                                 
+                                 Text("SCAN")
+                                     .font(.system(size: 8, weight: .bold))
+                                     .tracking(1)
+                                     .foregroundColor(DesignSystem.Colors.secondary)
+                                 Spacer() // 上下中央揃え用
+                             }
                         }
                         .padding(.horizontal, DesignSystem.Spacing.lg)
                     }
                     .padding(.top, DesignSystem.Spacing.lg)
-                    
-                    // 中盤：QRコードとURL
-                    VStack(spacing: DesignSystem.Spacing.lg) {
-                        Image(uiImage: generateQRCode(from: scheduleViewModel.getWebUrl(for: event)))
-                            .interpolation(.none)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 140, height: 140)
-                            .padding(DesignSystem.Spacing.md)
-                            .background(Color.white)
-                            .cornerRadius(12)
-                            .shadow(color: .black.opacity(0.05), radius: 5, x: 0, y: 2)
-                        
-                        VStack(spacing: 4) {
-                            Text("SCAN TO JOIN")
-                                .font(.system(size: 10, weight: .bold))
-                                .tracking(2)
-                                .foregroundColor(DesignSystem.Colors.secondary)
-                            
-                            Text(scheduleViewModel.getWebUrl(for: event))
-                                .font(.system(.caption, design: .monospaced))
-                                .foregroundColor(DesignSystem.Colors.gray6)
-                                .lineLimit(1)
-                                .truncationMode(.middle)
-                                .padding(.horizontal, DesignSystem.Spacing.lg)
-                        }
-                    }
-                    .padding(.vertical, DesignSystem.Spacing.lg)
                     
                     // ミシン目（位置計測）
                     DashedLine()
@@ -1440,6 +1487,7 @@ struct QuickCreatePlanView: View {
                         .frame(height: 1)
                         .anchorPreference(key: TicketDividerAnchorKey.self, value: .bounds) { $0 }
                         .padding(.horizontal, DesignSystem.Spacing.md)
+                        .padding(.top, DesignSystem.Spacing.lg) // 点線の上に余白追加
                     
                     // 下部：アクションボタンエリア
                     VStack(spacing: DesignSystem.Spacing.md) {
@@ -1507,7 +1555,7 @@ struct QuickCreatePlanView: View {
                         }
                     }
                 }
-                .padding(.horizontal, DesignSystem.Spacing.lg)
+                .padding(.horizontal, DesignSystem.Spacing.xxl) // カードの左右の余白をさらに増やす
                 // アニメーション設定
                 .offset(y: showTicketAnimation ? 0 : 200)
                 .opacity(showTicketAnimation ? 1 : 0)
@@ -1565,6 +1613,81 @@ struct QuickCreatePlanView: View {
         }
         
         return UIImage(systemName: "xmark.circle") ?? UIImage()
+    }
+}
+
+// 簡易的なFlowLayout（タグの折り返し表示用）
+struct FlowLayout: Layout {
+    var spacing: CGFloat = 8
+    
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let rows = computeRows(proposal: proposal, subviews: subviews)
+        if rows.isEmpty { return .zero }
+        
+        let width = proposal.width ?? rows.map { $0.width }.max() ?? 0
+        let height = rows.last!.maxY
+        return CGSize(width: width, height: height)
+    }
+    
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let rows = computeRows(proposal: proposal, subviews: subviews)
+        
+        for row in rows {
+            for element in row.elements {
+                element.subview.place(
+                    at: CGPoint(x: bounds.minX + element.x, y: bounds.minY + row.y),
+                    proposal: ProposedViewSize(width: element.width, height: element.height)
+                )
+            }
+        }
+    }
+    
+    struct Row {
+        var elements: [Element]
+        var y: CGFloat
+        var height: CGFloat
+        var width: CGFloat { elements.last?.maxX ?? 0 }
+        var maxY: CGFloat { y + height }
+    }
+    
+    struct Element {
+        var subview: LayoutSubview
+        var x: CGFloat
+        var width: CGFloat
+        var height: CGFloat
+        var maxX: CGFloat { x + width }
+    }
+    
+    func computeRows(proposal: ProposedViewSize, subviews: Subviews) -> [Row] {
+        var rows: [Row] = []
+        var currentElements: [Element] = []
+        var x: CGFloat = 0
+        var y: CGFloat = 0
+        var rowHeight: CGFloat = 0
+        let maxWidth = proposal.width ?? .infinity
+        
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            
+            if x + size.width > maxWidth && !currentElements.isEmpty {
+                // 次の行へ
+                rows.append(Row(elements: currentElements, y: y, height: rowHeight))
+                y += rowHeight + spacing
+                currentElements = []
+                x = 0
+                rowHeight = 0
+            }
+            
+            currentElements.append(Element(subview: subview, x: x, width: size.width, height: size.height))
+            rowHeight = max(rowHeight, size.height)
+            x += size.width + spacing
+        }
+        
+        if !currentElements.isEmpty {
+            rows.append(Row(elements: currentElements, y: y, height: rowHeight))
+        }
+        
+        return rows
     }
 }
 
