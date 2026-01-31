@@ -1333,17 +1333,75 @@ struct QuickCreatePlanView: View {
                             .multilineTextAlignment(.center)
                             .padding(.horizontal, DesignSystem.Spacing.md)
                         
-                        HStack(spacing: 16) {
-                            Label("\(event.candidateDates.count)つの候補日", systemImage: "calendar")
-                                .font(DesignSystem.Typography.caption)
-                                .foregroundColor(DesignSystem.Colors.gray6)
+                        VStack(alignment: .leading, spacing: 12) {
+                            // 候補日リスト
+                            if !event.candidateDates.isEmpty {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    ForEach(event.candidateDates.prefix(4), id: \.self) { date in
+                                        HStack(spacing: 8) {
+                                            Image(systemName: "calendar")
+                                                .font(.system(size: 12))
+                                                .foregroundColor(DesignSystem.Colors.gray6)
+                                            Text(formatDateForTicket(date))
+                                                .font(.system(.subheadline, design: .monospaced)) // システムフォント(Monospaced)
+                                                .foregroundColor(DesignSystem.Colors.black)
+                                        }
+                                    }
+                                    if event.candidateDates.count > 4 {
+                                        Text("+ 他 \(event.candidateDates.count - 4)日")
+                                            .font(.caption)
+                                            .foregroundColor(DesignSystem.Colors.gray6)
+                                            .padding(.leading, 24)
+                                    }
+                                }
+                            }
                             
+                            Divider()
+                                .background(DesignSystem.Colors.gray3)
+                            
+                            // 場所
                             if let location = event.location, !location.isEmpty {
-                                Label(location, systemImage: "mappin.and.ellipse")
-                                    .font(DesignSystem.Typography.caption)
-                                    .foregroundColor(DesignSystem.Colors.gray6)
+                                HStack(alignment: .top, spacing: 8) {
+                                    Image(systemName: "mappin.and.ellipse")
+                                        .font(.system(size: 12))
+                                        .foregroundColor(DesignSystem.Colors.gray6)
+                                        .frame(width: 16)
+                                    Text(location)
+                                        .font(.subheadline)
+                                        .foregroundColor(DesignSystem.Colors.black)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+                            }
+                            
+                            // メモ（詳細）
+                            if let description = event.description, !description.isEmpty {
+                                HStack(alignment: .top, spacing: 8) {
+                                    Image(systemName: "text.alignleft")
+                                        .font(.system(size: 12)) // アイコンサイズ統一
+                                        .foregroundColor(DesignSystem.Colors.gray6)
+                                        .frame(width: 16)
+                                    Text(description)
+                                        .font(.caption)
+                                        .foregroundColor(DesignSystem.Colors.gray6)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                        .lineLimit(3)
+                                }
+                            }
+                            
+                            // 締切日
+                            if let deadline = event.deadline {
+                                HStack(alignment: .top, spacing: 8) {
+                                    Image(systemName: "flag.fill")
+                                        .font(.system(size: 12))
+                                        .foregroundColor(DesignSystem.Colors.primary) // アクセントカラー
+                                        .frame(width: 16)
+                                    Text("回答期限: \(formatDateForTicket(deadline))")
+                                        .font(.system(.caption, design: .monospaced))
+                                        .foregroundColor(DesignSystem.Colors.black)
+                                }
                             }
                         }
+                        .padding(.horizontal, DesignSystem.Spacing.lg)
                     }
                     .padding(.top, DesignSystem.Spacing.lg)
                     
@@ -1480,6 +1538,14 @@ struct QuickCreatePlanView: View {
                 showTicketAnimation = true
             }
         }
+    }
+    
+    // チケット用日付フォーマッター
+    private func formatDateForTicket(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "ja_JP")
+        formatter.dateFormat = "M/d(E) H:mm"
+        return formatter.string(from: date)
     }
     
     // QRコード生成
