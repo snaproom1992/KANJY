@@ -12,14 +12,6 @@ struct KANJYApp: App {
     var body: some Scene {
         WindowGroup {
             SplashScreenView()
-                .task {
-                    // アプリ起動時に匿名ログインを行う
-                    do {
-                        try await SupabaseManager.shared.signInAnonymously()
-                    } catch {
-                        print("❌ 匿名ログイン失敗: \(error)")
-                    }
-                }
         }
     }
 }

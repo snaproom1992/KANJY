@@ -243,15 +243,6 @@ public class ScheduleManagementViewModel: ObservableObject {
         let webUrl = generateWebUrl(eventId: eventId)
         let now = Date()
         
-        // ID未取得の場合はここでログインを試行（遅延ログイン）
-        if SupabaseManager.shared.currentUserId == nil {
-            print("⚠️ ID未取得のため、強制ログインを試行します")
-            try? await SupabaseManager.shared.signInAnonymously()
-        }
-        
-        print("🍙 Supabase保存開始")
-        print("🍙 EventID: \(eventId)")
-        print("🍙 WebURL: \(webUrl)")
         let eventData = SupabaseEventInsert(
             id: eventId.uuidString.lowercased(),
             title: title,
@@ -262,12 +253,12 @@ public class ScheduleManagementViewModel: ObservableObject {
             deadline: deadline != nil ? ISO8601DateFormatter().string(from: deadline!) : nil,
             share_url: shareUrl,
             web_url: webUrl,
-            created_by: SupabaseManager.shared.currentUserId ?? createdBy,
+            created_by: createdBy,
             is_active: true,
             created_at: ISO8601DateFormatter().string(from: now),
             updated_at: ISO8601DateFormatter().string(from: now)
         )
-        print("🍙 Supabase insert実行中...")
+        
         _ = try await supabase
             .from("events")
             .insert(eventData)
@@ -288,21 +279,18 @@ public class ScheduleManagementViewModel: ObservableObject {
             isActive: true,
             shareUrl: shareUrl,
             webUrl: webUrl,
-            createdBy: SupabaseManager.shared.currentUserId ?? createdBy,
+            createdBy: createdBy,
             createdAt: now,
             updatedAt: now
         )
-        print("🍙 作成されたイベント: \(event)")
         
         // ローカルにも追加
         await MainActor.run {
             self.events.append(event)
             self.saveData()
         }
-        print("🍙 Supabase保存完了!")
         return event
         } catch {
-            print("🍙 Supabase保存エラー: \(error)")
             throw error
         }
     }
@@ -371,23 +359,11 @@ public class ScheduleManagementViewModel: ObservableObject {
     }
     
     private func deleteEventInSupabase(eventId: UUID) async throws {
-        print("🍙 Supabase削除開始 - EventID: \(eventId)")
-        
-        // ID未取得の場合はここで再ログインを試行（作成時と同じロジック）
-        if SupabaseManager.shared.currentUserId == nil {
-            print("⚠️ 削除前: ID未取得のため、セッション復元を試行します")
-            try? await SupabaseManager.shared.signInAnonymously()
-        }
-        
-        print("🍙 現在のUserID: \(SupabaseManager.shared.currentUserId ?? "nil")")
-        
-        _ = try await supabase
+        try await supabase
             .from("events")
             .delete()
             .eq("id", value: eventId.uuidString.lowercased())
             .execute()
-        
-        print("🍙 Supabase削除リクエスト完了")
     }
     
     // MARK: - 回答管理
