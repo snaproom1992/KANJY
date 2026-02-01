@@ -182,7 +182,9 @@ public class ScheduleManagementViewModel: ObservableObject {
     
     @AppStorage("scheduleEvents") private var eventsData: Data = Data()
     
-    private let supabase = SupabaseManager.shared.client
+    private var supabase: SupabaseClient {
+        SupabaseManager.shared.client
+    }
     
     public init() {
         loadData()
@@ -241,6 +243,12 @@ public class ScheduleManagementViewModel: ObservableObject {
         let webUrl = generateWebUrl(eventId: eventId)
         let now = Date()
         
+        // ID未取得の場合はここでログインを試行（遅延ログイン）
+        if SupabaseManager.shared.currentUserId == nil {
+            print("⚠️ ID未取得のため、強制ログインを試行します")
+            try? await SupabaseManager.shared.signInAnonymously()
+        }
+        
         print("🍙 Supabase保存開始")
         print("🍙 EventID: \(eventId)")
         print("🍙 WebURL: \(webUrl)")
@@ -254,7 +262,7 @@ public class ScheduleManagementViewModel: ObservableObject {
             deadline: deadline != nil ? ISO8601DateFormatter().string(from: deadline!) : nil,
             share_url: shareUrl,
             web_url: webUrl,
-            created_by: createdBy,
+            created_by: SupabaseManager.shared.currentUserId ?? createdBy,
             is_active: true,
             created_at: ISO8601DateFormatter().string(from: now),
             updated_at: ISO8601DateFormatter().string(from: now)
@@ -280,7 +288,7 @@ public class ScheduleManagementViewModel: ObservableObject {
             isActive: true,
             shareUrl: shareUrl,
             webUrl: webUrl,
-            createdBy: createdBy,
+            createdBy: SupabaseManager.shared.currentUserId ?? createdBy,
             createdAt: now,
             updatedAt: now
         )
@@ -353,34 +361,33 @@ public class ScheduleManagementViewModel: ObservableObject {
         }
     }
     
-    public func deleteEvent(id: UUID) {
+    public func deleteEvent(id: UUID) async throws {
         // ローカルから削除
         events.removeAll { $0.id == id }
         saveData()
         
-        // Supabaseからも削除（非同期）
-        Task {
-            do {
-                try await deleteEventInSupabase(eventId: id)
-            } catch {
-                print("Supabase削除エラー: \(error)")
-            }
-        }
+        // Supabaseからも削除
+        try await deleteEventInSupabase(eventId: id)
     }
     
     private func deleteEventInSupabase(eventId: UUID) async throws {
         print("🍙 Supabase削除開始 - EventID: \(eventId)")
         
-        // イベントを削除
-        // カスケード削除が設定されていれば回答も自動的に削除されるはずですが、
-        // 念のため確認が必要です（通常は外部キー制約で自動削除）
+        // ID未取得の場合はここで再ログインを試行（作成時と同じロジック）
+        if SupabaseManager.shared.currentUserId == nil {
+            print("⚠️ 削除前: ID未取得のため、セッション復元を試行します")
+            try? await SupabaseManager.shared.signInAnonymously()
+        }
+        
+        print("🍙 現在のUserID: \(SupabaseManager.shared.currentUserId ?? "nil")")
+        
         _ = try await supabase
             .from("events")
             .delete()
             .eq("id", value: eventId.uuidString.lowercased())
             .execute()
         
-        print("🍙 Supabase削除完了")
+        print("🍙 Supabase削除リクエスト完了")
     }
     
     // MARK: - 回答管理
@@ -561,7 +568,11 @@ public class ScheduleManagementViewModel: ObservableObject {
 public class AttendanceManager: ObservableObject {
     public static let shared = AttendanceManager()
     
-    private let supabase = SupabaseManager.shared.client
+
+    
+    private var supabase: SupabaseClient {
+        SupabaseManager.shared.client
+    }
     
     private init() {}
     

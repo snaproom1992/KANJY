@@ -65,7 +65,13 @@ struct ScheduleEventDetailView: View {
             .alert("スケジュール調整の削除", isPresented: $showingDeleteAlert) {
                 Button("キャンセル", role: .cancel) {}
                 Button("削除", role: .destructive) {
-                    viewModel.deleteEvent(id: event.id)
+                    Task {
+                        do {
+                            try await viewModel.deleteEvent(id: event.id)
+                        } catch {
+                            print("❌ 削除エラー: \(error)")
+                        }
+                    }
                     dismiss()
                 }
             } message: {

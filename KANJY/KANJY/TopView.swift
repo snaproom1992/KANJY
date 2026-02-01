@@ -104,15 +104,25 @@ struct TopView: View {
                 Button("キャンセル", role: .cancel) {}
                 Button("削除", role: .destructive) {
                     if let plan = planToDelete {
-                        hapticNotification(.success)
-                        
-                        // Supabase連携データの削除（IDがある場合）
-                        if let eventId = plan.scheduleEventId {
-                            scheduleViewModel.deleteEvent(id: eventId)
-                        }
-                        
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                            viewModel.deletePlan(id: plan.id)
+                        Task {
+                            // Supabase連携データの削除（IDがある場合）
+                            if let eventId = plan.scheduleEventId {
+                                do {
+                                    try await scheduleViewModel.deleteEvent(id: eventId)
+                                } catch {
+                                    print("❌ 削除エラー: \(error)")
+                                    // エラーでもローカル削除は続行するか、ユーザーに通知するか？
+                                    // ここでは一旦続行（UX優先）だが、ログは残す
+                                }
+                            }
+                            
+                            // 完了後にローカル削除（メインスレッドで実行）
+                            await MainActor.run {
+                                hapticNotification(.success)
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                    viewModel.deletePlan(id: plan.id)
+                                }
+                            }
                         }
                     }
                 }

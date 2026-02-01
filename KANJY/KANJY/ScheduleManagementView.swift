@@ -90,7 +90,13 @@ struct ScheduleManagementView: View {
                 Button("キャンセル", role: .cancel) {}
                 Button("削除", role: .destructive) {
                     if let event = eventToDelete {
-                        viewModel.deleteEvent(id: event.id)
+                        Task {
+                            do {
+                                try await viewModel.deleteEvent(id: event.id)
+                            } catch {
+                                print("❌ 削除エラー: \(error)")
+                            }
+                        }
                     }
                 }
             } message: {
