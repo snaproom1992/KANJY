@@ -354,8 +354,33 @@ public class ScheduleManagementViewModel: ObservableObject {
     }
     
     public func deleteEvent(id: UUID) {
+        // ローカルから削除
         events.removeAll { $0.id == id }
         saveData()
+        
+        // Supabaseからも削除（非同期）
+        Task {
+            do {
+                try await deleteEventInSupabase(eventId: id)
+            } catch {
+                print("Supabase削除エラー: \(error)")
+            }
+        }
+    }
+    
+    private func deleteEventInSupabase(eventId: UUID) async throws {
+        print("🍙 Supabase削除開始 - EventID: \(eventId)")
+        
+        // イベントを削除
+        // カスケード削除が設定されていれば回答も自動的に削除されるはずですが、
+        // 念のため確認が必要です（通常は外部キー制約で自動削除）
+        _ = try await supabase
+            .from("events")
+            .delete()
+            .eq("id", value: eventId.uuidString.lowercased())
+            .execute()
+        
+        print("🍙 Supabase削除完了")
     }
     
     // MARK: - 回答管理

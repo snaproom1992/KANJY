@@ -105,13 +105,19 @@ struct TopView: View {
                 Button("削除", role: .destructive) {
                     if let plan = planToDelete {
                         hapticNotification(.success)
+                        
+                        // Supabase連携データの削除（IDがある場合）
+                        if let eventId = plan.scheduleEventId {
+                            scheduleViewModel.deleteEvent(id: eventId)
+                        }
+                        
                         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                             viewModel.deletePlan(id: plan.id)
                         }
                     }
                 }
             } message: {
-                Text("この飲み会を削除してもよろしいですか？")
+                Text("この飲み会を削除しますか？\n（連携済みのスケジュール調整も同時にクラウドから削除されます）")
             }
             .sheet(isPresented: $showingCalendarSheet) {
                 CalendarSheetView(viewModel: viewModel)
