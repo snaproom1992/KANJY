@@ -64,6 +64,24 @@ struct SettingsView: View {
                     }
                 }
                 
+                Section("法的情報") {
+                    NavigationLink(destination: MarkdownDocumentView(filename: "TERMS_OF_SERVICE", title: "利用規約")) {
+                        HStack {
+                            Image(systemName: "doc.text")
+                                .foregroundColor(DesignSystem.Colors.primary)
+                            Text("利用規約")
+                        }
+                    }
+                    
+                    NavigationLink(destination: MarkdownDocumentView(filename: "PRIVACY_POLICY", title: "プライバシーポリシー")) {
+                        HStack {
+                            Image(systemName: "hand.raised")
+                                .foregroundColor(DesignSystem.Colors.primary)
+                            Text("プライバシーポリシー")
+                        }
+                    }
+                }
+                
                 Section("アプリについて") {
                     HStack {
                         Text("バージョン")
