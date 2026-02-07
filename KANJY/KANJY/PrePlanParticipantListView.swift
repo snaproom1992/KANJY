@@ -114,10 +114,45 @@ struct PrePlanParticipantListView: View {
             // 参加者リスト（集金チェック用）
             VStack(spacing: DesignSystem.Spacing.sm) {
                 if viewModel.participants.isEmpty {
-                    Text("参加者がまだいません")
-                        .font(DesignSystem.Typography.body)
-                        .foregroundColor(DesignSystem.Colors.secondary)
-                        .padding(.vertical, DesignSystem.Spacing.xl)
+                    // わかりやすい空状態ガイダンス
+                    VStack(spacing: 12) {
+                        VStack(alignment: .leading, spacing: 12) {
+                            // タイトル
+                            HStack(spacing: 8) {
+                                Image(systemName: "person.2.fill")
+                                    .font(.system(size: 24))
+                                    .foregroundColor(DesignSystem.Colors.primary.opacity(0.6))
+                                Text("参加者がまだいません")
+                                    .font(DesignSystem.Typography.headline)
+                                    .foregroundColor(DesignSystem.Colors.black)
+                            }
+                            
+                            // 説明
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("参加者は以下の方法で追加できます：")
+                                    .font(DesignSystem.Typography.caption)
+                                    .foregroundColor(DesignSystem.Colors.secondary)
+                                
+                            VStack(alignment: .leading, spacing: 6) {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "arrow.down")
+                                        .font(.system(size: 14))
+                                        .foregroundColor(DesignSystem.Colors.primary)
+                                    Text("下の「参加者を追加」ボタンから手動で追加できます")
+                                        .font(DesignSystem.Typography.caption)
+                                        .foregroundColor(DesignSystem.Colors.black)
+                                }
+                            }
+                            }
+                        }
+                        .padding()
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .fill(DesignSystem.Colors.primary.opacity(0.05))
+                        )
+                    }
+                    .padding(.vertical, DesignSystem.Spacing.md)
                 } else {
                     ForEach(Array(viewModel.participants.enumerated()), id: \.offset) { index, participant in
                         Button(action: {
