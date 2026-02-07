@@ -1401,48 +1401,55 @@ struct QuickCreatePlanView: View {
                         HStack(alignment: .top, spacing: 16) {
                             // 左カラム: 詳細情報
                             VStack(alignment: .leading, spacing: 16) {
-                                // CANDIDATES (リスト表示はバッジで十分なら省略、または詳細として残す)
-                                // ここではReferenceに合わせてロケーションやメモを優先
-                                
                                 // LOCATION
-                                if let location = event.location, !location.isEmpty {
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text("LOCATION")
-                                            .font(.system(size: 9, weight: .bold))
-                                            .tracking(1.5)
-                                            .foregroundColor(DesignSystem.Colors.gray6)
-                                        
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("LOCATION")
+                                        .font(.system(size: 9, weight: .bold))
+                                        .tracking(1.5)
+                                        .foregroundColor(DesignSystem.Colors.gray6)
+                                    
+                                    if let location = event.location, !location.isEmpty {
                                         Text(location)
                                             .font(.system(size: 13, weight: .medium))
                                             .foregroundColor(DesignSystem.Colors.black)
                                             .fixedSize(horizontal: false, vertical: true)
+                                    } else {
+                                        Text("場所未定")
+                                            .font(.system(size: 13, weight: .regular))
+                                            .foregroundColor(DesignSystem.Colors.gray4)
+                                            .italic()
                                     }
                                 }
                                 
                                 // MEMO
-                                if let description = event.description, !description.isEmpty {
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text("MEMO")
-                                            .font(.system(size: 9, weight: .bold))
-                                            .tracking(1.5)
-                                            .foregroundColor(DesignSystem.Colors.gray6)
-                                        
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("MEMO")
+                                        .font(.system(size: 9, weight: .bold))
+                                        .tracking(1.5)
+                                        .foregroundColor(DesignSystem.Colors.gray6)
+                                    
+                                    if let description = event.description, !description.isEmpty {
                                         Text(description)
                                             .font(.system(size: 13, weight: .regular))
                                             .foregroundColor(DesignSystem.Colors.gray6)
                                             .lineLimit(3)
                                             .fixedSize(horizontal: false, vertical: true)
+                                    } else {
+                                        Text("メモなし")
+                                            .font(.system(size: 13, weight: .regular))
+                                            .foregroundColor(DesignSystem.Colors.gray4)
+                                            .italic()
                                     }
                                 }
                                 
                                 // DEADLINE
-                                if let deadline = event.deadline {
-                                    VStack(alignment: .leading, spacing: 6) {
-                                        Text("DEADLINE")
-                                            .font(.system(size: 9, weight: .bold))
-                                            .tracking(1.5)
-                                            .foregroundColor(DesignSystem.Colors.Attendance.notAttending)
-                                        
+                                VStack(alignment: .leading, spacing: 6) {
+                                    Text("DEADLINE")
+                                        .font(.system(size: 9, weight: .bold))
+                                        .tracking(1.5)
+                                        .foregroundColor(DesignSystem.Colors.gray6)
+                                    
+                                    if let deadline = event.deadline {
                                         Text(formatDateForTicket(deadline))
                                             .font(.system(size: 11, weight: .bold, design: .monospaced))
                                             .foregroundColor(DesignSystem.Colors.Attendance.notAttending)
@@ -1452,9 +1459,14 @@ struct QuickCreatePlanView: View {
                                                 Capsule()
                                                     .fill(DesignSystem.Colors.Attendance.notAttending.opacity(0.1))
                                             )
+                                    } else {
+                                        Text("回答期限なし")
+                                            .font(.system(size: 13, weight: .regular))
+                                            .foregroundColor(DesignSystem.Colors.gray4)
+                                            .italic()
                                     }
-                                    .padding(.bottom, 8) // 余白追加
                                 }
+                                .padding(.bottom, 8) // 余白追加
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
                             
