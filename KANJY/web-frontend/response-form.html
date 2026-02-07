@@ -552,6 +552,9 @@
         @media (max-width: 768px) {
             .mobile-responsive-table {
                 display: block;
+                min-width: 0 !important;
+                /* 横スクロール防止（500px制限を解除） */
+                width: 100% !important;
             }
 
             .mobile-responsive-table thead {
