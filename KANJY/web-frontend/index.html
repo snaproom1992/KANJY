@@ -1314,12 +1314,13 @@
                         <p class="notion-caption text-stone-600">全参加者の詳細な回答状況を確認・編集できます（名前クリックで編集）</p>
                     </div>
 
-                    <div class="responses-table-container">
+                    <div class="responses-table-container hidden md:block">
                         <div class="overflow-x-auto responses-table">
                             <table class="w-full notion-table">
                                 <thead>
                                     <tr>
-                                        <th class="text-left py-6 px-8 font-semibold text-gray-800 text-sm w-80">
+                                        <th
+                                            class="text-left py-6 px-8 font-semibold text-stone-700 text-sm w-80 shadow-sm border-r border-stone-100 z-10 bg-white">
                                             <span class="notion-body-medium">参加者</span>
                                             <span class="block notion-caption text-stone-500 mt-1">編集するには名前をタップ</span>
                                         </th>
@@ -1332,6 +1333,11 @@
                                 </tbody>
                             </table>
                         </div>
+                    </div>
+
+                    <!-- Mobile Card View -->
+                    <div id="mobile-response-list" class="block md:hidden space-y-4 px-4 pb-6">
+                        <!-- 動的に生成されるカード一覧がここに挿入されます -->
                     </div>
 
                     <!-- Show More Button -->
@@ -3059,6 +3065,9 @@
             if (!responses || responses.length === 0) {
                 // テーブルを非表示
                 if (tableContainer) tableContainer.style.display = 'none';
+                // モバイルリストも非表示
+                const mobileList = document.getElementById('mobile-response-list');
+                if (mobileList) mobileList.style.display = 'none';
 
                 // シンプルな「まだ回答がありません」メッセージを表示
                 if (parentCardBody) {
@@ -3086,8 +3095,17 @@
 
                 return;
             } else {
-                // テーブルを表示
-                if (tableContainer) tableContainer.style.display = 'block';
+                // テーブルを表示 (Desktop)
+                if (tableContainer) tableContainer.style.removeProperty('display'); // hidden md:block で制御されるのでstyle削除が適切だが、念のため
+                // モバイルリストを表示 (Mobile)
+                const mobileList = document.getElementById('mobile-response-list');
+                if (mobileList) mobileList.style.removeProperty('display');
+            }
+
+            // Mobile List Container
+            const mobileListContainer = document.getElementById('mobile-response-list');
+            if (mobileListContainer) {
+                mobileListContainer.innerHTML = '';
             }
 
             // 表示する回答を決定
@@ -3095,8 +3113,15 @@
             const remainingCount = responses.length - displayLimit;
 
             displayResponses.forEach((response, index) => {
+                // Table Row (Desktop)
                 const row = createResponseRow(response, index);
                 detailTableBody.appendChild(row);
+
+                // Card (Mobile)
+                if (mobileListContainer) {
+                    const card = createResponseCard(response, index);
+                    mobileListContainer.appendChild(card);
+                }
             });
 
             // 「もっと表示」ボタンの表示制御
@@ -3246,6 +3271,97 @@
             // 行生成完了
 
             return tr;
+        }
+
+        // モバイル用カードを作成
+        function createResponseCard(response, index) {
+            const card = document.createElement('div');
+            card.className = 'bg-white rounded-xl border border-stone-200 shadow-sm p-4 cursor-pointer active:scale-[0.98] transition-all duration-200';
+            card.setAttribute('data-response-id', response.id);
+
+            // タッチ/クリックイベント
+            const handleInteraction = function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+                // 編集画面へ
+                editResponse(response.id);
+            };
+            card.addEventListener('touchend', handleInteraction, { passive: false });
+            card.addEventListener('click', handleInteraction);
+
+            // ヘッダー: アイコン、名前、コメントバッジ
+            let commentBadge = '';
+            if (response.comment) {
+                commentBadge = `
+                    <div class="ml-auto">
+                        <svg class="w-5 h-5 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+                        </svg>
+                    </div>
+                `;
+            }
+
+            const headerHtml = `
+                <div class="flex items-center space-x-3 mb-3 border-b border-stone-100 pb-3">
+                    <div class="w-10 h-10 bg-stone-600 rounded-full flex items-center justify-center shadow-sm flex-shrink-0">
+                        <span class="text-white font-semibold text-sm">${response.participant_name.charAt(0)}</span>
+                    </div>
+                    <div class="font-semibold text-stone-900 text-lg truncate flex-1">
+                        ${response.participant_name}
+                    </div>
+                    ${commentBadge}
+                </div>
+            `;
+
+            // ボディ: 日程リスト
+            let datesHtml = '<div class="space-y-2">';
+            if (currentEvent && currentEvent.candidate_dates) {
+                currentEvent.candidate_dates.forEach(dateStr => {
+                    const status = getStatusForDate(response, dateStr);
+                    let statusIcon = '';
+                    let statusColor = '';
+                    let statusBg = '';
+
+                    if (status === 'attending') {
+                        statusIcon = '○';
+                        statusColor = 'text-emerald-600';
+                        statusBg = 'bg-emerald-50';
+                    } else if (status === 'maybe') {
+                        statusIcon = '△'; // スマホでは△の方が一般的かも？または？
+                        statusColor = 'text-amber-600';
+                        statusBg = 'bg-amber-50';
+                    } else {
+                        statusIcon = '×';
+                        statusColor = 'text-gray-400';
+                        statusBg = 'bg-gray-50';
+                    }
+
+                    const date = new Date(dateStr);
+                    const dateLabel = `${date.getMonth() + 1}/${date.getDate()}(${['日', '月', '火', '水', '木', '金', '土'][date.getDay()]}) ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}〜`;
+
+                    datesHtml += `
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-stone-600">${dateLabel}</span>
+                            <span class="font-bold ${statusColor} ${statusBg} w-8 h-8 flex items-center justify-center rounded-full text-lg shadow-sm border border-stone-100">${statusIcon}</span>
+                        </div>
+                     `;
+                });
+            }
+            datesHtml += '</div>';
+
+            // フッター: コメント本文（あれば）
+            let footerHtml = '';
+            if (response.comment) {
+                footerHtml = `
+                    <div class="mt-3 pt-3 border-t border-stone-100 text-sm text-stone-600 bg-stone-50 rounded-lg p-3">
+                        <span class="font-medium text-xs text-stone-400 block mb-1">コメント</span>
+                        ${response.comment}
+                    </div>
+                `;
+            }
+
+            card.innerHTML = headerHtml + datesHtml + footerHtml;
+            return card;
         }
 
         // 指定日時の回答ステータスを取得
