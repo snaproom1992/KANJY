@@ -2773,48 +2773,26 @@
                     console.log('🔌 Subscription status:', status);
 
                     // TODO: デバッグ完了後に削除
-                    const debugEl = document.getElementById('debug-realtime-status');
-                    if (debugEl) debugEl.textContent = `Status: ${status}`;
+
 
                     if (status === 'SUBSCRIBED') {
                         console.log('✅ Realtime接続成功');
-                        if (debugEl) debugEl.style.color = 'green';
+
                         // showNotification('接続完了', 'リアルタイム更新が有効になりました', 'success');
                     } else if (status === 'CHANNEL_ERROR') {
                         console.error('❌ Realtime接続エラー');
-                        if (debugEl) debugEl.style.color = 'red';
+
                         showNotification('接続エラー', 'リアルタイム更新の接続に失敗しました', 'error');
                     } else if (status === 'TIMED_OUT') {
                         console.error('❌ Realtime接続タイムアウト');
-                        if (debugEl) debugEl.style.color = 'orange';
+
                         showNotification('接続タイムアウト', 'リアルタイム更新の接続がタイムアウトしました', 'error');
                     }
                 });
 
             console.log('🔌 Subscribed to changes for event:', eventId);
 
-            // TODO: デバッグ用オーバーレイを作成（完了後削除）
-            if (!document.getElementById('debug-overlay')) {
-                const overlay = document.createElement('div');
-                overlay.id = 'debug-overlay';
-                overlay.style.position = 'fixed';
-                overlay.style.top = '10px';
-                overlay.style.left = '10px';
-                overlay.style.backgroundColor = 'rgba(0,0,0,0.8)';
-                overlay.style.color = 'white';
-                overlay.style.padding = '8px';
-                overlay.style.borderRadius = '4px';
-                overlay.style.fontSize = '12px';
-                overlay.style.zIndex = '9999';
-                overlay.style.maxWidth = '300px';
-                overlay.innerHTML = `
-                    <div><strong>Debug Info</strong></div>
-                    <div>EventID: ${eventId.substring(0, 8)}...</div>
-                    <div id="debug-realtime-status">Status: CONNECTING...</div>
-                    <div id="debug-last-event">Last Event: None</div>
-                `;
-                document.body.appendChild(overlay);
-            }
+
         }
 
         // アクションパラメータの処理
