@@ -3066,6 +3066,11 @@
                 if (showMoreSection) {
                     showMoreSection.style.display = 'none';
                 }
+
+                // データが0件でも、日程別状況（グラフ・表）の「データなし」表示を更新する必要がある
+                updateScheduleTable(responses);
+                createScheduleChart(responses);
+
                 return;
             }
 
