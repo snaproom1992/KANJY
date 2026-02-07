@@ -547,6 +547,91 @@
                 border-radius: 0.75rem;
             }
         }
+
+        /* モバイルレスポンシブテーブル（カード表示） */
+        @media (max-width: 768px) {
+            .mobile-responsive-table {
+                display: block;
+            }
+
+            .mobile-responsive-table thead {
+                display: none;
+            }
+
+            .mobile-responsive-table tbody {
+                display: block;
+            }
+
+            .mobile-responsive-table tr {
+                display: flex;
+                flex-wrap: wrap;
+                margin-bottom: 1rem;
+                padding: 1rem;
+                background: #fff;
+                border: 1px solid #E5E7EB;
+                border-radius: 0.75rem;
+                box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            }
+
+            /* 日付セル（1行目） */
+            .mobile-responsive-table td:first-child {
+                width: 100%;
+                display: block;
+                border: none !important;
+                padding: 0 0 0.75rem 0 !important;
+                margin-bottom: 0.5rem;
+                border-bottom: 1px solid #F3F4F6 !important;
+                text-align: left !important;
+            }
+
+            .mobile-responsive-table td:first-child .flex-col {
+                flex-direction: row !important;
+                align-items: center;
+                gap: 0.75rem;
+            }
+
+            .mobile-responsive-table td:first-child .text-lg {
+                font-size: 1.125rem !important;
+            }
+
+            .mobile-responsive-table td:first-child .text-xs {
+                font-size: 0.875rem !important;
+                color: #6B7280;
+            }
+
+            /* 選択肢セル（2行目） */
+            .mobile-responsive-table td:not(:first-child) {
+                width: 33.33%;
+                display: flex;
+                justify-content: center;
+                border: none !important;
+                padding: 0.25rem !important;
+            }
+
+            /* 選択肢ボタンの調整 */
+            .choice-cell {
+                border-radius: 0.5rem !important;
+                height: 100%;
+                width: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .choice-button {
+                padding: 0.5rem !important;
+                width: 100%;
+            }
+
+            .choice-button span.text-2xl {
+                font-size: 1.5rem !important;
+                margin-bottom: 0.25rem;
+            }
+
+            .choice-button span.notion-body-medium {
+                font-size: 0.75rem !important;
+            }
+        }
     </style>
 </head>
 
@@ -1010,7 +1095,7 @@
             }).join('');
 
             container.innerHTML = `
-                <table class="w-full notion-table">
+                <table class="w-full notion-table mobile-responsive-table">
                     <thead>
                         <tr>
                             <th class="text-left py-3 px-6 notion-small text-stone-500">候補日時</th>
@@ -1078,12 +1163,12 @@
                         status = 'maybe';
                     }
 
-                    const targetCell = document.querySelector(`[data-date="${dateStr}"][data-status="${status}"]`);
+                    const targetCell = document.querySelector(`[data - date= "${dateStr}"][data - status="${status}"]`);
                     if (targetCell) {
                         selectChoice(targetCell);
-                        console.log(`✅ 日程選択復元: ${dateStr} -> ${status}`);
+                        console.log(`✅ 日程選択復元: ${dateStr} -> ${status} `);
                     } else {
-                        console.warn(`⚠️ 選択ボタンが見つかりません: ${dateStr}, ${status}`);
+                        console.warn(`⚠️ 選択ボタンが見つかりません: ${dateStr}, ${status} `);
                     }
                 });
             } else {
@@ -1102,7 +1187,7 @@
         // 選択肢を選択状態にする
         function selectChoice(button) {
             const dateStr = button.dataset.date;
-            document.querySelectorAll(`[data-date="${dateStr}"]`).forEach(btn => {
+            document.querySelectorAll(`[data - date= "${dateStr}"]`).forEach(btn => {
                 btn.classList.remove('selected');
             });
             button.classList.add('selected');
@@ -1118,14 +1203,14 @@
             submitBtn.disabled = true;
             const originalText = submitBtn.innerHTML;
             submitBtn.innerHTML = `
-                <span class="flex items-center justify-center">
+                < span class="flex items-center justify-center" >
                     <svg class="animate-spin w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
                     ${editMode ? '更新中...' : '送信中...'}
-                </span>
-            `;
+                </span >
+                `;
 
             let isSubmitted = false; // 送信成功フラグ
 
@@ -1172,7 +1257,7 @@
                 // refresh=1パラメータを追加してデータを再取得させる
                 // action=respondedパラメータを追加して完了メッセージを表示させる
                 const timestamp = Date.now();
-                const targetUrl = `/?id=${currentEventId}&refresh=1&action=responded&_t=${timestamp}`;
+                const targetUrl = `/? id = ${currentEventId}& refresh=1 & action=responded & _t=${timestamp} `;
                 console.log('🚀 遷移先:', targetUrl);
 
                 window.location.replace(targetUrl);
@@ -1184,10 +1269,10 @@
 
                 // 技術的詳細を準備
                 const technicalDetails = [
-                    `エラー: ${error.message || '不明'}`,
-                    `コード: ${error.code || 'N/A'}`,
-                    `タイムスタンプ: ${new Date().toISOString()}`,
-                    error.stack ? `\nスタック:\n${error.stack}` : ''
+                    `エラー: ${error.message || '不明'} `,
+                    `コード: ${error.code || 'N/A'} `,
+                    `タイムスタンプ: ${new Date().toISOString()} `,
+                    error.stack ? `\nスタック: \n${error.stack} ` : ''
                 ].filter(Boolean).join('\n');
 
                 // 新しいエラー表示システムを使用
@@ -1343,12 +1428,12 @@
                 const deleteBtn = document.getElementById('delete-response-btn');
                 deleteBtn.disabled = true;
                 deleteBtn.innerHTML = `
-                    <svg class="animate-spin w-5 h-5 mr-2 inline" fill="none" viewBox="0 0 24 24">
+                < svg class="animate-spin w-5 h-5 mr-2 inline" fill = "none" viewBox = "0 0 24 24" >
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    削除中...
-                `;
+                    </svg >
+                削除中...
+            `;
 
                 // まず削除前にレコードが存在するかを確認
                 console.log('📋 削除前のレコード確認');
@@ -1469,7 +1554,7 @@
                     // タイムスタンプを追加して強制リロード
                     // refresh=1パラメータを追加してデータを再取得させる
                     const timestamp = Date.now();
-                    const targetUrl = `/?id=${currentEventId}&refresh=1&_t=${timestamp}`;
+                    const targetUrl = `/? id = ${currentEventId}& refresh=1 & _t=${timestamp} `;
                     console.log('🚀 遷移先:', targetUrl);
                     console.log('📝 タイムスタンプ:', timestamp);
                     console.log('🔄 refresh=1 パラメータを追加してデータを再取得します');
@@ -1487,10 +1572,10 @@
 
                 // 技術的詳細を準備
                 const technicalDetails = [
-                    `エラー: ${error.message || '不明'}`,
-                    `コード: ${error.code || 'N/A'}`,
-                    `タイムスタンプ: ${new Date().toISOString()}`,
-                    error.stack ? `\nスタック:\n${error.stack}` : ''
+                    `エラー: ${error.message || '不明'} `,
+                    `コード: ${error.code || 'N/A'} `,
+                    `タイムスタンプ: ${new Date().toISOString()} `,
+                    error.stack ? `\nスタック: \n${error.stack} ` : ''
                 ].filter(Boolean).join('\n');
 
                 // 新しいエラー表示システムを使用
@@ -1500,11 +1585,11 @@
                 const deleteBtn = document.getElementById('delete-response-btn');
                 deleteBtn.disabled = false;
                 deleteBtn.innerHTML = `
-                    <svg class="w-5 h-5 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                    </svg>
-                    この回答を削除
-                `;
+                < svg class="w-5 h-5 mr-2 inline" fill = "none" stroke = "currentColor" viewBox = "0 0 24 24" >
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg >
+                この回答を削除
+                    `;
             }
         }
 
@@ -1518,7 +1603,7 @@
             }
 
             // refresh=1 パラメータを追加して戻る（データ再取得のため）
-            const targetUrl = `index.html?id=${currentEventId}&refresh=1`;
+            const targetUrl = `index.html ? id = ${currentEventId}& refresh=1`;
             console.log('🚀 遷移先:', targetUrl);
             console.log('📝 データ再取得フラグ: refresh=1');
 
@@ -1729,9 +1814,9 @@
                 '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>' :
                 '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>';
 
-            notification.className = `${bgColor} text-white px-6 py-4 rounded-xl shadow-lg transform translate-x-full transition-all duration-300 ease-in-out max-w-sm`;
+            notification.className = `${bgColor} text - white px - 6 py - 4 rounded - xl shadow - lg transform translate - x - full transition - all duration - 300 ease -in -out max - w - sm`;
             notification.innerHTML = `
-                <div class="flex items-start space-x-3">
+                < div class="flex items-start space-x-3" >
                     <div class="flex-shrink-0 mt-0.5">
                         ${icon}
                     </div>
@@ -1744,8 +1829,8 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                         </svg>
                     </button>
-                </div>
-            `;
+                </div >
+                `;
 
             container.appendChild(notification);
 
@@ -1798,11 +1883,11 @@
             messageContainer.id = 'large-success-message';
             messageContainer.className = 'fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50';
             messageContainer.innerHTML = `
-                <div class="bg-white rounded-2xl shadow-floating p-8 mx-4 max-w-md w-full animate-scale-in">
+                < div class="bg-white rounded-2xl shadow-floating p-8 mx-4 max-w-md w-full animate-scale-in" >
                     <div class="text-center">
                         <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
                             <svg class="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
                             </svg>
                         </div>
                         <h3 class="text-2xl font-bold text-gray-900 mb-3">${title}</h3>
@@ -1811,7 +1896,7 @@
                             自動的に一覧画面に戻ります...
                         </div>
                     </div>
-                </div>
+                </div >
             `;
 
             document.body.appendChild(messageContainer);
