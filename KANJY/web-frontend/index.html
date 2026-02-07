@@ -3048,19 +3048,32 @@
 
             detailTableBody.innerHTML = '';
 
+            // テーブルのコンテナ要素を取得（表示切り替え用）
+            const tableContainer = detailTableBody.closest('.responses-table-container');
+            const parentCardBody = tableContainer ? tableContainer.parentElement : null;
+
+            // 既存の「データなし」メッセージがあれば削除
+            const existingNoData = document.getElementById('responses-no-data');
+            if (existingNoData) existingNoData.remove();
+
             if (!responses || responses.length === 0) {
-                detailTableBody.innerHTML = `
-                    <tr style="background: transparent;">
-                        <td colspan="100%" class="py-12 text-center" style="border: none;">
-                            <div class="flex flex-col items-center justify-center text-gray-400 bg-stone-50/50 rounded-xl border border-dashed border-stone-200 py-8 mx-4">
-                                <svg class="w-10 h-10 mb-2 text-stone-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                                </svg>
-                                <span class="text-sm font-medium">まだ回答がありません</span>
-                            </div>
-                        </td>
-                    </tr>
-                `;
+                // テーブルを非表示
+                if (tableContainer) tableContainer.style.display = 'none';
+
+                // シンプルな「まだ回答がありません」メッセージを表示
+                if (parentCardBody) {
+                    const noDataDiv = document.createElement('div');
+                    noDataDiv.id = 'responses-no-data';
+                    noDataDiv.className = 'flex flex-col items-center justify-center py-12 text-gray-400';
+                    noDataDiv.innerHTML = `
+                        <svg class="w-12 h-12 mb-3 text-stone-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                        <span class="text-sm font-medium">まだ回答がありません</span>
+                    `;
+                    parentCardBody.appendChild(noDataDiv);
+                }
+
                 // 「もっと表示」ボタンを非表示
                 const showMoreSection = document.getElementById('show-more-section');
                 if (showMoreSection) {
@@ -3072,6 +3085,9 @@
                 createScheduleChart(responses);
 
                 return;
+            } else {
+                // テーブルを表示
+                if (tableContainer) tableContainer.style.display = 'block';
             }
 
             // 表示する回答を決定
