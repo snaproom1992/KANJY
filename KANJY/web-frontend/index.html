@@ -3389,7 +3389,7 @@
             }
 
             // 全体のステータスから未定かどうかを判定
-            if (response.status === 'undecided') {
+            if (response.status === 'undecided' || response.status === 'maybe') {
                 return 'maybe';
             }
 
