@@ -602,6 +602,10 @@ struct PrePlanView: View {
             .onChange(of: viewModel.participants.count) { _, newCount in
                 handleParticipantsCountChange(newCount: newCount)
             }
+            .onDisappear {
+                // 自動保存：戻るボタンが押されたときも変更を保存
+                autoSavePlan()
+            }
             // 削除確認アラートを追加
             .alert("参加者を削除", isPresented: $showingDeleteAlert) {
                 Button("キャンセル", role: .cancel) {}
@@ -1300,31 +1304,18 @@ struct PrePlanView: View {
             }
             
             // 集金管理セクション
-            if !viewModel.participants.isEmpty {
-                InfoCard(
-                    title: "集金管理",
-                    icon: "creditcard",
-                    isOptional: true
-                ) {
-                    PrePlanParticipantListView(
-                        viewModel: viewModel,
-                        confirmedDate: confirmedDate,
-                        editingParticipant: $editingParticipant,
-                        showingAddParticipant: $showingAddParticipant,
-                        showPaymentGenerator: $showPaymentGenerator
-                    )
-                }
-            } else {
-                VStack(spacing: DesignSystem.Spacing.md) {
-                    Image(systemName: "person.2.slash")
-                        .font(.system(size: 50))
-                        .foregroundColor(DesignSystem.Colors.secondary)
-                    Text("参加者なし")
-                        .font(DesignSystem.Typography.headline)
-                        .foregroundColor(DesignSystem.Colors.black)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, DesignSystem.Spacing.xxxl)
+            InfoCard(
+                title: "集金管理",
+                icon: "creditcard",
+                isOptional: true
+            ) {
+                PrePlanParticipantListView(
+                    viewModel: viewModel,
+                    confirmedDate: confirmedDate,
+                    editingParticipant: $editingParticipant,
+                    showingAddParticipant: $showingAddParticipant,
+                    showPaymentGenerator: $showPaymentGenerator
+                )
             }
         }
     }
@@ -1448,7 +1439,7 @@ struct PrePlanView: View {
                         
                         Spacer()
                         
-                        // 編集アイコンボタン
+                        // 編集ボタン（テキスト付き）
                         Button(action: {
                             if hasScheduleEvent, let event = scheduleEvent {
                                 startEditingScheduleForSheet(event: event)
@@ -1458,10 +1449,19 @@ struct PrePlanView: View {
                                 showScheduleEditSheet = true
                             }
                         }) {
-                            Image(systemName: "pencil")
-                                .font(.system(size: DesignSystem.Icon.Size.large, weight: .medium))
-                                .foregroundColor(DesignSystem.Colors.primary)
-                                .frame(width: DesignSystem.Button.Size.medium, height: DesignSystem.Button.Size.medium)
+                            HStack(spacing: 4) {
+                                Image(systemName: "pencil")
+                                    .font(.system(size: 12, weight: .medium))
+                                Text("編集")
+                                    .font(DesignSystem.Typography.caption)
+                            }
+                            .foregroundColor(DesignSystem.Colors.primary)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(
+                                Capsule()
+                                    .fill(DesignSystem.Colors.primary.opacity(0.1))
+                            )
                         }
                     }
                     
@@ -2809,7 +2809,7 @@ struct PrePlanView: View {
         }
     }
     
-    // 🔗 URL・プレビュー・編集カード（一番上に配置）
+    // 🔗 シンプル版チケットUI（QRコード＋共有機能のみ）
     @ViewBuilder
     private func ScheduleUrlAndActionsCardView(
         event: ScheduleEvent,
@@ -2818,94 +2818,201 @@ struct PrePlanView: View {
         onPreview: @escaping () -> Void,
         onSyncResponses: @escaping () -> Void
     ) -> some View {
-        VStack(alignment: .leading, spacing: DesignSystem.Spacing.lg) {
-            // セクションヘッダー
+        VStack(alignment: .leading, spacing: DesignSystem.Spacing.md) {
+            // 更新ボタン（チケットの外、右上）
             HStack {
-                Image(systemName: "link")
-                    .font(.system(size: DesignSystem.Icon.Size.medium, weight: DesignSystem.Typography.FontWeight.medium))
-                    .foregroundColor(DesignSystem.Colors.primary)
-                Text("インビテーションURL")
-                    .font(DesignSystem.Typography.headline)
-                    .foregroundColor(DesignSystem.Colors.black)
-                
                 Spacer()
-                
-                // 更新アイコンボタン（右上のみ）
                 Button(action: onSyncResponses) {
-                    Image(systemName: "arrow.clockwise")
-                        .font(.system(size: DesignSystem.Icon.Size.large, weight: .medium))
-                        .foregroundColor(DesignSystem.Colors.primary)
-                        .frame(width: DesignSystem.Button.Size.medium, height: DesignSystem.Button.Size.medium)
+                    HStack(spacing: 4) {
+                        Image(systemName: "arrow.clockwise")
+                            .font(.system(size: 14, weight: .medium))
+                        Text("回答を更新")
+                            .font(DesignSystem.Typography.caption)
+                    }
+                    .foregroundColor(DesignSystem.Colors.gray6)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(
+                        Capsule()
+                            .fill(DesignSystem.Colors.gray2)
+                    )
                 }
             }
+            .padding(.horizontal, DesignSystem.Spacing.lg)
             
-            // URL表示＆コピー
-            if let webUrl = event.webUrl {
+            // シンプル版チケット
+            VStack(spacing: 0) {
+                // 上部：ヘッダーエリア（プライマリーカラー）
+                ZStack {
+                    Rectangle()
+                        .fill(DesignSystem.Colors.primary)
+                        .frame(height: 50)
+                    
+                    HStack(spacing: 12) {
+                        Image(systemName: "envelope.fill")
+                            .font(.system(size: 16))
+                            .foregroundColor(.white)
+                        Text("INVITATION")
+                            .font(.system(.subheadline, design: .serif))
+                            .fontWeight(.bold)
+                            .tracking(3)
+                            .foregroundColor(.white)
+                    }
+                }
+                .mask(
+                    TicketTopShape(cornerRadius: 16)
+                )
+                
+                // メインコンテンツ：QRコードのみ
                 VStack(spacing: DesignSystem.Spacing.md) {
-                    // URL表示エリア（タップでプレビュー）
-                    HStack(spacing: DesignSystem.Spacing.md) {
-                        Button(action: onPreview) {
-                            HStack(spacing: DesignSystem.Spacing.xs) {
-                                Text(webUrl)
-                                    .font(DesignSystem.Typography.body)
-                                    .foregroundColor(DesignSystem.Colors.primary)
-                                    .lineLimit(1)
-                                    .truncationMode(.middle)
-                                
-                                Image(systemName: "chevron.right")
-                                    .font(.system(size: DesignSystem.Icon.Size.small))
-                                    .foregroundColor(DesignSystem.Colors.secondary)
-                            }
+                    // QRコード（中央配置）
+                    VStack(spacing: 8) {
+                        Image(uiImage: generateQRCodeForPrePlanView(from: scheduleViewModel.getWebUrl(for: event)))
+                            .interpolation(.none)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 120, height: 120)
+                            .background(Color.white)
+                            .cornerRadius(8)
+                        
+                        Text("QRコードをスキャンまたはタップすると\n調整用Webページが開きます")
+                            .font(DesignSystem.Typography.caption)
+                            .foregroundColor(DesignSystem.Colors.gray6)
+                            .multilineTextAlignment(.center)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .padding(DesignSystem.Spacing.xl)
+                .contentShape(Rectangle()) // タップ領域を確保
+                .onTapGesture {
+                    if let url = URL(string: scheduleViewModel.getWebUrl(for: event)) {
+                        UIApplication.shared.open(url)
+                    }
+                }
+                
+                // ミシン目
+                DashedLine()
+                    .stroke(style: StrokeStyle(lineWidth: 1.5, dash: [6, 4]))
+                    .foregroundColor(DesignSystem.Colors.gray3)
+                    .frame(height: 1)
+                    .padding(.horizontal, DesignSystem.Spacing.md)
+                    .anchorPreference(key: TicketDividerAnchorKey.self, value: .bounds) { $0 }
+                
+                // 下部：アクションボタンエリア
+                if let webUrl = event.webUrl {
+                    VStack(spacing: DesignSystem.Spacing.sm) {
+                        // シェアボタン（プライマリーアクション）
+                        Button(action: {
+                            shareUrl(scheduleViewModel.getShareUrl(for: event))
+                        }) {
+                            Label("招待状を送る", systemImage: "square.and.arrow.up")
+                                .font(DesignSystem.Typography.body.weight(.semibold))
+                                .frame(maxWidth: .infinity)
                         }
-                        .buttonStyle(.plain)
+                        .primaryButtonStyle()
+                        .controlSize(DesignSystem.Button.Control.large)
                         
-                        Spacer()
-                        
-                        // コピーアイコンボタン
+                        // コピーボタン（セカンダリーアクション）
                         Button(action: {
                             UIPasteboard.general.string = webUrl
-                            // コピー成功のhaptic feedback
                             let generator = UINotificationFeedbackGenerator()
                             generator.notificationOccurred(.success)
-                            // トーストを表示
                             withAnimation {
                                 showingCopyToast = true
                             }
-                            // 2秒後に自動で非表示
                             DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                                 withAnimation {
                                     showingCopyToast = false
                                 }
                             }
                         }) {
-                            Image(systemName: "doc.on.doc")
-                                .font(.system(size: DesignSystem.Icon.Size.medium, weight: DesignSystem.Typography.FontWeight.medium))
-                                .foregroundColor(DesignSystem.Colors.primary)
-                                .frame(width: DesignSystem.Button.Size.medium, height: DesignSystem.Button.Size.medium)
-                                .background(
-                                    Circle()
-                                        .fill(DesignSystem.Colors.primary.opacity(0.1))
-                                )
+                            Label("URLをコピー", systemImage: "doc.on.doc")
+                                .font(DesignSystem.Typography.body)
+                                .frame(maxWidth: .infinity)
                         }
+                        .secondaryButtonStyle()
+                        .controlSize(DesignSystem.Button.Control.large)
+                        .tint(DesignSystem.Colors.primary)
                     }
-                    .padding(DesignSystem.Spacing.md)
-                    .background(
-                        RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadiusSmall, style: .continuous)
-                            .fill(DesignSystem.Colors.gray1)
-                    )
+                    .padding(DesignSystem.Spacing.lg)
                 }
             }
+            .backgroundPreferenceValue(TicketDividerAnchorKey.self) { anchor in
+                GeometryReader { geo in
+                    if let anchor = anchor {
+                        let dividerY = geo[anchor].midY
+                        TicketShape(notchYPosition: dividerY)
+                            .fill(DesignSystem.Colors.white)
+                            .shadow(
+                                color: DesignSystem.Colors.black.opacity(0.08),
+                                radius: 12,
+                                x: 0,
+                                y: 4
+                            )
+                    } else {
+                        // フォールバック（アンカー取得前）
+                        TicketShape(notchOffset: 0.6)
+                            .fill(DesignSystem.Colors.white)
+                            .shadow(
+                                color: DesignSystem.Colors.black.opacity(0.08),
+                                radius: 12,
+                                x: 0,
+                                y: 4
+                            )
+                    }
+                }
+            }
+            .padding(.horizontal, DesignSystem.Spacing.lg)
             
-            Text("集まった回答は、参加者リストから確認することができます。")
+            // 説明テキスト
+            Text("イベント情報は下のセクションで確認できます。")
                 .font(DesignSystem.Typography.caption)
                 .foregroundColor(DesignSystem.Colors.secondary)
-                .padding(.top, -DesignSystem.Spacing.md)
+                .padding(.horizontal, DesignSystem.Spacing.lg)
         }
-        .padding(DesignSystem.Spacing.lg)
-        .background(Color(.systemBackground))
-        .cornerRadius(DesignSystem.Card.cornerRadius)
-        .shadow(color: DesignSystem.Colors.black.opacity(0.05), radius: 8, x: 0, y: 2)
     }
+    
+    // QRコード生成（PrePlanView用）
+    private func generateQRCodeForPrePlanView(from string: String) -> UIImage {
+        let context = CIContext()
+        let filter = CIFilter.qrCodeGenerator()
+        filter.message = Data(string.utf8)
+        
+        if let outputImage = filter.outputImage {
+            let transform = CGAffineTransform(scaleX: 10, y: 10)
+            let scaledImage = outputImage.transformed(by: transform)
+            
+            if let cgImage = context.createCGImage(scaledImage, from: scaledImage.extent) {
+                return UIImage(cgImage: cgImage)
+            }
+        }
+        
+        return UIImage(systemName: "xmark.circle") ?? UIImage()
+    }
+    
+    // チケット用日付フォーマッター（コンパクト版）
+    private func formatDateForTicketCompact(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "ja_JP")
+        formatter.dateFormat = "M/d(E) H:mm"
+        return formatter.string(from: date)
+    }
+    
+    // URL共有
+    private func shareUrl(_ url: String) {
+        let activityVC = UIActivityViewController(
+            activityItems: [url],
+            applicationActivities: nil
+        )
+        
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let window = windowScene.windows.first,
+           let rootVC = window.rootViewController {
+            rootVC.present(activityVC, animated: true)
+        }
+    }
+    
     
     // 📅 候補日時リストビュー
     @ViewBuilder

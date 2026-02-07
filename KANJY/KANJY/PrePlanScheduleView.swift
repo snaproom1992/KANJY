@@ -67,10 +67,10 @@ struct ScheduleDisplayView: View {
             // URL表示＆コピー
             if let webUrl = event.webUrl {
                 Button(action: {
-                    UIPasteboard.general.string = webUrl
-                    // コピー成功のhaptic feedback
-                    let generator = UINotificationFeedbackGenerator()
-                    generator.notificationOccurred(.success)
+                    // タップでSafariで開く
+                    if let url = URL(string: webUrl) {
+                        UIApplication.shared.open(url)
+                    }
                 }) {
                     HStack(spacing: DesignSystem.Spacing.md) {
                         VStack(alignment: .leading, spacing: DesignSystem.Spacing.xs) {
@@ -81,17 +81,20 @@ struct ScheduleDisplayView: View {
                                 .truncationMode(.middle)
                             
                             HStack(spacing: DesignSystem.Spacing.xs) {
-                                Text("タップしてコピー")
+                                Text("タップして開く / 長押しでコピー")
                                     .font(DesignSystem.Typography.caption)
                                     .foregroundColor(DesignSystem.Colors.secondary)
                                 
-                                Image(systemName: "doc.on.doc")
+                                Image(systemName: "safari")
                                     .font(DesignSystem.Typography.caption)
                                     .foregroundColor(DesignSystem.Colors.secondary)
                             }
                         }
                         
                         Spacer()
+                        
+                        Image(systemName: "arrow.up.right.square")
+                            .foregroundColor(DesignSystem.Colors.primary)
                     }
                     .padding(DesignSystem.Spacing.md)
                     .background(
@@ -100,6 +103,24 @@ struct ScheduleDisplayView: View {
                     )
                 }
                 .buttonStyle(PlainButtonStyle())
+                .contextMenu {
+                    Button(action: {
+                        UIPasteboard.general.string = webUrl
+                        // コピー成功のhaptic feedback
+                        let generator = UINotificationFeedbackGenerator()
+                        generator.notificationOccurred(.success)
+                    }) {
+                        Label("URLをコピー", systemImage: "doc.on.doc")
+                    }
+                    
+                    Button(action: {
+                        if let url = URL(string: webUrl) {
+                            UIApplication.shared.open(url)
+                        }
+                    }) {
+                        Label("Safariで開く", systemImage: "safari")
+                    }
+                }
             }
             
             // サブアクション：プレビューと編集
