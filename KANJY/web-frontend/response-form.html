@@ -1,17 +1,26 @@
 <!DOCTYPE html>
 <html lang="ja" class="h-full">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KANJY - 回答フォーム</title>
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>回答入力 - KANJY</title>
+
+    <!-- キャッシュ制御メタタグ -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
     <!-- Supabase CDN -->
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    
+
     <script>
         tailwind.config = {
             theme: {
@@ -116,7 +125,7 @@
             }
         }
     </script>
-    
+
     <style>
         :root {
             --bg-primary: #ffffff;
@@ -208,6 +217,22 @@
             color: #374151;
         }
 
+        /* Hover Effects - Touch Device Optimization */
+        @media (hover: hover) {
+            .btn-hover:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            }
+
+            .choice-cell:hover {
+                background-color: #FAFAF9;
+            }
+        }
+
+        .btn-hover:active {
+            transform: scale(0.98);
+        }
+
         .micro-transition {
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
@@ -235,10 +260,57 @@
             transform: translateY(-4px);
         }
 
-        .card-section + .card-section {
+        .card-section+.card-section {
             border-top: 1px solid var(--section-divider);
             padding-top: 2rem;
             margin-top: 2rem;
+        }
+
+        /* モバイル最適化のベーススタイル */
+        :root {
+            --sat: env(safe-area-inset-top);
+            --sab: env(safe-area-inset-bottom);
+            --sal: env(safe-area-inset-left);
+            --sar: env(safe-area-inset-right);
+        }
+
+        html {
+            -webkit-text-size-adjust: 100%;
+            -webkit-tap-highlight-color: transparent;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+            background-color: #F5F5F4;
+            color: #1C1917;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+            width: 100%;
+            overscroll-behavior-y: none;
+        }
+
+        /* タッチ操作の最適化 */
+        button,
+        a,
+        input,
+        textarea,
+        .choice-cell {
+            touch-action: manipulation;
+        }
+
+        /* iOSでの入力時ズーム防止 */
+        input,
+        textarea {
+            font-size: 16px !important;
+        }
+
+        /* フォーム要素のフォーカススタイル改善 */
+        input:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #000;
+            box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
         }
 
         .form-input {
@@ -333,6 +405,7 @@
                 opacity: 0;
                 transform: scale(0.9);
             }
+
             to {
                 opacity: 1;
                 transform: scale(1);
@@ -341,8 +414,10 @@
 
         /* モバイル最適化 */
         @media (max-width: 768px) {
+
             /* 基本的な横スクロール防止 */
-            body, html {
+            body,
+            html {
                 overflow-x: hidden !important;
                 max-width: 100vw;
             }
@@ -379,22 +454,22 @@
             .card-section {
                 padding: 1rem !important;
             }
-            
+
             /* メインコンテナの余白調整 */
             main {
                 padding-top: 1rem !important;
                 padding-bottom: 1rem !important;
             }
-            
+
             /* セクション間の余白削減 */
-            .space-y-8 > * + * {
+            .space-y-8>*+* {
                 margin-top: 1rem !important;
             }
-            
-            .space-y-6 > * + * {
+
+            .space-y-6>*+* {
                 margin-top: 0.75rem !important;
             }
-            
+
             /* タイトルの余白調整 */
             .notion-heading-2 {
                 margin-top: 1rem !important;
@@ -432,7 +507,8 @@
 
             /* フォーム入力のサイズ調整 */
             .form-input {
-                font-size: 16px !important; /* iOS zoom 防止 */
+                font-size: 16px !important;
+                /* iOS zoom 防止 */
             }
 
             /* パディング調整 */
@@ -482,10 +558,11 @@
                     <span class="text-gray-900 font-light text-xl tracking-[0.2em] uppercase">K A N J Y</span>
                 </div>
                 <div class="flex items-center">
-                    <a href="https://apps.apple.com/jp/app/kanjy/id6746665673" target="_blank" 
-                       class="inline-flex items-center space-x-2 bg-gray-100 hover:bg-gray-200 transition-colors duration-200 px-4 py-2 rounded-lg text-sm font-medium text-gray-700">
+                    <a href="https://apps.apple.com/jp/app/kanjy/id6746665673" target="_blank"
+                        class="inline-flex items-center space-x-2 bg-gray-100 hover:bg-gray-200 transition-colors duration-200 px-4 py-2 rounded-lg text-sm font-medium text-gray-700">
                         <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+                            <path
+                                d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
                         </svg>
                         <span>App Storeでダウンロード</span>
                     </a>
@@ -516,9 +593,8 @@
                             <p class="notion-caption section-helper">お名前は他の参加者と共有されます。後から編集も可能です。</p>
                             <div>
                                 <label for="name" class="notion-small block text-stone-500 mb-2">お名前 *</label>
-                                <input type="text" id="name" name="name" required 
-                                       class="form-input w-full px-4 py-3 notion-body"
-                                       placeholder="例：山田太郎">
+                                <input type="text" id="name" name="name" required
+                                    class="form-input w-full px-4 py-3 notion-body" placeholder="例：山田太郎">
                             </div>
                         </div>
 
@@ -540,33 +616,36 @@
                             </div>
                             <div>
                                 <label for="comment" class="notion-small block text-stone-500 mb-2">コメント（任意）</label>
-                                <textarea id="comment" name="comment" rows="4" 
-                                          class="form-input w-full px-4 py-3 notion-body resize-none"
-                                          placeholder="例：楽しみにしています！"></textarea>
+                                <textarea id="comment" name="comment" rows="4"
+                                    class="form-input w-full px-4 py-3 notion-body resize-none"
+                                    placeholder="例：楽しみにしています！"></textarea>
                             </div>
                         </div>
 
                         <div class="card-section space-y-4">
-                            <button type="submit" 
-                                    class="w-full micro-transition inline-flex items-center justify-center px-6 py-4 bg-stone-900 hover:bg-stone-800 text-white font-semibold rounded-xl shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed">
+                            <button type="submit"
+                                class="w-full micro-transition inline-flex items-center justify-center px-6 py-4 bg-stone-900 hover:bg-stone-800 text-white font-semibold rounded-xl shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed">
                                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                                 </svg>
                                 回答を送信
                             </button>
-                            
-                            <button type="button" onclick="cancelForm()" 
-                                    class="w-full micro-transition inline-flex items-center justify-center px-6 py-4 bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold rounded-xl border border-stone-200">
+
+                            <button type="button" onclick="cancelForm()"
+                                class="w-full micro-transition inline-flex items-center justify-center px-6 py-4 bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold rounded-xl border border-stone-200">
                                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M6 18L18 6M6 6l12 12" />
                                 </svg>
                                 キャンセル
                             </button>
-                            
-                            <button type="button" id="delete-response-btn" onclick="deleteResponse()" 
-                                    class="w-full micro-transition inline-flex items-center justify-center px-6 py-4 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-xl shadow-sm hover:shadow-md hidden">
+
+                            <button type="button" id="delete-response-btn" onclick="deleteResponse()"
+                                class="w-full micro-transition inline-flex items-center justify-center px-6 py-4 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-xl shadow-sm hover:shadow-md hidden">
                                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                 </svg>
                                 この回答を削除
                             </button>
@@ -581,21 +660,25 @@
     <div id="notification-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
 
     <!-- 確認ダイアログ -->
-    <div id="confirm-dialog" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 hidden">
+    <div id="confirm-dialog"
+        class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 hidden">
         <div class="bg-white rounded-2xl shadow-floating p-6 mx-4 max-w-sm w-full animate-scale-in">
             <div class="text-center">
                 <div class="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <svg class="w-8 h-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16c-.77.833.192 2.5 1.732 2.5z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16c-.77.833.192 2.5 1.732 2.5z" />
                     </svg>
                 </div>
                 <h3 id="confirm-title" class="text-lg font-bold text-gray-900 mb-2">確認</h3>
                 <p id="confirm-message" class="text-gray-600 mb-6 whitespace-pre-line">本当によろしいですか？</p>
                 <div class="flex space-x-3">
-                    <button id="confirm-cancel" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-3 px-4 rounded-xl transition-all duration-200">
+                    <button id="confirm-cancel"
+                        class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-3 px-4 rounded-xl transition-all duration-200">
                         キャンセル
                     </button>
-                    <button id="confirm-ok" class="flex-1 bg-kanjy-500 hover:bg-kanjy-600 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 shadow-md">
+                    <button id="confirm-ok"
+                        class="flex-1 bg-kanjy-500 hover:bg-kanjy-600 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 shadow-md">
                         実行
                     </button>
                 </div>
@@ -607,10 +690,10 @@
         // Supabase設定
         const SUPABASE_URL = 'https://jvluhjifihiuopqdwjll.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2bHVoamlmaWhpdW9wcWR3amxsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTExNTc5OTEsImV4cCI6MjA2NjczMzk5MX0.WDTzIs73X8NHGFcIYFk4CN-7dH5tQT5l0Bd2uY6H9lc';
-        
+
         // Supabaseクライアントをグローバルスコープで宣言
         var supabase;
-        
+
         // Supabaseライブラリの読み込みを待つ
         function waitForSupabase() {
             return new Promise((resolve, reject) => {
@@ -618,7 +701,7 @@
                     resolve();
                     return;
                 }
-                
+
                 console.log('⏳ Supabaseライブラリの読み込みを待機中...');
                 let attempts = 0;
                 const maxAttempts = 50; // 5秒待機
@@ -635,38 +718,38 @@
                 }, 100);
             });
         }
-        
+
         // RLSポリシーテスト関数
         async function testRLSPolicies() {
             try {
                 console.log('🔒 RLSポリシーテスト開始');
-                
+
                 // 読み取り権限テスト
                 const { data: readTest, error: readError } = await supabase
                     .from('responses')
                     .select('id')
                     .limit(1);
-                
+
                 console.log('📖 読み取りテスト:', readError ? 'NG' : 'OK');
                 if (readError) console.log('読み取りエラー:', readError);
-                
+
                 // 削除権限テスト（実際には削除しない、エラーだけ確認）
                 const { error: deleteTestError } = await supabase
                     .from('responses')
                     .delete()
                     .eq('id', '00000000-0000-0000-0000-000000000000'); // 存在しないID
-                
+
                 console.log('🗑️ 削除権限テスト:', deleteTestError ? '制限あり' : 'OK');
                 if (deleteTestError) {
                     console.log('削除権限エラー:', deleteTestError);
                     console.log('RLSによる制限の可能性があります');
                 }
-                
+
             } catch (error) {
                 console.error('RLSテストエラー:', error);
             }
         }
-        
+
         // グローバル変数
         let currentEvent = null;
         let currentEventId = null;
@@ -674,13 +757,13 @@
         let editResponseId = null;
 
         // 初期化
-        document.addEventListener('DOMContentLoaded', async function() {
+        document.addEventListener('DOMContentLoaded', async function () {
             console.log('🍙 回答フォーム初期化開始');
-            
+
             // Supabaseライブラリの読み込みを待つ
             try {
                 await waitForSupabase();
-                
+
                 // Supabaseクライアント初期化
                 supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
                 console.log('🔑 Supabaseクライアント初期化完了');
@@ -689,24 +772,34 @@
                 console.log('- supabaseオブジェクト:', typeof supabase);
                 console.log('- supabase.from:', typeof supabase.from);
             } catch (initError) {
-                console.error('❌ Supabase初期化エラー:', initError);
-                showError('Supabaseの初期化に失敗しました');
+                // 技術的詳細を準備
+                const technicalDetails = [
+                    `エラー: ${initError.message || '不明'}`,
+                    `コード: ${initError.code || 'N/A'}`,
+                    `タイムスタンプ: ${new Date().toISOString()}`,
+                    initError.stack ? `\nスタック:\n${initError.stack}` : ''
+                ].filter(Boolean).join('\n');
+
+                // 新しいエラー表示システムを使用
+                showError(initError, technicalDetails);
                 return;
             }
-            
+
             // URLパラメータを取得
             const urlParams = new URLSearchParams(window.location.search);
             currentEventId = urlParams.get('id');
             editResponseId = urlParams.get('edit');
             editMode = !!editResponseId;
-            
+
             console.log('📋 初期化パラメータ:');
             console.log('- イベントID:', currentEventId);
             console.log('- 編集回答ID:', editResponseId);
             console.log('- 編集モード:', editMode);
-            
+
             if (!currentEventId) {
-                showError('イベントIDが指定されていません');
+                const error = new Error('イベントIDが指定されていません');
+                const technicalDetails = 'URLパラメータに"id"が含まれていません。正しいURLでアクセスしているか確認してください。';
+                showError(error, technicalDetails);
                 return;
             }
 
@@ -716,16 +809,16 @@
                 const { data: testData, error: testError } = await supabase
                     .from('responses')
                     .select('count', { count: 'exact', head: true });
-                
+
                 if (testError) {
                     console.error('Supabase接続エラー:', testError);
                 } else {
                     console.log('✅ Supabase接続成功 - レスポンス総数:', testData);
                 }
-                
+
                 // RLSポリシーテストを実行
                 await testRLSPolicies();
-                
+
             } catch (testErr) {
                 console.error('Supabase接続テスト失敗:', testErr);
             }
@@ -735,13 +828,13 @@
                 console.log('📊 イベント情報を読み込み中...');
                 await loadEvent(currentEventId);
                 console.log('✅ イベント情報読み込み完了');
-                
+
                 if (editMode) {
                     // 編集モードの場合、既存回答を読み込み
                     console.log('📝 編集モード：既存回答を読み込み中...');
                     await loadExistingResponse(editResponseId);
                     console.log('✅ 既存回答読み込み完了');
-                    
+
                     // 送信ボタンのテキストを更新
                     const submitBtn = document.querySelector('button[type="submit"]');
                     if (submitBtn) {
@@ -754,22 +847,30 @@
                             </span>
                         `;
                     }
-                    
+
                     // 削除ボタンを表示
                     const deleteBtn = document.getElementById('delete-response-btn');
                     if (deleteBtn) {
                         deleteBtn.classList.remove('hidden');
                     }
                 }
-                
+
                 // フォームイベントリスナーを設定
                 setupFormListeners();
-                
+
                 console.log('🎉 回答フォーム初期化完了');
-                
+
             } catch (error) {
-                console.error('❌ 初期化エラー:', error);
-                showError('データの読み込みに失敗しました: ' + error.message);
+                // 技術的詳細を準備
+                const technicalDetails = [
+                    `エラー: ${error.message || '不明'}`,
+                    `コード: ${error.code || 'N/A'}`,
+                    `タイムスタンプ: ${new Date().toISOString()}`,
+                    error.stack ? `\nスタック:\n${error.stack}` : ''
+                ].filter(Boolean).join('\n');
+
+                // 新しいエラー表示システムを使用
+                showError(error, technicalDetails);
             }
         });
 
@@ -777,18 +878,18 @@
         async function loadEvent(eventId) {
             try {
                 console.log('イベント読み込み開始:', eventId);
-                
+
                 const { data: events, error } = await supabase
                     .from('events')
                     .select('*')
                     .eq('id', eventId);
-                
+
                 if (error) throw error;
                 if (!events || events.length === 0) throw new Error('イベントが見つかりません');
-                
+
                 currentEvent = events[0];
                 displayEvent(currentEvent);
-                
+
             } catch (error) {
                 console.error('イベント読み込みエラー:', error);
                 throw error;
@@ -799,29 +900,29 @@
         async function loadExistingResponse(responseId) {
             try {
                 console.log('📖 既存回答を読み込み中:', responseId);
-                
+
                 const { data: responses, error } = await supabase
                     .from('responses')
                     .select('*')
                     .eq('id', responseId);
-                
+
                 console.log('📊 Supabase回答読み込み結果:', { responses, error });
-                
+
                 if (error) {
                     console.error('❌ Supabaseエラー:', error);
                     throw error;
                 }
-                
+
                 if (!responses || responses.length === 0) {
                     console.error('❌ 回答データが見つかりません');
                     throw new Error('回答が見つかりません');
                 }
-                
+
                 const response = responses[0];
                 console.log('✅ 回答データ取得成功:', response);
-                
+
                 populateForm(response);
-                
+
             } catch (error) {
                 console.error('❌ 既存回答読み込みエラー:', error);
                 throw error;
@@ -835,7 +936,7 @@
             if (titleElement) {
                 titleElement.textContent = event.title || '新年会への参加をお聞かせください';
             }
-            
+
             // 説明
             const descElement = document.getElementById('event-description');
             if (descElement) {
@@ -845,7 +946,7 @@
                     descElement.innerHTML = 'みんなで楽しい時間を過ごしましょう！<br>あなたの都合をお聞かせください。';
                 }
             }
-            
+
             // 日程選択肢を生成
             if (event.candidate_dates && Array.isArray(event.candidate_dates)) {
                 generateScheduleOptions(event.candidate_dates);
@@ -939,7 +1040,7 @@
         // 選択ボタンのイベントリスナーを設定
         function setupChoiceButtons() {
             document.querySelectorAll('.choice-cell').forEach(cell => {
-                cell.addEventListener('click', function() {
+                cell.addEventListener('click', function () {
                     selectChoice(this);
                 });
             });
@@ -948,35 +1049,35 @@
         // フォームを既存データで埋める（編集モード用）
         function populateForm(response) {
             console.log('📝 フォームにデータを入力中:', response);
-            
+
             // 基本情報を設定
             const nameInput = document.getElementById('name');
             const commentInput = document.getElementById('comment');
-            
+
             if (nameInput) {
                 nameInput.value = response.participant_name || '';
             } else {
                 console.warn('⚠️ 名前入力フィールドが見つかりません');
             }
-            
+
             if (commentInput) {
                 commentInput.value = response.comment || '';
             } else {
                 console.warn('⚠️ コメント入力フィールドが見つかりません');
             }
-            
+
             // 日程選択を復元
             if (currentEvent && currentEvent.candidate_dates) {
                 currentEvent.candidate_dates.forEach(dateStr => {
                     let status = 'not_attending';
-                    
+
                     if (response.available_dates && response.available_dates.includes(dateStr)) {
                         status = 'attending';
                     } else if (response.status === 'undecided') {
                         // 全体ステータスが未定の場合で、参加でない日程は未定として表示
                         status = 'maybe';
                     }
-                    
+
                     const targetCell = document.querySelector(`[data-date="${dateStr}"][data-status="${status}"]`);
                     if (targetCell) {
                         selectChoice(targetCell);
@@ -988,7 +1089,7 @@
             } else {
                 console.warn('⚠️ イベントまたは候補日程が見つかりません');
             }
-            
+
             console.log('✅ フォームデータ入力完了');
         }
 
@@ -1010,9 +1111,9 @@
         // フォーム送信処理
         async function handleSubmit(event) {
             event.preventDefault();
-            
+
             const submitBtn = event.target.querySelector('button[type="submit"]');
-            
+
             // ローディング状態に変更
             submitBtn.disabled = true;
             const originalText = submitBtn.innerHTML;
@@ -1025,36 +1126,72 @@
                     ${editMode ? '更新中...' : '送信中...'}
                 </span>
             `;
-            
+
+            let isSubmitted = false; // 送信成功フラグ
+
             try {
                 // フォームデータを収集
                 const formData = collectFormData();
-                
+
                 if (editMode) {
                     // 更新用にresponse_dateを除外
                     const updateData = { ...formData };
                     delete updateData.response_date;
-                    
+
                     await updateResponse(editResponseId, updateData);
-                    showSuccessNotification('回答を更新しました！', '変更内容が正常に保存されました。');
+                    isSubmitted = true;
+                    // フォーム全体を無効化
+                    disableForm();
+                    // 送信成功メッセージを大きく表示
+                    showLargeSuccessMessage('回答を更新しました！', '変更内容が正常に保存されました。');
                 } else {
                     // 新規作成
                     await createResponse(formData);
-                    showSuccessNotification('回答を送信しました！', 'ご回答いただき、ありがとうございました。');
+                    isSubmitted = true;
+                    // フォーム全体を無効化
+                    disableForm();
+                    // 送信成功メッセージを大きく表示
+                    showLargeSuccessMessage('回答を送信しました！', 'ご回答いただき、ありがとうございました。');
                 }
-                
-                // 通知を表示してから2秒後に一覧画面に戻る
-                setTimeout(() => {
-                    goBack();
-                }, 2000);
-                
+
+                // データベースへの反映を待つ（Supabaseの反映遅延を考慮 - 短縮）
+                console.log('⏱️ データベースへの反映を待機中...');
+                // 即時反映のために待機時間を短縮 (500ms -> 100ms) または削除
+                // Supabase Realtimeがあれば待機不要だが、念のため少しだけ待つ
+                await new Promise(resolve => setTimeout(resolve, 100));
+
+                console.log('🔙 トップに戻ります (即時)');
+
+                if (!currentEventId) {
+                    console.error('❌ イベントIDが不明です');
+                    console.error('❌ currentEventId:', currentEventId);
+                    return;
+                }
+
+                // タイムスタンプを追加して強制リロード
+                // refresh=1パラメータを追加してデータを再取得させる
+                // action=respondedパラメータを追加して完了メッセージを表示させる
+                const timestamp = Date.now();
+                const targetUrl = `/?id=${currentEventId}&refresh=1&action=responded&_t=${timestamp}`;
+                console.log('🚀 遷移先:', targetUrl);
+
+                window.location.replace(targetUrl);
+
             } catch (error) {
-                console.error('送信エラー:', error);
-                showErrorNotification('送信に失敗しました', 'もう一度お試しください。問題が続く場合は、イベント主催者またはサポート（snaproom.info@gmail.com）までご連絡ください。');
-            } finally {
-                // ローディング状態を解除
+                // エラー時のみボタンを再度有効化
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = originalText;
+
+                // 技術的詳細を準備
+                const technicalDetails = [
+                    `エラー: ${error.message || '不明'}`,
+                    `コード: ${error.code || 'N/A'}`,
+                    `タイムスタンプ: ${new Date().toISOString()}`,
+                    error.stack ? `\nスタック:\n${error.stack}` : ''
+                ].filter(Boolean).join('\n');
+
+                // 新しいエラー表示システムを使用
+                showError(error, technicalDetails);
             }
         }
 
@@ -1062,42 +1199,42 @@
         function collectFormData() {
             const participantName = document.getElementById('name').value.trim();
             const comment = document.getElementById('comment').value.trim();
-            
+
             if (!participantName) {
                 throw new Error('お名前を入力してください');
             }
-            
+
             // 日程選択を収集
             const availableDates = [];
             const dateStatuses = {};
-            
+
             document.querySelectorAll('.choice-cell.selected').forEach(cell => {
                 const dateStr = cell.dataset.date;
                 const status = cell.dataset.status;
-                
+
                 dateStatuses[dateStr] = status;
-                
+
                 // 参加のみをavailable_datesに追加（既存のテーブル構造に合わせる）
                 if (status === 'attending') {
                     availableDates.push(dateStr);
                 }
             });
-            
+
             // 全体の参加状況を判定
             const statusValues = Object.values(dateStatuses);
             let overallStatus = 'not_attending';
-            
+
             if (statusValues.includes('attending')) {
                 overallStatus = 'attending';
             } else if (statusValues.includes('maybe')) {
                 overallStatus = 'undecided';
             }
-            
+
             // 少なくとも1つの日程に回答しているかチェック
             if (statusValues.length === 0) {
                 throw new Error('少なくとも1つの日程について回答してください');
             }
-            
+
             console.log('📋 収集したフォームデータ:', {
                 participantName,
                 availableDates,
@@ -1105,7 +1242,7 @@
                 dateStatuses,
                 comment
             });
-            
+
             return {
                 event_id: currentEventId,
                 participant_name: participantName,
@@ -1124,7 +1261,7 @@
                 '入力画面に戻る',
                 'このまま続ける'
             );
-            
+
             if (confirmed) {
                 goBack();
             }
@@ -1133,19 +1270,19 @@
         // 新規回答を作成
         async function createResponse(formData) {
             console.log('📤 新規回答を作成中:', formData);
-            
+
             const { data, error } = await supabase
                 .from('responses')
                 .insert([formData])
                 .select();
-            
+
             console.log('📥 Supabase回答結果:', { data, error });
-            
+
             if (error) {
                 console.error('❌ 新規回答作成エラー:', error);
                 throw error;
             }
-            
+
             console.log('✅ 新規回答作成成功');
             return data;
         }
@@ -1153,20 +1290,20 @@
         // 回答を更新
         async function updateResponse(responseId, updateData) {
             console.log('📤 回答を更新中:', { responseId, updateData });
-            
+
             const { data, error } = await supabase
                 .from('responses')
                 .update(updateData)
                 .eq('id', responseId)
                 .select();
-            
+
             console.log('📥 Supabase更新結果:', { data, error });
-            
+
             if (error) {
                 console.error('❌ 回答更新エラー:', error);
                 throw error;
             }
-            
+
             console.log('✅ 回答更新成功');
             return data;
         }
@@ -1176,16 +1313,16 @@
             console.log('🗑️ 削除機能開始');
             console.log('編集モード:', editMode);
             console.log('編集回答ID:', editResponseId);
-            
+
             if (!editMode || !editResponseId) {
                 console.error('❌ 削除条件が満たされていません');
                 showErrorNotification('削除できません', '編集モードではないか、回答IDが無効です。');
                 return;
             }
-            
+
             // 参加者名を取得（確認用）
             const participantName = document.getElementById('name').value.trim() || '参加者';
-            
+
             // 確認ダイアログ
             const confirmed = await showConfirmDialog(
                 '回答削除の確認',
@@ -1193,15 +1330,15 @@
                 '削除する',
                 '削除しない'
             );
-            
+
             if (!confirmed) {
                 console.log('削除がキャンセルされました');
                 return;
             }
-            
+
             try {
                 console.log('🔄 削除処理開始 - ID:', editResponseId);
-                
+
                 // 削除ボタンをローディング状態に
                 const deleteBtn = document.getElementById('delete-response-btn');
                 deleteBtn.disabled = true;
@@ -1212,49 +1349,49 @@
                     </svg>
                     削除中...
                 `;
-                
+
                 // まず削除前にレコードが存在するかを確認
                 console.log('📋 削除前のレコード確認');
                 const { data: beforeCheck, error: checkError } = await supabase
                     .from('responses')
                     .select('id, participant_name')
                     .eq('id', editResponseId);
-                
+
                 if (checkError) {
                     console.error('レコード確認エラー:', checkError);
                     throw new Error('削除前の確認に失敗: ' + checkError.message);
                 }
-                
+
                 console.log('削除前のレコード:', beforeCheck);
-                
+
                 if (!beforeCheck || beforeCheck.length === 0) {
                     throw new Error('削除対象のレコードが見つかりません');
                 }
-                
+
                 // RLS制限により物理削除ができないため、論理削除を実行
                 console.log('🗑️ 論理削除を実行（RLS制限回避）');
                 console.log('削除対象ID:', editResponseId);
                 console.log('イベントID:', currentEventId);
-                
+
                 // まず物理削除を試行
                 const { data: deleteResult, error: deleteError } = await supabase
                     .from('responses')
                     .delete()
                     .eq('id', editResponseId)
                     .select();
-                
+
                 console.log('物理削除結果:', deleteResult);
                 console.log('物理削除エラー:', deleteError);
-                
+
                 // 物理削除が失敗した場合は論理削除を実行
                 if (deleteError || !deleteResult || deleteResult.length === 0) {
                     console.log('⚠️ 物理削除に失敗。論理削除を実行します...');
-                    
+
                     // 論理削除: 制約に準拠して削除済みマークを付ける
                     const originalName = beforeCheck[0]?.participant_name || 'ユーザー';
                     const { data: updateResult, error: updateError } = await supabase
                         .from('responses')
-                        .update({ 
+                        .update({
                             status: 'not_attending', // 制約に準拠した値を使用
                             participant_name: '[削除済み] ' + originalName,
                             comment: (beforeCheck[0]?.comment || '') + '\n[削除日時: ' + new Date().toLocaleString('ja-JP') + ']',
@@ -1262,34 +1399,34 @@
                         })
                         .eq('id', editResponseId)
                         .select();
-                    
+
                     console.log('論理削除結果:', updateResult);
                     console.log('論理削除エラー:', updateError);
-                    
+
                     if (updateError) {
                         console.error('論理削除もエラー:', updateError);
                         throw new Error('削除に失敗しました: ' + updateError.message);
                     }
-                    
+
                     if (!updateResult || updateResult.length === 0) {
                         throw new Error('論理削除に失敗しました。対象レコードが見つかりません。');
                     }
-                    
+
                     console.log('✅ 論理削除成功。削除マークを付けました。');
                 } else {
                     console.log('✅ 物理削除成功。削除されたレコード数:', deleteResult.length);
                 }
-                
+
                 // 削除後の確認（物理削除または論理削除の確認）
                 console.log('📋 削除処理の確認');
                 const { data: afterCheck, error: afterCheckError } = await supabase
                     .from('responses')
                     .select('id, participant_name, status, comment')
                     .eq('id', editResponseId);
-                
+
                 console.log('削除後のレコード状態:', afterCheck);
                 console.log('削除後の確認エラー:', afterCheckError);
-                
+
                 if (afterCheckError) {
                     console.error('削除後確認エラー:', afterCheckError);
                     // エラーがある場合は、物理削除が成功した可能性もある
@@ -1297,7 +1434,7 @@
                 } else if (afterCheck && afterCheck.length > 0) {
                     // レコードが残っている場合
                     const record = afterCheck[0];
-                    
+
                     if (record.participant_name.startsWith('[削除済み]')) {
                         console.log('✅ 論理削除が完了しています');
                         console.log('削除マーク詳細:', {
@@ -1313,15 +1450,33 @@
                 } else {
                     console.log('✅ 物理削除が完了しています（レコードが完全に削除されました）');
                 }
-                
+
                 console.log('✅ 削除成功');
                 showSuccessNotification('回答を削除しました', '回答が正常に削除されました。');
-                
-                // 通知を表示してから2秒後に一覧画面に戻る
+
+                // 通知を表示してから0.5秒後に一覧画面に戻る
+                console.log('⏱️ 0.5秒後にトップページに戻ります...');
                 setTimeout(() => {
-                    goBack();
-                }, 2000);
-                
+                    console.log('⏱️ setTimeoutが実行されました（削除後）');
+                    console.log('🔙 トップに戻ります');
+
+                    if (!currentEventId) {
+                        console.error('❌ イベントIDが不明です');
+                        console.error('❌ currentEventId:', currentEventId);
+                        return;
+                    }
+
+                    // タイムスタンプを追加して強制リロード
+                    // refresh=1パラメータを追加してデータを再取得させる
+                    const timestamp = Date.now();
+                    const targetUrl = `/?id=${currentEventId}&refresh=1&_t=${timestamp}`;
+                    console.log('🚀 遷移先:', targetUrl);
+                    console.log('📝 タイムスタンプ:', timestamp);
+                    console.log('🔄 refresh=1 パラメータを追加してデータを再取得します');
+
+                    window.location.replace(targetUrl);
+                }, 500);
+
             } catch (error) {
                 console.error('❌ 削除エラー:', error);
                 console.error('エラー詳細:', {
@@ -1329,9 +1484,18 @@
                     message: error.message,
                     stack: error.stack
                 });
-                
-                showErrorNotification('削除に失敗しました', 'もう一度お試しください。問題が続く場合は、イベント主催者またはサポート（snaproom.info@gmail.com）までご連絡ください。');
-                
+
+                // 技術的詳細を準備
+                const technicalDetails = [
+                    `エラー: ${error.message || '不明'}`,
+                    `コード: ${error.code || 'N/A'}`,
+                    `タイムスタンプ: ${new Date().toISOString()}`,
+                    error.stack ? `\nスタック:\n${error.stack}` : ''
+                ].filter(Boolean).join('\n');
+
+                // 新しいエラー表示システムを使用
+                showError(error, technicalDetails);
+
                 // ボタンを元に戻す
                 const deleteBtn = document.getElementById('delete-response-btn');
                 deleteBtn.disabled = false;
@@ -1346,27 +1510,142 @@
 
         // 一覧画面に戻る
         function goBack() {
-            // ナビゲーション履歴がある場合は、一つ前に戻る
-            if (window.history.length > 1) {
-                console.log('📱 ナビゲーション履歴を使用して戻ります');
-                window.history.back();
-            } else {
-                // 履歴がない場合（直接アクセスされた場合など）は、index.htmlに遷移
-                console.log('📱 ナビゲーション履歴がないため、index.htmlに遷移します');
-                const urlParams = new URLSearchParams();
-                if (currentEventId) {
-                    urlParams.set('id', currentEventId);
-                    urlParams.set('t', Date.now());
-                    urlParams.set('v', 'beautiful');
-                }
-                window.location.href = `index.html?${urlParams.toString()}`;
+            console.log('🔙 トップに戻ります');
+
+            if (!currentEventId) {
+                console.error('❌ イベントIDが不明です');
+                return;
             }
+
+            // refresh=1 パラメータを追加して戻る（データ再取得のため）
+            const targetUrl = `index.html?id=${currentEventId}&refresh=1`;
+            console.log('🚀 遷移先:', targetUrl);
+            console.log('📝 データ再取得フラグ: refresh=1');
+
+            window.location.href = targetUrl;
         }
 
-        // エラー表示
-        function showError(message) {
-            console.error('🚨', message);
-            showErrorNotification('エラーが発生しました', `${message} 解決しない場合は、イベント主催者またはサポート（snaproom.info@gmail.com）までご連絡ください。`);
+        // ========================================
+        // エラーハンドリングシステム（index.htmlと統一）
+        // ========================================
+
+        // エラー分類
+        const ErrorType = {
+            NETWORK: 'network',
+            PERMISSION: 'permission',
+            DATA_NOT_FOUND: 'data_not_found',
+            VALIDATION: 'validation',
+            TIMEOUT: 'timeout',
+            SYSTEM: 'system',
+            UNKNOWN: 'unknown'
+        };
+
+        // エラー分類関数
+        function classifyError(error) {
+            const errorMessage = error?.message?.toLowerCase() || '';
+            const errorCode = error?.code?.toLowerCase() || '';
+
+            // ネットワークエラー
+            if (errorMessage.includes('network') ||
+                errorMessage.includes('fetch') ||
+                errorMessage.includes('connection') ||
+                errorMessage.includes('タイムアウト') ||
+                errorMessage.includes('timeout')) {
+                return ErrorType.NETWORK;
+            }
+
+            // 権限エラー
+            if (errorCode === '42501' ||
+                errorMessage.includes('permission') ||
+                errorMessage.includes('権限') ||
+                errorMessage.includes('unauthorized')) {
+                return ErrorType.PERMISSION;
+            }
+
+            // データが見つからない
+            if (errorCode === 'pgrst116' ||
+                errorMessage.includes('not found') ||
+                errorMessage.includes('見つかりません') ||
+                errorMessage.includes('does not exist')) {
+                return ErrorType.DATA_NOT_FOUND;
+            }
+
+            // タイムアウト
+            if (errorMessage.includes('timeout') ||
+                errorMessage.includes('タイムアウト')) {
+                return ErrorType.TIMEOUT;
+            }
+
+            // バリデーションエラー
+            if (errorMessage.includes('validation') ||
+                errorMessage.includes('invalid') ||
+                errorMessage.includes('入力してください')) {
+                return ErrorType.VALIDATION;
+            }
+
+            // システムエラー
+            if (errorMessage.includes('supabase') ||
+                errorMessage.includes('database') ||
+                errorMessage.includes('データベース')) {
+                return ErrorType.SYSTEM;
+            }
+
+            return ErrorType.UNKNOWN;
+        }
+
+        // ユーザーフレンドリーなエラーメッセージを取得
+        function getUserFriendlyErrorMessage(errorType) {
+            const messages = {
+                [ErrorType.NETWORK]: {
+                    title: 'インターネット接続エラー',
+                    message: 'インターネット接続を確認してください。Wi-Fiやモバイルデータ通信が有効になっているか確認し、再度お試しください。'
+                },
+                [ErrorType.PERMISSION]: {
+                    title: 'アクセス権限エラー',
+                    message: 'このデータへのアクセス権限がありません。イベント作成者に確認するか、正しいURLでアクセスしているか確認してください。'
+                },
+                [ErrorType.DATA_NOT_FOUND]: {
+                    title: 'データが見つかりません',
+                    message: 'イベント情報が見つかりませんでした。URLが正しいか確認するか、イベント作成者に連絡してください。'
+                },
+                [ErrorType.VALIDATION]: {
+                    title: '入力エラー',
+                    message: '入力内容に問題があります。必須項目がすべて入力されているか確認してください。'
+                },
+                [ErrorType.TIMEOUT]: {
+                    title: '接続タイムアウト',
+                    message: 'サーバーへの接続に時間がかかりすぎています。しばらく待ってから再度お試しください。'
+                },
+                [ErrorType.SYSTEM]: {
+                    title: 'システムエラー',
+                    message: '一時的なシステムエラーが発生しました。しばらく待ってから再度お試しください。'
+                },
+                [ErrorType.UNKNOWN]: {
+                    title: '予期しないエラー',
+                    message: '予期しないエラーが発生しました。問題が解決しない場合は、サポートまでご連絡ください。'
+                }
+            };
+
+            return messages[errorType] || messages[ErrorType.UNKNOWN];
+        }
+
+        // エラー表示関数（改善版）
+        function showError(error, technicalDetails = null) {
+            // エラー分類
+            const errorType = classifyError(error);
+            const errorInfo = getUserFriendlyErrorMessage(errorType);
+
+            // 通知システムを使用して表示
+            showErrorNotification(errorInfo.title, errorInfo.message);
+
+            // コンソールに詳細ログ（開発者向け）
+            console.error('❌ エラー発生:', {
+                type: errorType,
+                userMessage: errorInfo.message,
+                originalError: error,
+                technicalDetails: technicalDetails,
+                timestamp: new Date().toISOString()
+            });
         }
 
         // 成功通知を表示
@@ -1387,23 +1666,23 @@
                 const messageElement = document.getElementById('confirm-message');
                 const okButton = document.getElementById('confirm-ok');
                 const cancelButton = document.getElementById('confirm-cancel');
-                
+
                 // テキストを設定
                 titleElement.textContent = title;
                 messageElement.textContent = message;
                 okButton.textContent = okText;
                 cancelButton.textContent = cancelText;
-                
+
                 // ボタンの色を設定（削除の場合は赤、それ以外はブルー）
                 if (okText.includes('削除')) {
                     okButton.className = 'flex-1 bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 shadow-md';
                 } else {
                     okButton.className = 'flex-1 bg-kanjy-500 hover:bg-kanjy-600 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 shadow-md';
                 }
-                
+
                 // ダイアログを表示
                 dialog.classList.remove('hidden');
-                
+
                 // イベントリスナーを設定
                 const handleOk = () => {
                     dialog.classList.add('hidden');
@@ -1411,17 +1690,17 @@
                     cancelButton.removeEventListener('click', handleCancel);
                     resolve(true);
                 };
-                
+
                 const handleCancel = () => {
                     dialog.classList.add('hidden');
                     okButton.removeEventListener('click', handleOk);
                     cancelButton.removeEventListener('click', handleCancel);
                     resolve(false);
                 };
-                
+
                 okButton.addEventListener('click', handleOk);
                 cancelButton.addEventListener('click', handleCancel);
-                
+
                 // ESCキーでキャンセル
                 const handleEsc = (e) => {
                     if (e.key === 'Escape') {
@@ -1436,20 +1715,20 @@
         // 通知を表示
         function showNotification(title, message, type = 'success') {
             console.log('📢 通知表示:', { title, message, type });
-            
+
             const container = document.getElementById('notification-container');
             if (!container) {
                 console.error('❌ 通知コンテナが見つかりません');
                 return;
             }
-            
+
             const notification = document.createElement('div');
-            
+
             const bgColor = type === 'success' ? 'bg-green-500' : 'bg-red-500';
-            const icon = type === 'success' ? 
+            const icon = type === 'success' ?
                 '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>' :
                 '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>';
-            
+
             notification.className = `${bgColor} text-white px-6 py-4 rounded-xl shadow-lg transform translate-x-full transition-all duration-300 ease-in-out max-w-sm`;
             notification.innerHTML = `
                 <div class="flex items-start space-x-3">
@@ -1467,14 +1746,14 @@
                     </button>
                 </div>
             `;
-            
+
             container.appendChild(notification);
-            
+
             // アニメーションで表示
             setTimeout(() => {
                 notification.classList.remove('translate-x-full');
             }, 100);
-            
+
             // 5秒後に自動削除
             setTimeout(() => {
                 notification.classList.add('translate-x-full');
@@ -1485,27 +1764,27 @@
                 }, 300);
             }, 5000);
         }
-        
+
         // フォーム全体を無効化
         function disableForm() {
             const form = document.getElementById('response-form');
             if (!form) return;
-            
+
             // すべての入力フィールドを無効化
             const inputs = form.querySelectorAll('input, textarea, button');
             inputs.forEach(input => {
                 input.disabled = true;
             });
-            
+
             // 選択ボタンも無効化
             document.querySelectorAll('.choice-cell').forEach(cell => {
                 cell.style.pointerEvents = 'none';
                 cell.style.opacity = '0.6';
             });
-            
+
             console.log('✅ フォームを無効化しました（重複送信防止）');
         }
-        
+
         // 大きな成功メッセージを表示（画面中央）
         function showLargeSuccessMessage(title, message) {
             // 既存の大きなメッセージがあれば削除
@@ -1513,7 +1792,7 @@
             if (existingMessage) {
                 existingMessage.remove();
             }
-            
+
             // 大きなメッセージコンテナを作成
             const messageContainer = document.createElement('div');
             messageContainer.id = 'large-success-message';
@@ -1534,9 +1813,9 @@
                     </div>
                 </div>
             `;
-            
+
             document.body.appendChild(messageContainer);
-            
+
             // 2秒後にフェードアウト（ページ遷移と同時に）
             setTimeout(() => {
                 messageContainer.classList.add('opacity-0');
@@ -1545,4 +1824,5 @@
         }
     </script>
 </body>
-</html> 
+
+</html>
