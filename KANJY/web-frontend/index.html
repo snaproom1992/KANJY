@@ -1242,7 +1242,8 @@
                     </div>
 
                     <!-- テーブル表示エリア -->
-                    <div id="table-container" class="overflow-x-auto schedule-table" style="display: none;">
+                    <div id="table-container" class="overflow-x-auto schedule-table hidden md:block"
+                        style="display: none;">
                         <table class="w-full notion-table" role="table" aria-label="日程別回答状況一覧">
                             <thead>
                                 <tr>
@@ -1297,6 +1298,11 @@
                                 <!-- 動的に生成される日程別参加状況がここに挿入されます -->
                             </tbody>
                         </table>
+                    </div>
+
+                    <!-- Mobile Schedule List Container -->
+                    <div id="mobile-schedule-list" class="block md:hidden space-y-4 px-4 pb-6" style="display: none;">
+                        <!-- 動的に生成されるカード一覧がここに挿入されます -->
                     </div>
                 </div>
             </section>
@@ -1844,6 +1850,8 @@
             chartViewBtn.addEventListener('click', function () {
                 chartContainer.style.display = 'block';
                 tableContainer.style.display = 'none';
+                const mobileScheduleList = document.getElementById('mobile-schedule-list');
+                if (mobileScheduleList) mobileScheduleList.style.display = 'none';
 
                 chartViewBtn.classList.add('bg-white', 'shadow-sm', 'text-gray-900');
                 chartViewBtn.classList.remove('text-gray-600', 'hover:text-gray-900');
@@ -1855,7 +1863,9 @@
             // 表表示
             tableViewBtn.addEventListener('click', function () {
                 chartContainer.style.display = 'none';
-                tableContainer.style.display = 'block';
+                tableContainer.style.removeProperty('display'); // hidden md:block で制御
+                const mobileScheduleList = document.getElementById('mobile-schedule-list');
+                if (mobileScheduleList) mobileScheduleList.style.removeProperty('display'); // block md:hidden で制御
 
                 tableViewBtn.classList.add('bg-white', 'shadow-sm', 'text-gray-900');
                 tableViewBtn.classList.remove('text-gray-600', 'hover:text-gray-900');
@@ -3445,11 +3455,9 @@
             // 重複除去を強制実行
             const originalDates = currentEvent.candidate_dates;
             const uniqueDates = [...new Set(originalDates)];
-            console.log('🔧 重複除去 - 元:', originalDates.length, '個', '除去後:', uniqueDates.length, '個');
 
             if (originalDates.length !== uniqueDates.length) {
-                console.warn('⚠️ 重複を発見して除去しました:', originalDates);
-                console.log('✅ 除去後の日付:', uniqueDates);
+                console.warn('⚠️ 重複を発見して除去しました');
                 currentEvent.candidate_dates = uniqueDates;
             }
 
@@ -3468,10 +3476,41 @@
 
             scheduleTableBody.innerHTML = '';
 
+            // Mobile List Container
+            const mobileScheduleListContainer = document.getElementById('mobile-schedule-list');
+            if (mobileScheduleListContainer) {
+                mobileScheduleListContainer.innerHTML = '';
+            }
+
+            // データがない場合の処理
+            if (!responses || responses.length === 0) {
+                const noDataRow = document.createElement('tr');
+                noDataRow.innerHTML = `<td colspan="6" class="py-12 text-center text-stone-500 bg-stone-50/50 rounded-lg border-2 border-dashed border-stone-200">
+                    <div class="flex flex-col items-center justify-center">
+                        <svg class="w-12 h-12 mb-3 text-stone-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                        </svg>
+                        <span class="text-sm font-medium">まだ回答がありません</span>
+                    </div>
+                 </td>`;
+                scheduleTableBody.appendChild(noDataRow);
+
+                if (mobileScheduleListContainer) {
+                    mobileScheduleListContainer.innerHTML = `
+                        <div class="py-12 text-center text-stone-500 bg-stone-50/50 rounded-xl border-2 border-dashed border-stone-200">
+                            <div class="flex flex-col items-center justify-center">
+                                <svg class="w-12 h-12 mb-3 text-stone-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                                </svg>
+                                <span class="text-sm font-medium">まだ回答がありません</span>
+                            </div>
+                        </div>`;
+                }
+                return;
+            }
+
             // 各候補日時の統計を計算
-            console.log('📊 統計計算開始 - candidate_dates:', currentEvent.candidate_dates);
             const dateStats = currentEvent.candidate_dates.map((dateStr, index) => {
-                console.log(`📊 処理中の日付${index + 1}:`, dateStr);
                 const date = new Date(dateStr);
                 const stats = {
                     date: date,
@@ -3482,32 +3521,30 @@
                 };
 
                 responses.forEach(response => {
-                    // 表の表示ロジックと同じ判定を使用
                     const tableStatus = getStatusForDate(response, dateStr);
-
-                    if (tableStatus === 'attending') {
-                        stats.attending++;
-                    } else if (tableStatus === 'maybe') {
-                        stats.maybe++;
-                    } else {
-                        stats.notAttending++;
-                    }
+                    if (tableStatus === 'attending') stats.attending++;
+                    else if (tableStatus === 'maybe') stats.maybe++;
+                    else stats.notAttending++;
                 });
 
                 stats.total = stats.attending + stats.maybe + stats.notAttending;
-
                 return stats;
             });
 
-            // 人気順でソート
-            dateStats.sort((a, b) => b.attending - a.attending);
+            // 人気順でソート (参加人数降順)
+            const sortedStats = [...dateStats].sort((a, b) => b.attending - a.attending);
 
-            // テーブル行を生成
-            console.log('📋 テーブル行生成開始 - dateStats:', dateStats);
-            dateStats.forEach((stats, index) => {
-                console.log(`📋 行${index + 1}生成:`, stats.dateStr, formatDateLong(stats.date));
+            // テーブル行とモバイルカードを生成
+            sortedStats.forEach((stats, index) => {
+                // テーブル行
                 const row = createScheduleTableRow(stats, index);
                 scheduleTableBody.appendChild(row);
+
+                // モバイルカード
+                if (mobileScheduleListContainer) {
+                    const card = createScheduleCard(stats, index);
+                    mobileScheduleListContainer.appendChild(card);
+                }
             });
         }
 
@@ -3597,6 +3634,101 @@
             `;
 
             return tr;
+        }
+
+        // モバイル用スケジュールカードを作成
+        function createScheduleCard(stats, index) {
+            const date = new Date(stats.date);
+            const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+            // UTCベースで日付を取得
+            const month = date.getUTCMonth() + 1;
+            const day = date.getUTCDate();
+            const weekday = weekdays[date.getUTCDay()];
+            const dateLabel = `${month}月${day}日(${weekday})`;
+
+            // 時間（UTC->JST変換済みと仮定、またはUTCで処理）
+            // ここではDateオブジェクトが既に調整済みと仮定
+            const hours = String(date.getUTCHours()).padStart(2, '0');
+            const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+            const timeLabel = `${hours}:${minutes}〜`;
+
+            // 評価を決定
+            let evaluationText = '検討中';
+            let evaluationColor = 'text-stone-500';
+            let evaluationBg = 'bg-stone-50';
+
+            // 評価ロジック
+            if (index === 0 && stats.attending >= 3) {
+                evaluationText = '最有力';
+                evaluationColor = 'text-emerald-700';
+                evaluationBg = 'bg-emerald-50';
+            } else if (index <= 1 && stats.attending >= 2) {
+                evaluationText = '有力';
+                evaluationColor = 'text-emerald-600';
+                evaluationBg = 'bg-emerald-50';
+            } else if (stats.attending >= 1) {
+                evaluationText = '候補';
+                evaluationColor = 'text-blue-600';
+                evaluationBg = 'bg-blue-50';
+            } else {
+                evaluationText = '厳しめ';
+                evaluationColor = 'text-rose-600';
+                evaluationBg = 'bg-rose-50';
+            }
+
+            const card = document.createElement('div');
+            card.className = 'bg-white rounded-xl border border-stone-200 shadow-sm overflow-hidden mb-4';
+
+            // ヘッダー（日付と評価）
+            card.innerHTML = `
+                <div class="px-4 py-3 border-b border-stone-100 flex items-center justify-between bg-stone-50">
+                    <div class="flex items-center space-x-3">
+                         <div class="flex flex-col items-center justify-center w-10 h-10 rounded-lg bg-white border border-stone-200 shadow-sm">
+                            <span class="text-xs font-bold text-stone-500">${weekday}</span>
+                         </div>
+                         <div class="flex flex-col">
+                            <span class="text-lg font-bold text-stone-900">${month}月${day}日</span>
+                            <span class="text-sm text-stone-500 flex items-center">
+                                <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                ${timeLabel}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="flex flex-col items-end">
+                        <span class="text-xs font-bold ${evaluationColor} ${evaluationBg} px-2 py-1 rounded-full border border-stone-100 shadow-sm">${evaluationText}</span>
+                    </div>
+                </div>
+                <div class="p-4">
+                    <div class="flex items-center justify-between text-center divide-x divide-stone-100">
+                        <div class="flex-1 px-1 flex flex-col items-center">
+                            <span class="text-xs text-stone-500 mb-1">参加</span>
+                            <div class="flex items-baseline space-x-1">
+                                <span class="text-emerald-600 font-bold text-lg">○</span>
+                                <span class="text-stone-900 font-bold text-xl">${stats.attending}</span>
+                                <span class="text-xs text-stone-400">名</span>
+                            </div>
+                        </div>
+                        <div class="flex-1 px-1 flex flex-col items-center">
+                            <span class="text-xs text-stone-500 mb-1">未定</span>
+                            <div class="flex items-baseline space-x-1">
+                                <span class="text-amber-500 font-bold text-lg">?</span>
+                                <span class="text-stone-900 font-bold text-xl">${stats.maybe}</span>
+                                <span class="text-xs text-stone-400">名</span>
+                            </div>
+                        </div>
+                        <div class="flex-1 px-1 flex flex-col items-center">
+                            <span class="text-xs text-stone-500 mb-1">不参加</span>
+                            <div class="flex items-baseline space-x-1">
+                                <span class="text-gray-400 font-bold text-lg">×</span>
+                                <span class="text-stone-900 font-bold text-xl">${stats.notAttending}</span>
+                                <span class="text-xs text-stone-400">名</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            return card;
         }
 
         // 日付フォーマット（長形式）- UTC日付を正確に表示
