@@ -76,8 +76,8 @@ struct EventInvitationGenerator: View {
                     Image(systemName: planEmoji)
                         .font(.system(size: 40))
                         .foregroundColor(colorFromStringForSwiftUI(viewModel.selectedIconColor) ?? DesignSystem.Colors.primary)
-                } else if planEmoji == "KANJY_HIPPO" || planEmoji.isEmpty {
-                    // カバアイコン（明示的選択または空）
+                } else if planEmoji.isEmpty || planEmoji == "KANJY_HIPPO" {
+                    // 空またはレガシーデータ → AppLogo表示
                     if let appLogo = UIImage(named: "AppLogo") {
                         Image(uiImage: appLogo)
                             .resizable()
@@ -315,8 +315,8 @@ struct EventInvitationGenerator: View {
                 let iconColor = colorFromString(viewModel.selectedIconColor) ?? primaryColor
                 let tintedIcon = iconImage.withTintColor(iconColor, renderingMode: .alwaysOriginal)
                 tintedIcon.draw(in: iconRect)
-            } else if planEmoji == "KANJY_HIPPO" || planEmoji.isEmpty {
-                // カバアイコン（明示的選択または空）
+            } else if planEmoji.isEmpty || planEmoji == "KANJY_HIPPO" {
+                // 空またはレガシーデータ → AppLogo表示
                 if let appLogo = UIImage(named: "AppLogo") {
                     let logoSize: CGFloat = emojiFontSize * 1.2
                     let logoRect = CGRect(

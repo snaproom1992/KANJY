@@ -1956,7 +1956,7 @@ struct PrePlanView: View {
                             
                             HStack(spacing: 12) {
                                 Button(action: {
-                                    viewModel.selectedEmoji = "KANJY_HIPPO"
+                                    viewModel.selectedEmoji = ""
                                     viewModel.selectedIcon = nil
                                     showIconPicker = false
                                     autoSavePlan()
@@ -1976,11 +1976,11 @@ struct PrePlanView: View {
                                     .frame(width: 50, height: 50)
                                     .background(
                                         Circle()
-                                            .fill(viewModel.selectedEmoji == "KANJY_HIPPO" && viewModel.selectedIcon == nil ? DesignSystem.Colors.primary.opacity(0.2) : Color.gray.opacity(0.1))
+                                            .fill(viewModel.selectedEmoji.isEmpty && viewModel.selectedIcon == nil ? DesignSystem.Colors.primary.opacity(0.2) : Color.gray.opacity(0.1))
                                     )
                                     .overlay(
                                         Circle()
-                                            .stroke(viewModel.selectedEmoji == "KANJY_HIPPO" && viewModel.selectedIcon == nil ? DesignSystem.Colors.primary : Color.clear, lineWidth: 2)
+                                            .stroke(viewModel.selectedEmoji.isEmpty && viewModel.selectedIcon == nil ? DesignSystem.Colors.primary : Color.clear, lineWidth: 2)
                                     )
                                 }
                                 .buttonStyle(PlainButtonStyle())

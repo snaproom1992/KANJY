@@ -29,8 +29,8 @@ struct PrePlanHeaderView: View {
                     Image(systemName: iconName)
                         .font(.system(size: 40))
                         .foregroundColor(colorFromString(viewModel.selectedIconColor) ?? DesignSystem.Colors.primary)
-                } else if viewModel.selectedEmoji == "KANJY_HIPPO" || viewModel.selectedEmoji.isEmpty {
-                    // カバアイコン（明示的選択または空）
+                } else if viewModel.selectedEmoji.isEmpty || viewModel.selectedEmoji == "KANJY_HIPPO" {
+                    // 空またはレガシーデータ → AppLogo表示
                     if let appLogo = UIImage(named: "AppLogo") {
                         Image(uiImage: appLogo)
                             .resizable()
