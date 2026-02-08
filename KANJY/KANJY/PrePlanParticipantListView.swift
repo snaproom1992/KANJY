@@ -218,7 +218,7 @@ struct PrePlanParticipantListView: View {
                                     return "佐藤 ¥5,000 / 田中 ¥3,000..."
                                 } else {
                                     let names = viewModel.participants.prefix(2).map { p in
-                                        let amount = p.hasFixedAmount ? p.fixedAmount : viewModel.paymentAmount(for: p)
+                                        let amount = viewModel.totalPaymentAmount(for: p)
                                         return "\(p.name) ¥\(viewModel.formatAmount(String(amount)))"
                                     }
                                     return names.joined(separator: " / ") + (viewModel.participants.count > 2 ? "..." : "")
@@ -298,13 +298,11 @@ struct PrePlanParticipantListView: View {
     private func copyPaymentText() {
         let title = "【\(viewModel.editingPlanName.isEmpty ? "飲み会" : viewModel.editingPlanName)】お支払い内訳\n"
         let details = viewModel.participants.map { p in
-            let amount = p.hasFixedAmount 
-                ? p.fixedAmount 
-                : viewModel.paymentAmount(for: p)
+            let amount = viewModel.totalPaymentAmount(for: p)
             return "- \(p.name): ¥\(viewModel.formatAmount(String(amount)))"
         }.joined(separator: "\n")
         
-        let total = "\n合計: ¥\(viewModel.formatAmount(viewModel.totalAmount))"
+        let total = "\n合計: ¥\(viewModel.formatAmount(String(viewModel.totalAmountValue)))"
         
         let textToCopy = title + details + total
         UIPasteboard.general.string = textToCopy
@@ -333,18 +331,12 @@ struct ParticipantRowView: View {
             
             Spacer()
             
-            // 金額（固定金額または計算金額）
+            // 金額（全カード合算の支払額）
             VStack(alignment: .trailing, spacing: 0) {
-                if participant.hasFixedAmount {
-                    Text("¥\(viewModel.formatAmount(String(participant.fixedAmount)))")
-                        .font(DesignSystem.Typography.body)
-                        .foregroundColor(DesignSystem.Colors.primary)
-                } else {
-                    Text("¥\(viewModel.formatAmount(String(viewModel.paymentAmount(for: participant))))")
-                        .font(DesignSystem.Typography.body)
-                        .foregroundColor(DesignSystem.Colors.black)
-                }
-                
+                let total = viewModel.totalPaymentAmount(for: participant)
+                Text("¥\(viewModel.formatAmount(String(total)))")
+                    .font(DesignSystem.Typography.body)
+                    .foregroundColor(total > 0 ? DesignSystem.Colors.black : DesignSystem.Colors.secondary)
             }
             
             // 集金状態（チェックボックス）

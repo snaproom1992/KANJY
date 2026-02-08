@@ -67,14 +67,18 @@ struct PrePlanView: View {
     @State private var showAddAmountDialog = false
     @State private var additionalAmount: String = ""
     @State private var additionalItemName: String = ""
+    @State private var additionalUseMultiplier: Bool = true
+    @State private var additionalSelectedParticipantIds: Set<UUID> = []
     
     // 金額編集ダイアログ用
     @State private var showEditAmountDialog = false
     @State private var editingAmountItem: AmountItem? = nil
     @State private var editingAmount: String = ""
     @State private var editingItemName: String = ""
+    @State private var editingUseMultiplier: Bool = true
+    @State private var editingSelectedParticipantIds: Set<UUID> = []
     
-    // アコーディオン表示制御用
+    // アコーディオン表示制御用（未使用だが互換性のため残す）
     @State private var isBreakdownExpanded: Bool = false
     
     // アイコン選択ダイアログ用
@@ -181,36 +185,9 @@ struct PrePlanView: View {
     
     // 編集シート
     private func editSheet(participant: Participant) -> some View {
-        // --- ここからロジックをViewビルダーの外に出す ---
-        let tempParticipants = viewModel.participants.map { p in
-            if p.id == participant.id {
-                return Participant(id: p.id, name: editingText, roleType: editingRoleType, hasCollected: p.hasCollected, hasFixedAmount: p.hasFixedAmount, fixedAmount: p.fixedAmount)
-            }
-            return p
-        }
-        let totalMultiplier = tempParticipants.reduce(0.0) { sum, p in
-            switch p.roleType {
-            case .standard(let role):
-                return sum + role.defaultMultiplier
-            case .custom(let customRole):
-                return sum + customRole.multiplier
-            }
-        }
-        let amountString = viewModel.totalAmount.filter { $0.isNumber }
-        var paymentAmountText: String = ""
-        if let total = Double(amountString), totalMultiplier > 0 {
-            let baseAmount = total / totalMultiplier
-            let editingMultiplier: Double
-            switch editingRoleType {
-            case .standard(let role):
-                editingMultiplier = role.defaultMultiplier
-            case .custom(let customRole):
-                editingMultiplier = customRole.multiplier
-            }
-            let paymentAmount = Int(round(baseAmount * editingMultiplier))
-            paymentAmountText = "¥" + viewModel.formatAmount(String(paymentAmount))
-        }
-        // --- ここまでロジックをViewビルダーの外に出す ---
+        // --- 参加者の全カード合計支払額を計算 ---
+        let totalPayment = viewModel.totalPaymentAmount(for: participant)
+        let paymentAmountText = totalPayment > 0 ? "¥" + viewModel.formatAmount(String(totalPayment)) : ""
         
         return NavigationStack {
             Form {
@@ -236,16 +213,9 @@ struct PrePlanView: View {
                         .onChange(of: editingHasFixedAmount) { _, newValue in
                             if newValue && editingFixedAmount == 0 {
                                 // 固定する場合で金額が0なら現在の計算金額をセット
-                                if let amount = Int(amountString), totalMultiplier > 0 {
-                                    let baseAmount = Double(amount) / totalMultiplier
-                                    let multiplier: Double
-                                    switch editingRoleType {
-                                    case .standard(let role):
-                                        multiplier = role.defaultMultiplier
-                                    case .custom(let customRole):
-                                        multiplier = customRole.multiplier
-                                    }
-                                    editingFixedAmount = Int(round(baseAmount * multiplier))
+                                let currentPayment = viewModel.totalPaymentAmount(for: participant)
+                                if currentPayment > 0 {
+                                    editingFixedAmount = currentPayment
                                 }
                             }
                         }
@@ -743,8 +713,11 @@ struct PrePlanView: View {
             // 項目名（空の場合はデフォルト名を設定）
             let itemName = additionalItemName.isEmpty ? "追加のお会計" : additionalItemName
             
-            // 内訳アイテムを追加
-            viewModel.addAmountItem(name: itemName, amount: amount)
+            // 参加者IDの配列（全員選択の場合はnil）
+            let participantIds: [UUID]? = additionalSelectedParticipantIds.count == viewModel.participants.count ? nil : Array(additionalSelectedParticipantIds)
+            
+            // お会計カードを追加
+            viewModel.addAmountItem(name: itemName, amount: amount, participantIds: participantIds, useMultiplier: additionalUseMultiplier)
             
             // 入力欄をクリア
             additionalAmount = ""
@@ -757,6 +730,12 @@ struct PrePlanView: View {
         editingAmountItem = item
         editingItemName = item.name
         editingAmount = viewModel.formatAmount(String(item.amount))
+        editingUseMultiplier = item.useMultiplier
+        if let ids = item.participantIds {
+            editingSelectedParticipantIds = Set(ids)
+        } else {
+            editingSelectedParticipantIds = Set(viewModel.participants.map { $0.id })
+        }
     }
     
     // 金額更新処理
@@ -767,14 +746,17 @@ struct PrePlanView: View {
         let numbers = editingAmount.filter { $0.isNumber }
         if let amount = Int(numbers) {
             // 項目名（空の場合はデフォルト名を設定）
-            let itemName = editingItemName.isEmpty ? "追加のお会計" : editingItemName
+            let itemName = editingItemName.isEmpty ? "お会計" : editingItemName
             
-            // 内訳アイテムを更新
-            viewModel.updateAmountItem(id: item.id, name: itemName, amount: amount)
+            // 参加者IDの配列（全員選択の場合はnil）
+            let participantIds: [UUID]? = editingSelectedParticipantIds.count == viewModel.participants.count ? nil : Array(editingSelectedParticipantIds)
+            
+            // お会計カードを更新
+            viewModel.updateAmountItem(id: item.id, name: itemName, amount: amount, participantIds: participantIds, useMultiplier: editingUseMultiplier)
         }
     }
     
-    // 内訳アイテム削除
+    // お会計カード削除
     private func deleteAmountItem(at offsets: IndexSet) {
         viewModel.removeAmountItems(at: offsets)
     }
@@ -889,7 +871,7 @@ struct PrePlanView: View {
     }
     
     private var summaryTotalAmountText: String {
-        viewModel.totalAmount.isEmpty ? "未設定" : "¥\(viewModel.formatAmount(viewModel.totalAmount))"
+        viewModel.totalAmountValue > 0 ? "¥\(viewModel.formatAmount(String(viewModel.totalAmountValue)))" : "未設定"
     }
     
     private var summaryCollectionStatusText: String {
@@ -1291,19 +1273,36 @@ struct PrePlanView: View {
     @ViewBuilder
     private func CollectionStepContent() -> some View {
         VStack(spacing: DesignSystem.Spacing.lg) {
-            // 金額設定セクション
-            InfoCard(
-                title: "合計金額",
-                icon: "yensign.circle"
-            ) {
-                VStack(spacing: DesignSystem.Spacing.md) {
-                    AmountSectionContent()
-                    
-                    // 内訳セクション（内訳がある場合のみ表示）
-                    if !viewModel.amountItems.isEmpty {
-                        BreakdownSectionContent()
-                    }
+            // お会計カード一覧
+            ForEach(Array(viewModel.amountItems.enumerated()), id: \.element.id) { index, item in
+                PaymentCardView(item: item, index: index)
+            }
+            
+            // お会計を追加ボタン（カードを追加するだけ）
+            Button(action: {
+                withAnimation {
+                    viewModel.addAmountItem(name: "追加のお会計", amount: 0, participantIds: nil, useMultiplier: true)
                 }
+            }) {
+                HStack(spacing: 8) {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.system(size: 20))
+                    Text("お会計を追加")
+                        .font(DesignSystem.Typography.body)
+                        .fontWeight(.medium)
+                }
+                .foregroundColor(DesignSystem.Colors.primary)
+                .padding(.vertical, 14)
+                .frame(maxWidth: .infinity)
+                .background(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(DesignSystem.Colors.primary.opacity(0.3), style: StrokeStyle(lineWidth: 1.5, dash: [8, 4]))
+                )
+            }
+            
+            // 合計サマリー（カードが2枚以上の場合のみ表示）
+            if viewModel.amountItems.count >= 2 {
+                PaymentSummaryView()
             }
             
             // 集金管理セクション
@@ -1320,6 +1319,9 @@ struct PrePlanView: View {
                     showPaymentGenerator: $showPaymentGenerator
                 )
             }
+        }
+        .onAppear {
+            viewModel.ensureMainAmountItem()
         }
     }
     
@@ -1818,7 +1820,7 @@ struct PrePlanView: View {
         NavigationStack {
             Form {
                 Section {
-                    TextField("項目名（例：二次会、カラオケ代）空欄可", text: $additionalItemName)
+                    TextField("項目名（例：二次会、カラオケ代）", text: $additionalItemName)
                         .font(DesignSystem.Typography.body)
                         .foregroundColor(DesignSystem.Colors.black)
                     
@@ -1827,7 +1829,7 @@ struct PrePlanView: View {
                             .font(DesignSystem.Typography.body)
                             .foregroundColor(DesignSystem.Colors.black)
                         Spacer()
-                        TextField("金額を入力（例：1000）", text: $additionalAmount)
+                        TextField("0", text: $additionalAmount)
                             .font(DesignSystem.Typography.body)
                             .foregroundColor(DesignSystem.Colors.black)
                             .keyboardType(.numberPad)
@@ -1841,11 +1843,76 @@ struct PrePlanView: View {
                             }
                     }
                 } header: {
-                    Text("二次会やカラオケなど、追加の費用を入力できます")
+                    Text("基本情報")
+                }
+                
+                // 割り方セクション
+                Section {
+                    Picker("割り方", selection: $additionalUseMultiplier) {
+                        Text("倍率適用").tag(true)
+                        Text("均等割り").tag(false)
+                    }
+                    .pickerStyle(.segmented)
+                } header: {
+                    Text("割り勘の方法")
+                } footer: {
+                    Text(additionalUseMultiplier ? "役職の倍率に応じて金額が変わります" : "全員同じ金額で割ります")
                         .font(DesignSystem.Typography.caption)
                 }
+                
+                // 参加者選択セクション
+                Section {
+                    ForEach(viewModel.participants) { participant in
+                        Button(action: {
+                            withAnimation(.easeInOut(duration: 0.15)) {
+                                if additionalSelectedParticipantIds.contains(participant.id) {
+                                    additionalSelectedParticipantIds.remove(participant.id)
+                                } else {
+                                    additionalSelectedParticipantIds.insert(participant.id)
+                                }
+                            }
+                        }) {
+                            HStack {
+                                Text(participant.name)
+                                    .font(DesignSystem.Typography.body)
+                                    .foregroundColor(DesignSystem.Colors.black)
+                                Spacer()
+                                Image(systemName: additionalSelectedParticipantIds.contains(participant.id) ? "checkmark.circle.fill" : "circle")
+                                    .foregroundColor(additionalSelectedParticipantIds.contains(participant.id) ? DesignSystem.Colors.primary : DesignSystem.Colors.gray4)
+                                    .font(.system(size: 22))
+                            }
+                        }
+                    }
+                } header: {
+                    HStack {
+                        Text("支払い者（\(additionalSelectedParticipantIds.count)人選択中）")
+                        Spacer()
+                        Button(action: {
+                            withAnimation(.easeInOut(duration: 0.15)) {
+                                let allIds = Set(viewModel.participants.map { $0.id })
+                                if additionalSelectedParticipantIds == allIds {
+                                    additionalSelectedParticipantIds = []
+                                } else {
+                                    additionalSelectedParticipantIds = allIds
+                                }
+                            }
+                        }) {
+                            let isAllSelected = additionalSelectedParticipantIds.count == viewModel.participants.count
+                            Text(isAllSelected ? "全解除" : "全選択")
+                                .font(.system(size: DesignSystem.Typography.FontSize.caption, weight: .medium))
+                                .foregroundColor(DesignSystem.Colors.primary)
+                                .padding(.horizontal, DesignSystem.Spacing.sm)
+                                .padding(.vertical, DesignSystem.Spacing.xs)
+                                .background(
+                                    Capsule()
+                                        .fill(DesignSystem.Colors.primary.opacity(0.1))
+                                )
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
             }
-            .navigationTitle("追加のお会計")
+            .navigationTitle("お会計を追加")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -1860,7 +1927,7 @@ struct PrePlanView: View {
                         addAmount()
                         showAddAmountDialog = false
                     }
-                    .disabled(additionalAmount.isEmpty)
+                    .disabled(additionalAmount.isEmpty || additionalSelectedParticipantIds.isEmpty)
                 }
             }
         }
@@ -1874,7 +1941,7 @@ struct PrePlanView: View {
         NavigationStack {
             Form {
                 Section {
-                    TextField("項目名（例：二次会、カラオケ代）空欄可", text: $editingItemName)
+                    TextField("項目名（例：二次会、カラオケ代）", text: $editingItemName)
                         .font(DesignSystem.Typography.body)
                         .foregroundColor(DesignSystem.Colors.black)
                     
@@ -1883,7 +1950,7 @@ struct PrePlanView: View {
                             .font(DesignSystem.Typography.body)
                             .foregroundColor(DesignSystem.Colors.black)
                         Spacer()
-                        TextField("金額を入力（例：1000）", text: $editingAmount)
+                        TextField("0", text: $editingAmount)
                             .font(DesignSystem.Typography.body)
                             .foregroundColor(DesignSystem.Colors.black)
                             .keyboardType(.numberPad)
@@ -1896,8 +1963,73 @@ struct PrePlanView: View {
                             }
                     }
                 } header: {
-                    Text("内訳項目の編集")
-                        .font(DesignSystem.Typography.headline)
+                    Text("基本情報")
+                }
+                
+                // 割り方セクション
+                Section {
+                    Picker("割り方", selection: $editingUseMultiplier) {
+                        Text("倍率適用").tag(true)
+                        Text("均等割り").tag(false)
+                    }
+                    .pickerStyle(.segmented)
+                } header: {
+                    Text("割り勘の方法")
+                } footer: {
+                    Text(editingUseMultiplier ? "役職の倍率に応じて金額が変わります" : "全員同じ金額で割ります")
+                        .font(DesignSystem.Typography.caption)
+                }
+                
+                // 参加者選択セクション
+                Section {
+                    ForEach(viewModel.participants) { participant in
+                        Button(action: {
+                            withAnimation(.easeInOut(duration: 0.15)) {
+                                if editingSelectedParticipantIds.contains(participant.id) {
+                                    editingSelectedParticipantIds.remove(participant.id)
+                                } else {
+                                    editingSelectedParticipantIds.insert(participant.id)
+                                }
+                            }
+                        }) {
+                            HStack {
+                                Text(participant.name)
+                                    .font(DesignSystem.Typography.body)
+                                    .foregroundColor(DesignSystem.Colors.black)
+                                Spacer()
+                                Image(systemName: editingSelectedParticipantIds.contains(participant.id) ? "checkmark.circle.fill" : "circle")
+                                    .foregroundColor(editingSelectedParticipantIds.contains(participant.id) ? DesignSystem.Colors.primary : DesignSystem.Colors.gray4)
+                                    .font(.system(size: 22))
+                            }
+                        }
+                    }
+                } header: {
+                    HStack {
+                        Text("支払い者（\(editingSelectedParticipantIds.count)人選択中）")
+                        Spacer()
+                        Button(action: {
+                            withAnimation(.easeInOut(duration: 0.15)) {
+                                let allIds = Set(viewModel.participants.map { $0.id })
+                                if editingSelectedParticipantIds == allIds {
+                                    editingSelectedParticipantIds = []
+                                } else {
+                                    editingSelectedParticipantIds = allIds
+                                }
+                            }
+                        }) {
+                            let isAllSelected = editingSelectedParticipantIds.count == viewModel.participants.count
+                            Text(isAllSelected ? "全解除" : "全選択")
+                                .font(.system(size: DesignSystem.Typography.FontSize.caption, weight: .medium))
+                                .foregroundColor(DesignSystem.Colors.primary)
+                                .padding(.horizontal, DesignSystem.Spacing.sm)
+                                .padding(.vertical, DesignSystem.Spacing.xs)
+                                .background(
+                                    Capsule()
+                                        .fill(DesignSystem.Colors.primary.opacity(0.1))
+                                )
+                        }
+                        .buttonStyle(.plain)
+                    }
                 }
             }
             .navigationTitle("お会計の編集")
@@ -1913,7 +2045,7 @@ struct PrePlanView: View {
                         updateAmount()
                         editingAmountItem = nil
                     }
-                    .disabled(editingAmount.isEmpty)
+                    .disabled(editingAmount.isEmpty || editingSelectedParticipantIds.isEmpty)
                 }
             }
         }
@@ -2249,150 +2381,186 @@ struct PrePlanView: View {
         ("briefcase.fill", "ビジネス")
     ]
     
-    // サブビュー：金額セクションの内容
+    // MARK: - お会計カードビュー
+    
     @ViewBuilder
-    private func AmountSectionContent() -> some View {
-        VStack(spacing: DesignSystem.Spacing.md) {
-            // 説明文
-            Text("ここで入力された金額を元に割り勘を計算します。")
+    private func PaymentCardView(item: AmountItem, index: Int) -> some View {
+        let itemParticipants = viewModel.participantsForItem(item)
+        let perPerson = viewModel.baseAmount(for: item)
+        let isAllParticipants = item.participantIds == nil
+        
+        VStack(spacing: 0) {
+            // 上部: タイトルバー（タップで編集シートへ）
+            Button(action: {
+                startEditingAmount(item)
+            }) {
+                HStack(spacing: DesignSystem.Spacing.sm) {
+                    Text(item.name)
+                        .font(DesignSystem.Typography.emphasizedSubheadline)
+                        .foregroundColor(DesignSystem.Colors.black)
+                    
+                    Spacer()
+                    
+                    // 情報タグ
+                    HStack(spacing: 4) {
+                        Image(systemName: "person.fill")
+                            .font(.system(size: 10))
+                        Text(isAllParticipants ? "全員" : "\(itemParticipants.count)人")
+                            .font(.system(size: 11, weight: .medium))
+                    }
+                    .foregroundColor(DesignSystem.Colors.primary)
+                    .padding(.vertical, 3)
+                    .padding(.horizontal, 8)
+                    .background(
+                        Capsule()
+                            .fill(DesignSystem.Colors.primary.opacity(0.08))
+                    )
+                    
+                    HStack(spacing: 4) {
+                        Image(systemName: item.useMultiplier ? "slider.horizontal.3" : "equal.circle")
+                            .font(.system(size: 10))
+                        Text(item.useMultiplier ? "倍率" : "均等")
+                            .font(.system(size: 11, weight: .medium))
+                    }
+                    .foregroundColor(DesignSystem.Colors.secondary)
+                    .padding(.vertical, 3)
+                    .padding(.horizontal, 8)
+                    .background(
+                        Capsule()
+                            .fill(Color(.systemGray5))
+                    )
+                    
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(DesignSystem.Colors.secondary.opacity(0.4))
+                }
+                .padding(.horizontal, DesignSystem.Card.Padding.medium)
+                .padding(.vertical, DesignSystem.Spacing.md)
+                .background(DesignSystem.Colors.primary.opacity(0.03))
+            }
+            .buttonStyle(ScaleButtonStyle())
+            
+            Divider()
+                .padding(.horizontal, DesignSystem.Spacing.md)
+            
+            // 下部: 金額入力エリア
+            VStack(spacing: DesignSystem.Spacing.sm) {
+                // 金額入力（右寄せ + カード上で直接入力）
+                HStack(alignment: .firstTextBaseline, spacing: 4) {
+                    Text("¥")
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundColor(DesignSystem.Colors.primary)
+                    
+                    TextField("0", text: cardAmountBinding(for: item.id))
+                        .font(.system(size: 32, weight: .bold, design: .rounded))
+                        .foregroundColor(DesignSystem.Colors.black)
+                        .keyboardType(.numberPad)
+                        .multilineTextAlignment(.trailing)
+                }
+                .padding(.top, DesignSystem.Spacing.xs)
+                
+                // 一人あたり + 参加者名
+                HStack {
+                    // 参加者がフィルタリングされている場合、名前を表示
+                    if !isAllParticipants && !itemParticipants.isEmpty {
+                        Text(itemParticipants.map { $0.name }.joined(separator: "、"))
+                            .font(DesignSystem.Typography.caption)
+                            .foregroundColor(DesignSystem.Colors.secondary)
+                            .lineLimit(1)
+                    }
+                    
+                    Spacer()
+                    
+                    if perPerson > 0 {
+                        Text("一人あたり約 ¥\(viewModel.formatAmount(String(Int(perPerson))))")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(DesignSystem.Colors.primary.opacity(0.8))
+                    }
+                }
+            }
+            .padding(.horizontal, DesignSystem.Card.Padding.medium)
+            .padding(.vertical, DesignSystem.Spacing.md)
+            
+            // カードが2枚以上のときのみ削除ボタン表示
+            if viewModel.amountItems.count > 1 {
+                Divider()
+                    .padding(.horizontal, DesignSystem.Spacing.md)
+                
+                Button(action: {
+                    withAnimation {
+                        viewModel.removeAmountItem(id: item.id)
+                    }
+                }) {
+                    HStack {
+                        Image(systemName: "trash")
+                            .font(.system(size: 12))
+                        Text("このお会計を削除")
+                            .font(DesignSystem.Typography.caption)
+                    }
+                    .foregroundColor(DesignSystem.Colors.alert.opacity(0.7))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, DesignSystem.Spacing.sm)
+                }
+            }
+        }
+        .background(
+            RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadius, style: .continuous)
+                .fill(DesignSystem.Colors.secondaryBackground)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadius, style: .continuous)
+                .stroke(DesignSystem.Colors.primary.opacity(0.08), lineWidth: 1)
+        )
+        .shadow(
+            color: Color.black.opacity(0.04),
+            radius: 6,
+            x: 0,
+            y: 2
+        )
+    }
+    
+    // カード金額のBinding生成（直接入力用）
+    private func cardAmountBinding(for itemId: UUID) -> Binding<String> {
+        Binding<String>(
+            get: {
+                guard let item = viewModel.amountItems.first(where: { $0.id == itemId }) else { return "0" }
+                return item.amount > 0 ? viewModel.formatAmount(String(item.amount)) : ""
+            },
+            set: { newValue in
+                let numbers = newValue.filter { $0.isNumber }
+                let amount = Int(numbers) ?? 0
+                viewModel.updateAmountItemAmount(id: itemId, amount: amount)
+            }
+        )
+    }
+    
+    // MARK: - 合計サマリービュー
+    
+    @ViewBuilder
+    private func PaymentSummaryView() -> some View {
+        HStack {
+            Text("\(viewModel.amountItems.count)件のお会計")
                 .font(DesignSystem.Typography.caption)
                 .foregroundColor(DesignSystem.Colors.secondary)
             
-            // メイン金額入力エリア
+            Spacer()
+            
             HStack(alignment: .firstTextBaseline, spacing: 4) {
+                Text("合計")
+                    .font(DesignSystem.Typography.caption)
+                    .foregroundColor(DesignSystem.Colors.secondary)
                 Text("¥")
-                    .font(.system(size: 28, weight: .bold))
-                    .foregroundColor(DesignSystem.Colors.primary)
-                
-                TextField("0", text: $viewModel.totalAmount)
-                    .font(.system(size: 36, weight: .bold, design: .rounded))
-                    .foregroundColor(DesignSystem.Colors.black)
-                    .keyboardType(.numberPad)
-                    .multilineTextAlignment(.trailing)
-                    .focused($focusedField, equals: .totalAmount)
-                    .onChange(of: viewModel.totalAmount) { _, newValue in
-                        let formatted = viewModel.formatAmount(newValue)
-                        if formatted != newValue {
-                            viewModel.totalAmount = formatted
-                        }
-                    }
-                
-                // クリアボタン（金額が入力されている場合のみ表示）
-                if !viewModel.totalAmount.isEmpty && viewModel.totalAmount != "0" {
-                    Button(action: {
-                        viewModel.totalAmount = ""
-                    }) {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 18))
-                            .foregroundColor(DesignSystem.Colors.secondary.opacity(0.4))
-                    }
-                }
+                    .font(.system(size: 18, weight: .bold))
+                Text(viewModel.formatAmount(String(viewModel.totalAmountValue)))
+                    .font(.system(size: 22, weight: .bold, design: .rounded))
             }
-            .padding(.vertical, DesignSystem.Spacing.sm)
-            .padding(.horizontal, DesignSystem.Spacing.lg)
-            .background(
-                RoundedRectangle(cornerRadius: DesignSystem.TextField.cornerRadius, style: .continuous)
-                    .fill(focusedField == .totalAmount ? DesignSystem.TextField.focusedBackgroundColor : DesignSystem.TextField.backgroundColor)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: DesignSystem.TextField.cornerRadius, style: .continuous)
-                    .stroke(focusedField == .totalAmount ? DesignSystem.TextField.focusedBorderColor : DesignSystem.TextField.borderColor, lineWidth: DesignSystem.TextField.borderWidth)
-            )
-            
-            // 一人あたりの金額プレビュー
-            if viewModel.baseAmount > 0 {
-                HStack(spacing: 4) {
-                    Image(systemName: "person.fill")
-                        .font(.system(size: 12))
-                    Text("一人あたり約")
-                        .font(DesignSystem.Typography.caption)
-                    Text("¥\(viewModel.formatAmount(String(Int(viewModel.baseAmount))))")
-                        .font(.system(size: 14, weight: .semibold))
-                }
-                .foregroundColor(DesignSystem.Colors.primary)
-                .padding(.vertical, DesignSystem.Spacing.xs)
-                .padding(.horizontal, DesignSystem.Spacing.md)
-                .background(
-                    Capsule()
-                        .fill(DesignSystem.Colors.primary.opacity(0.08))
-                )
-            }
-            
-            // 追加のお会計ボタン（二次会など）
-            Button(action: {
-                showAddAmountDialog = true
-            }) {
-                HStack(spacing: 6) {
-                    Image(systemName: "plus.circle.fill")
-                        .font(.system(size: 16))
-                    Text("追加のお会計")
-                        .font(DesignSystem.Typography.subheadline)
-                }
-                .foregroundColor(DesignSystem.Colors.primary)
-            }
+            .foregroundColor(DesignSystem.Colors.primary)
         }
-    }
-    
-    // サブビュー：追加のお会計セクションの内容
-    @ViewBuilder
-    private func BreakdownSectionContent() -> some View {
-        // 追加のお会計一覧ボタン
-        Button(action: {
-            withAnimation {
-                isBreakdownExpanded.toggle()
-            }
-        }) {
-            HStack {
-                Text("追加のお会計")
-                    .font(.subheadline)
-                    .foregroundColor(.primary)
-                
-                Spacer()
-                
-                HStack(spacing: 4) {
-                    Text(isBreakdownExpanded ? "閉じる" : "表示")
-                        .font(.caption)
-                        .foregroundColor(.blue)
-                    Image(systemName: isBreakdownExpanded ? "chevron.up" : "chevron.down")
-                        .imageScale(.small)
-                        .foregroundColor(.blue)
-                }
-            }
-        }
-        
-        // 内訳リスト（開いているときのみ表示）
-        if isBreakdownExpanded {
-            ForEach(viewModel.amountItems) { item in
-                BreakdownItemRow(item: item)
-            }
-            .onDelete(perform: deleteAmountItem)
-        }
-    }
-    
-    // サブビュー：内訳項目の行
-    @ViewBuilder
-    private func BreakdownItemRow(item: AmountItem) -> some View {
-        Button(action: {
-            startEditingAmount(item)
-        }) {
-            HStack(spacing: 8) {
-                Circle()
-                    .fill(Color.gray.opacity(0.3))
-                    .frame(width: 6, height: 6)
-                
-                Text(item.name)
-                    .font(.footnote)
-                    .lineLimit(1)
-                
-                Spacer()
-                
-                Text("¥\(viewModel.formatAmount(String(item.amount)))")
-                    .font(.footnote)
-                    .foregroundColor(.blue)
-            }
-        }
-        .buttonStyle(.plain)
-        .padding(.top, 8) // 最初の項目に上部余白を追加
+        .padding(DesignSystem.Spacing.lg)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(DesignSystem.Colors.primary.opacity(0.05))
+        )
     }
     
     // サブビュー：基準金額セクションの内容

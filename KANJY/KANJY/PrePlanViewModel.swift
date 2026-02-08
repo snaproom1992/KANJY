@@ -51,11 +51,24 @@ public class PrePlanViewModel: ObservableObject {
         return roleNames
     }
     
-    // 合計金額
-    @Published public var totalAmount: String = "" {
-        didSet {
-            repository.saveTotalAmount(totalAmount)
+    // MARK: - 合計金額（全カードの合計から算出）
+    
+    /// 全カードの合計金額（computed）
+    public var totalAmount: String {
+        get {
+            let total = amountItems.reduce(0) { $0 + $1.amount }
+            return total > 0 ? formatAmount(String(total)) : ""
         }
+        set {
+            // 後方互換性のためsetterを残す（マイグレーション時に使用）
+            // amountItemsが空の場合のみ、メインカードを作成
+            // 通常はamountItemsの操作を通じて合計が変わる
+        }
+    }
+    
+    /// 合計金額の数値（Int）
+    public var totalAmountValue: Int {
+        return amountItems.reduce(0) { $0 + $1.amount }
     }
     
     // 編集用の状態
@@ -97,10 +110,12 @@ public class PrePlanViewModel: ObservableObject {
         roleNames = repository.loadRoleNames()
         savedPlans = repository.loadSavedPlans()
         amountItems = repository.loadAmountItems()
-        totalAmount = repository.loadTotalAmount()
         selectedEmoji = repository.loadSelectedEmoji()
         selectedIcon = repository.loadSelectedIcon()
         selectedIconColor = repository.loadSelectedIconColor()
+        
+        // マイグレーション: 旧データ形式からの移行
+        migrateFromLegacyTotalAmount()
         
         print("絵文字を読み込み: \(selectedEmoji)")
         print("アイコンを読み込み: \(selectedIcon ?? "nil")")
@@ -110,7 +125,7 @@ public class PrePlanViewModel: ObservableObject {
     // データの保存
     public func saveData() {
         repository.saveParticipants(participants)
-        repository.saveTotalAmount(totalAmount)
+        repository.saveTotalAmount(totalAmount) // 後方互換用に引き続き保存
         repository.saveCustomRoles(customRoles)
         repository.saveRoleMultipliers(roleMultipliers)
         repository.saveRoleNames(roleNames)
@@ -118,82 +133,197 @@ public class PrePlanViewModel: ObservableObject {
         repository.saveAmountItems(amountItems)
     }
     
-    // 内訳項目の追加
-    public func addAmountItem(name: String, amount: Int) {
-        let item = AmountItem(name: name, amount: amount)
-        amountItems.append(item)
-        
-        // 現在の合計金額に追加
-        addToTotalAmount(amount)
-        
-        saveData()
-    }
+    // MARK: - マイグレーション（旧totalAmountからの移行）
     
-    // 内訳項目の削除
-    public func removeAmountItems(at offsets: IndexSet) {
-        // 削除される項目の金額合計を計算
-        let amountToSubtract = offsets.reduce(0) { sum, index in
-            sum + amountItems[index].amount
+    private func migrateFromLegacyTotalAmount() {
+        let legacyTotalAmount = repository.loadTotalAmount()
+        let legacyAmountString = legacyTotalAmount.filter { $0.isNumber }
+        let legacyTotal = Int(legacyAmountString) ?? 0
+        
+        // 旧totalAmountがあり、amountItemsが空の場合 → メインカードを作成
+        if legacyTotal > 0 && amountItems.isEmpty {
+            let mainItem = AmountItem(
+                name: "メインのお会計",
+                amount: legacyTotal,
+                participantIds: nil,
+                useMultiplier: true
+            )
+            amountItems = [mainItem]
+            saveData()
+            return
         }
         
-        // 項目を削除
-        amountItems.remove(atOffsets: offsets)
-        
-        // 合計金額から削除した金額を引く
-        subtractFromTotalAmount(amountToSubtract)
-        
+        // 旧totalAmountがあり、amountItemsも存在する場合
+        // → 旧amountItemsは「追加分」として totalAmount に加算されていた
+        // → 差分をメインカードとして生成
+        if legacyTotal > 0 && !amountItems.isEmpty {
+            // 既にparticipantIdsフィールドがある（マイグレーション済み）場合はスキップ
+            // 旧形式のAmountItemにはparticipantIdsがないが、デコーダでnilになるので
+            // メインカードが存在するかチェック
+            let hasMainCard = amountItems.contains { $0.name == "メインのお会計" }
+            if !hasMainCard {
+                let existingItemsTotal = amountItems.reduce(0) { $0 + $1.amount }
+                let mainAmount = max(0, legacyTotal - existingItemsTotal)
+                if mainAmount > 0 {
+                    let mainItem = AmountItem(
+                        name: "メインのお会計",
+                        amount: mainAmount,
+                        participantIds: nil,
+                        useMultiplier: true
+                    )
+                    amountItems.insert(mainItem, at: 0)
+                    saveData()
+                }
+            }
+        }
+    }
+    
+    // MARK: - お会計カードの管理
+    
+    /// お会計カードを追加
+    public func addAmountItem(name: String, amount: Int, participantIds: [UUID]? = nil, useMultiplier: Bool = true) {
+        let item = AmountItem(name: name, amount: amount, participantIds: participantIds, useMultiplier: useMultiplier)
+        amountItems.append(item)
         saveData()
     }
     
-    // 内訳項目の更新
-    public func updateAmountItem(id: UUID, name: String, amount: Int) {
+    /// お会計カードを削除
+    public func removeAmountItem(at index: Int) {
+        guard amountItems.indices.contains(index) else { return }
+        amountItems.remove(at: index)
+        saveData()
+    }
+    
+    /// お会計カードを削除（IndexSet版）
+    public func removeAmountItems(at offsets: IndexSet) {
+        amountItems.remove(atOffsets: offsets)
+        saveData()
+    }
+    
+    /// お会計カードを削除（ID指定）
+    public func removeAmountItem(id: UUID) {
+        amountItems.removeAll { $0.id == id }
+        saveData()
+    }
+    
+    /// お会計カードを更新
+    public func updateAmountItem(id: UUID, name: String, amount: Int, participantIds: [UUID]? = nil, useMultiplier: Bool = true) {
         if let index = amountItems.firstIndex(where: { $0.id == id }) {
-            let oldAmount = amountItems[index].amount
-            let amountDifference = amount - oldAmount
-            
-            // 項目を更新
-            amountItems[index] = AmountItem(id: id, name: name, amount: amount)
-            
-            // 合計金額を調整（増減分を反映）
-            if amountDifference > 0 {
-                addToTotalAmount(amountDifference)
-            } else if amountDifference < 0 {
-                subtractFromTotalAmount(abs(amountDifference))
-            }
-            
+            amountItems[index] = AmountItem(id: id, name: name, amount: amount, participantIds: participantIds, useMultiplier: useMultiplier)
             saveData()
         }
     }
     
-    // 合計金額に追加
-    private func addToTotalAmount(_ amount: Int) {
-        let currentAmountString = totalAmount.filter { $0.isNumber }
-        var currentAmount = Int(currentAmountString) ?? 0
-        
-        // 金額を追加
-        currentAmount += amount
-        
-        // フォーマットして保存
-        totalAmount = formatAmount(String(currentAmount))
+    /// お会計カードの金額のみを更新
+    public func updateAmountItemAmount(id: UUID, amount: Int) {
+        if let index = amountItems.firstIndex(where: { $0.id == id }) {
+            amountItems[index].amount = amount
+            saveData()
+        }
     }
     
-    // 合計金額から引く
-    private func subtractFromTotalAmount(_ amount: Int) {
-        let currentAmountString = totalAmount.filter { $0.isNumber }
-        var currentAmount = Int(currentAmountString) ?? 0
-        
-        // 金額を引く（負にならないように）
-        currentAmount = max(0, currentAmount - amount)
-        
-        // フォーマットして保存
-        totalAmount = formatAmount(String(currentAmount))
+    /// お会計カードの参加者を更新
+    public func updateAmountItemParticipants(id: UUID, participantIds: [UUID]?) {
+        if let index = amountItems.firstIndex(where: { $0.id == id }) {
+            amountItems[index].participantIds = participantIds
+            saveData()
+        }
     }
     
-    // 合計金額の更新（既存のメソッドは使用しない）
-    private func updateTotalAmount() {
-        // このメソッドは使用しなくなりましたが、後方互換性のために残しておきます
-        let total = amountItems.reduce(0) { $0 + $1.amount }
-        totalAmount = formatAmount(String(total))
+    /// お会計カードの割り方を更新
+    public func updateAmountItemUseMultiplier(id: UUID, useMultiplier: Bool) {
+        if let index = amountItems.firstIndex(where: { $0.id == id }) {
+            amountItems[index].useMultiplier = useMultiplier
+            saveData()
+        }
+    }
+    
+    /// メインのお会計カードを確保（なければ作成）
+    public func ensureMainAmountItem() {
+        if amountItems.isEmpty {
+            let mainItem = AmountItem(
+                name: "メインのお会計",
+                amount: 0,
+                participantIds: nil,
+                useMultiplier: true
+            )
+            amountItems = [mainItem]
+            saveData()
+        }
+    }
+    
+    // MARK: - カード単位の金額計算
+    
+    /// カードの対象参加者を取得
+    func participantsForItem(_ item: AmountItem) -> [Participant] {
+        if let ids = item.participantIds {
+            return participants.filter { ids.contains($0.id) }
+        } else {
+            return participants // nil = 全員
+        }
+    }
+    
+    /// カード単位の基準金額（倍率1.0の場合の金額）
+    func baseAmount(for item: AmountItem) -> Double {
+        let itemParticipants = participantsForItem(item)
+        guard !itemParticipants.isEmpty, item.amount > 0 else { return 0 }
+        
+        if item.useMultiplier {
+            // 倍率適用モード
+            let fixedTotal = itemParticipants.filter { $0.hasFixedAmount }
+                .reduce(0) { sum, p in sum + Double(p.fixedAmount) }
+            let remainingTotal = max(0, Double(item.amount) - fixedTotal)
+            let nonFixedParticipants = itemParticipants.filter { !$0.hasFixedAmount }
+            if nonFixedParticipants.isEmpty { return 0 }
+            let totalMultiplier = nonFixedParticipants.reduce(into: 0.0) { sum, p in
+                sum += p.effectiveMultiplier
+            }
+            guard totalMultiplier > 0 else { return 0 }
+            return remainingTotal / totalMultiplier
+        } else {
+            // 均等割りモード
+            return Double(item.amount) / Double(itemParticipants.count)
+        }
+    }
+    
+    /// カード内での参加者の支払金額
+    func paymentAmount(for participant: Participant, in item: AmountItem) -> Int {
+        let itemParticipants = participantsForItem(item)
+        guard itemParticipants.contains(where: { $0.id == participant.id }) else { return 0 }
+        
+        if item.useMultiplier {
+            // 固定金額の場合
+            if participant.hasFixedAmount {
+                return participant.fixedAmount
+            }
+            let base = baseAmount(for: item)
+            guard base > 0 else { return 0 }
+            return Int(round(base * participant.effectiveMultiplier))
+        } else {
+            // 均等割り
+            guard !itemParticipants.isEmpty else { return 0 }
+            return Int(round(Double(item.amount) / Double(itemParticipants.count)))
+        }
+    }
+    
+    /// 参加者の全カード合計支払額
+    func totalPaymentAmount(for participant: Participant) -> Int {
+        return amountItems.reduce(0) { sum, item in
+            sum + paymentAmount(for: participant, in: item)
+        }
+    }
+    
+    // MARK: - 後方互換用プロパティ（既存UIからの参照用）
+    
+    /// 旧 baseAmount（最初のカードのbaseAmount）
+    var baseAmount: Double {
+        guard let firstItem = amountItems.first else { return 0 }
+        return baseAmount(for: firstItem)
+    }
+    
+    /// 旧 paymentAmount（全カード合計）
+    func paymentAmount(for participant: Participant) -> Int {
+        return totalPaymentAmount(for: participant)
     }
     
     // 参加者の追加
@@ -221,21 +351,15 @@ public class PrePlanViewModel: ObservableObject {
     
     // スケジュール回答から参加者を同期
     func syncParticipants(from responses: [ScheduleResponse], date: Date?) {
-        // 同じ日の回答で、参加(attending)の人を抽出
-        // dateがnilの場合は、全員（あるいはとりあえず回答がある人全て）を対象にするか、
-        // コアワークフローに従い「集金対象者リスト」としては、dateがnilなら「全回答者」を表示するのが適切
-        
         let targetResponses: [ScheduleResponse]
         
         if let targetDate = date {
-            // 日程が決まっている場合：その日に参加(attending)の人
             targetResponses = responses.filter { response in
                 response.status == .attending && response.availableDates.contains { responseDate in
                     Calendar.current.isDate(responseDate, inSameDayAs: targetDate)
                 }
             }
         } else {
-            // 日程未定の場合：回答者全員（削除済みを除く）
             targetResponses = responses
         }
         
@@ -247,9 +371,6 @@ public class PrePlanViewModel: ObservableObject {
             )
         }
         
-        // 重複除去（同名の人がいれば統合などしたいが、一旦単純に置換）
-        // ID管理が厳密でないため、名前ベースでユニークにするなどの処理があっても良いが、
-        // ここではシンプルにリストを更新する
         participants = newParticipants
         saveData()
     }
@@ -299,57 +420,6 @@ public class PrePlanViewModel: ObservableObject {
     func deleteCustomRole(id: UUID) {
         customRoles.removeAll(where: { $0.id == id })
         saveData()
-    }
-    
-    // 一人当たりの基準金額を計算（倍率1.0の場合の金額）
-    var baseAmount: Double {
-        let amountString = totalAmount.filter { $0.isNumber }
-        guard let total = Double(amountString),
-              total > 0,
-              !participants.isEmpty else {
-            return 0
-        }
-        
-        // 固定金額を持つ参加者の合計金額を計算
-        let fixedTotal = participants.filter { $0.hasFixedAmount }
-            .reduce(0) { sum, participant in
-                sum + Double(participant.fixedAmount)
-            }
-        
-        // 残りの金額を計算
-        let remainingTotal = max(0, total - fixedTotal)
-        
-        // 固定金額を持たない参加者の倍率合計を計算
-        let nonFixedParticipants = participants.filter { !$0.hasFixedAmount }
-        
-        // 固定金額を持たない参加者がいない場合は0を返す
-        if nonFixedParticipants.isEmpty {
-            return 0
-        }
-        
-        let totalMultiplier = nonFixedParticipants
-            .reduce(into: 0.0) { sum, participant in
-                sum += participant.effectiveMultiplier
-            }
-        
-        // 倍率合計が0の場合は0を返す
-        guard totalMultiplier > 0 else { return 0 }
-        
-        return remainingTotal / totalMultiplier
-    }
-    
-    // 参加者ごとの支払金額を計算
-    func paymentAmount(for participant: Participant) -> Int {
-        // 金額が固定されている場合はその金額を返す
-        if participant.hasFixedAmount {
-            return participant.fixedAmount
-        }
-        
-        // 基準金額が0以下の場合は0を返す
-        guard baseAmount > 0 else { return 0 }
-        
-        // 通常の計算
-        return Int(round(baseAmount * participant.effectiveMultiplier))
     }
     
     // 金額をカンマ区切りにフォーマットする
@@ -513,7 +583,6 @@ public class PrePlanViewModel: ObservableObject {
     // プランの読み込み
     public func loadPlan(_ plan: Plan) {
         participants = plan.participants
-        totalAmount = plan.totalAmount
         roleMultipliers = plan.roleMultipliers
         roleNames = plan.roleNames
         editingPlanId = plan.id
@@ -542,10 +611,16 @@ public class PrePlanViewModel: ObservableObject {
         editingPlanEmoji = selectedEmoji
         
         // プランに内訳項目がある場合は読み込む
-        if let items = plan.amountItems {
+        if let items = plan.amountItems, !items.isEmpty {
             amountItems = items
         } else {
-            amountItems = []
+            // 旧形式: totalAmountからマイグレーション
+            let legacyAmountString = plan.totalAmount.filter { $0.isNumber }
+            if let legacyAmount = Int(legacyAmountString), legacyAmount > 0 {
+                amountItems = [AmountItem(name: "メインのお会計", amount: legacyAmount, participantIds: nil, useMultiplier: true)]
+            } else {
+                amountItems = []
+            }
         }
         
         saveData()
@@ -585,7 +660,6 @@ public class PrePlanViewModel: ObservableObject {
         participants = []
         roleMultipliers = [:]
         roleNames = [:]
-        totalAmount = ""
         amountItems = []
         editingPlanId = nil
         editingPlanName = ""
