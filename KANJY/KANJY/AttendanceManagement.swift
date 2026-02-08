@@ -415,6 +415,12 @@ public class ScheduleManagementViewModel: ObservableObject {
             // 古いNetlify URLの場合は、新しいVercel URLを生成
             return generateWebUrl(eventId: event.id)
         }
+        
+        // 誤って回答フォーム(response-form.html)のURLが保存されている場合は、正規のURLを生成して返す
+        if let webUrl = event.webUrl, webUrl.contains("response-form.html") {
+            return generateWebUrl(eventId: event.id)
+        }
+        
         // webUrlがVercelのURLの場合はそれを使用、それ以外は新しく生成
         if let webUrl = event.webUrl, webUrl.contains("kanjy.vercel.app") {
             return webUrl
