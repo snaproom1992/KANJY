@@ -18,6 +18,7 @@ struct QuickCreatePlanView: View {
     @State private var selectedIconColor: String? = nil
     @State private var showColorPicker = false
     @State private var showIconPicker = false
+    @State private var isHippoSelected = false
     
     // Step 2: 候補日時
     @State private var candidateDates: [Date] = []
@@ -194,19 +195,23 @@ struct QuickCreatePlanView: View {
                     if let iconName = selectedIcon {
                         Image(systemName: iconName)
                             .foregroundColor(colorFromString(selectedIconColor) ?? DesignSystem.Colors.primary)
-                    } else if !selectedEmoji.isEmpty {
+                    } else if !selectedEmoji.isEmpty && selectedEmoji != "KANJY_HIPPO" {
                         Text(selectedEmoji)
-                    } else {
-                        // 未選択の場合はカバアイコン
+                    } else if isHippoSelected {
+                        // カバアイコン選択済み → AppLogo表示
                         if let appLogo = UIImage(named: "AppLogo") {
                             Image(uiImage: appLogo)
                                 .resizable()
                                 .scaledToFit()
                                 .frame(width: 48, height: 48)
                         } else {
-                            Image(systemName: CreateStep.name.icon)
-                                .foregroundColor(DesignSystem.Colors.primary)
+                            Image(systemName: "face.smiling")
+                                .foregroundColor(DesignSystem.Colors.secondary)
                         }
+                    } else {
+                        // 未選択 → プレースホルダー
+                        Image(systemName: "face.smiling")
+                            .foregroundColor(DesignSystem.Colors.secondary)
                     }
                 }
                 .font(.system(size: 48))
@@ -241,10 +246,23 @@ struct QuickCreatePlanView: View {
                                     .foregroundColor(
                                         colorFromString(selectedIconColor) ?? DesignSystem.Colors.primary
                                     )
-                            } else if !selectedEmoji.isEmpty {
+                            } else if !selectedEmoji.isEmpty && selectedEmoji != "KANJY_HIPPO" {
                                 Text(selectedEmoji)
                                     .font(.system(size: 28))
+                            } else if isHippoSelected {
+                                // カバアイコン選択済み → AppLogo表示
+                                if let appLogo = UIImage(named: "AppLogo") {
+                                    Image(uiImage: appLogo)
+                                        .resizable()
+                                        .scaledToFit()
+                                        .frame(width: 28, height: 28)
+                                } else {
+                                    Image(systemName: "face.smiling")
+                                        .font(.system(size: 24))
+                                        .foregroundColor(DesignSystem.Colors.secondary)
+                                }
                             } else {
+                                // 未選択 → プレースホルダー
                                 Image(systemName: "face.smiling")
                                     .font(.system(size: 24))
                                     .foregroundColor(DesignSystem.Colors.secondary)
@@ -976,8 +994,8 @@ struct QuickCreatePlanView: View {
                     createdEvent = event
                     isCreating = false
                     
-                    // ViewModelに保存（空の場合は自動でカバを割り当て）
-                    viewModel.selectedEmoji = selectedEmoji.isEmpty ? "KANJY_HIPPO" : selectedEmoji
+                    // ViewModelに保存（空の場合はシステム側でAppLogoを表示）
+                    viewModel.selectedEmoji = selectedEmoji
                     viewModel.selectedIcon = selectedIcon
                     viewModel.selectedIconColor = selectedIconColor
                     viewModel.editingPlanDescription = description
@@ -1070,6 +1088,7 @@ struct QuickCreatePlanView: View {
                                     Button(action: {
                                         selectedEmoji = emoji
                                         selectedIcon = nil
+                                        isHippoSelected = false
                                         showIconPicker = false
                                     }) {
                                         Text(emoji)
@@ -1128,6 +1147,7 @@ struct QuickCreatePlanView: View {
                                     Button(action: {
                                         selectedIcon = icon.name
                                         selectedEmoji = ""
+                                        isHippoSelected = false
                                         if selectedIconColor == nil {
                                             selectedIconColor = "0.067,0.094,0.157"
                                         }
@@ -1162,8 +1182,9 @@ struct QuickCreatePlanView: View {
                             
                             HStack(spacing: 12) {
                                 Button(action: {
-                                    selectedEmoji = "KANJY_HIPPO"
+                                    selectedEmoji = ""
                                     selectedIcon = nil
+                                    isHippoSelected = true
                                     showIconPicker = false
                                 }) {
                                     Group {
@@ -1181,11 +1202,11 @@ struct QuickCreatePlanView: View {
                                     .frame(width: 50, height: 50)
                                     .background(
                                         Circle()
-                                            .fill(selectedEmoji == "KANJY_HIPPO" && selectedIcon == nil ? DesignSystem.Colors.primary.opacity(0.2) : Color.gray.opacity(0.1))
+                                            .fill(isHippoSelected && selectedIcon == nil ? DesignSystem.Colors.primary.opacity(0.2) : Color.gray.opacity(0.1))
                                     )
                                     .overlay(
                                         Circle()
-                                            .stroke(selectedEmoji == "KANJY_HIPPO" && selectedIcon == nil ? DesignSystem.Colors.primary : Color.clear, lineWidth: 2)
+                                            .stroke(isHippoSelected && selectedIcon == nil ? DesignSystem.Colors.primary : Color.clear, lineWidth: 2)
                                     )
                                 }
                                 .buttonStyle(PlainButtonStyle())
@@ -1401,12 +1422,11 @@ struct QuickCreatePlanView: View {
                                         .foregroundColor(
                                             colorFromString(selectedIconColor) ?? DesignSystem.Colors.primary
                                         )
-                                } else if !selectedEmoji.isEmpty {
+                                } else if !selectedEmoji.isEmpty && selectedEmoji != "KANJY_HIPPO" {
                                     Text(selectedEmoji)
                                         .font(.system(size: 32))
                                 } else {
-                                    // Fallback Icon
-                                    // Fallback Icon (AppLogo)
+                                    // 未選択・カバ選択 → AppLogo表示（完了画面では常にロゴ）
                                     if let appLogo = UIImage(named: "AppLogo") {
                                         Image(uiImage: appLogo)
                                             .resizable()
@@ -1414,7 +1434,6 @@ struct QuickCreatePlanView: View {
                                             .frame(width: 44, height: 44)
                                             .cornerRadius(8)
                                     } else {
-                                        // Image fails to load fallback
                                         RoundedRectangle(cornerRadius: 8)
                                             .fill(DesignSystem.Colors.primary)
                                             .frame(width: 44, height: 44)
