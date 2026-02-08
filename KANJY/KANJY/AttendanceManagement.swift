@@ -350,9 +350,11 @@ public class ScheduleManagementViewModel: ObservableObject {
     }
     
     public func deleteEvent(id: UUID) async throws {
-        // ローカルから削除
-        events.removeAll { $0.id == id }
-        saveData()
+        // メインスレッドでローカルデータを削除（@Published / @AppStorage の更新はメインスレッド必須）
+        await MainActor.run {
+            events.removeAll { $0.id == id }
+            saveData()
+        }
         
         // Supabaseからも削除
         try await deleteEventInSupabase(eventId: id)
