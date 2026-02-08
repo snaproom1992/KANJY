@@ -1942,11 +1942,9 @@ struct PrePlanView: View {
                         
                         // 現在選択されている色を1つだけ表示（補助的な機能）
                         CurrentColorButton()
-                            .padding(.horizontal, DesignSystem.Spacing.lg)
                         
                         // アイコンセクション
                         SimpleIconGridRow(icons: availableIcons.map { $0.name })
-                            .padding(.horizontal, DesignSystem.Spacing.lg)
                         
                         Divider()
                         
@@ -2078,7 +2076,7 @@ struct PrePlanView: View {
                 .font(DesignSystem.Typography.subheadline)
                 .foregroundColor(DesignSystem.Colors.secondary)
             
-            LazyVGrid(columns: Array(repeating: GridItem(.fixed(50), spacing: 12, alignment: .leading), count: 6), alignment: .leading, spacing: 12) {
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12, alignment: .center), count: 6), spacing: 12) {
                 ForEach(icons, id: \.self) { iconName in
                     Button(action: {
                         viewModel.selectedIcon = iconName
@@ -2112,7 +2110,7 @@ struct PrePlanView: View {
     // シンプルな絵文字グリッド行
     @ViewBuilder
     private func SimpleEmojiGridRow(emojis: [String]) -> some View {
-        LazyVGrid(columns: Array(repeating: GridItem(.fixed(50), spacing: 12, alignment: .leading), count: 6), alignment: .leading, spacing: 12) {
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12, alignment: .center), count: 6), spacing: 12) {
             ForEach(emojis, id: \.self) { emoji in
                 Button(action: {
                     viewModel.selectedEmoji = emoji

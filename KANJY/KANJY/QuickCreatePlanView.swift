@@ -1065,7 +1065,7 @@ struct QuickCreatePlanView: View {
                                 .font(DesignSystem.Typography.subheadline)
                                 .foregroundColor(DesignSystem.Colors.secondary)
                             
-                            LazyVGrid(columns: Array(repeating: GridItem(.fixed(50), spacing: 12, alignment: .leading), count: 6), alignment: .leading, spacing: 12) {
+                            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12, alignment: .center), count: 6), spacing: 12) {
                                 ForEach(["🍻", "🍺", "🥂", "🍷", "🍸", "🍹", "🍾", "🥃", "🍴", "🍖", "🍗", "🍣", "🍕", "🍔", "🥩", "🍙", "🤮", "🤢", "🥴", "😵", "😵‍💫", "💸", "🎊"], id: \.self) { emoji in
                                     Button(action: {
                                         selectedEmoji = emoji
@@ -1123,7 +1123,7 @@ struct QuickCreatePlanView: View {
                                 .font(DesignSystem.Typography.subheadline)
                                 .foregroundColor(DesignSystem.Colors.secondary)
                             
-                            LazyVGrid(columns: Array(repeating: GridItem(.fixed(50), spacing: 12, alignment: .leading), count: 6), alignment: .leading, spacing: 12) {
+                            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12, alignment: .center), count: 6), spacing: 12) {
                                 ForEach(availableIcons, id: \.name) { icon in
                                     Button(action: {
                                         selectedIcon = icon.name
