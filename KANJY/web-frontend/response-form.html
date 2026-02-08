@@ -1274,7 +1274,7 @@
                 // refresh=1パラメータを追加してデータを再取得させる
                 // action=respondedパラメータを追加して完了メッセージを表示させる
                 const timestamp = Date.now();
-                const targetUrl = `/? id = ${currentEventId}& refresh=1 & action=responded & _t=${timestamp} `;
+                const targetUrl = `/?id=${currentEventId}&refresh=1&action=responded&_t=${timestamp}`;
                 console.log('🚀 遷移先:', targetUrl);
 
                 window.location.replace(targetUrl);
