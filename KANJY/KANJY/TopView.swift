@@ -169,7 +169,7 @@ private extension TopView {
             viewModel.editingPlanId = nil
             viewModel.editingPlanName = ""
             viewModel.editingPlanDate = nil
-            viewModel.selectedEmoji = "🍻"
+            viewModel.selectedEmoji = ""
             showingCreateView = true
         }) {
             HStack(spacing: DesignSystem.Spacing.md) {
@@ -256,7 +256,7 @@ private extension TopView {
                     viewModel.editingPlanId = nil
                     viewModel.editingPlanName = ""
                     viewModel.editingPlanDate = nil
-                    viewModel.selectedEmoji = "🍻"
+                    viewModel.selectedEmoji = ""
                     showingCreateView = true
                 }
             } else {
@@ -423,13 +423,27 @@ private struct PlanCard: View {
                 // ヘッダー：絵文字 + タイトル + 日付
                 HStack(alignment: .center, spacing: 12) {
                     Group {
-                        if let iconName = plan.icon {
+                        if let iconName = plan.icon, !iconName.isEmpty {
                             Image(systemName: iconName)
                                 .font(.system(size: 44))
                                 .foregroundColor(colorFromString(plan.iconColor) ?? DesignSystem.Colors.primary)
+                        } else if let emoji = plan.emoji, !emoji.isEmpty {
+                            Text(emoji)
+                                .font(.system(size: 44))
                         } else {
-                    Text(plan.emoji ?? "🍻")
-                        .font(.system(size: 44))
+                            // Default: App Logo (Hippo)
+                            if let appLogo = UIImage(named: "AppLogo") {
+                                Image(uiImage: appLogo)
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 44, height: 44)
+                                    .cornerRadius(6)
+                            } else {
+                                // Fallback
+                                Image(systemName: "wineglass.fill")
+                                    .font(.system(size: 28))
+                                    .foregroundColor(DesignSystem.Colors.primary)
+                            }
                         }
                     }
                     .frame(width: 70, height: 70)

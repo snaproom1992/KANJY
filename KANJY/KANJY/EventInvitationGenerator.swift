@@ -76,9 +76,22 @@ struct EventInvitationGenerator: View {
                     Image(systemName: planEmoji)
                         .font(.system(size: 40))
                         .foregroundColor(colorFromStringForSwiftUI(viewModel.selectedIconColor) ?? DesignSystem.Colors.primary)
+                } else if planEmoji == "KANJY_HIPPO" || planEmoji.isEmpty {
+                    // カバアイコン（明示的選択または空）
+                    if let appLogo = UIImage(named: "AppLogo") {
+                        Image(uiImage: appLogo)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 40, height: 40)
+                            .cornerRadius(4)
+                    } else {
+                        Image(systemName: "wineglass.fill")
+                            .font(.system(size: 32))
+                            .foregroundColor(DesignSystem.Colors.primary)
+                    }
                 } else {
-                Text(planEmoji)
-                    .font(.system(size: 40))
+                    Text(planEmoji)
+                        .font(.system(size: 40))
                 }
                 Text(planName)
                     .font(DesignSystem.Typography.headline)
@@ -302,13 +315,25 @@ struct EventInvitationGenerator: View {
                 let iconColor = colorFromString(viewModel.selectedIconColor) ?? primaryColor
                 let tintedIcon = iconImage.withTintColor(iconColor, renderingMode: .alwaysOriginal)
                 tintedIcon.draw(in: iconRect)
+            } else if planEmoji == "KANJY_HIPPO" || planEmoji.isEmpty {
+                // カバアイコン（明示的選択または空）
+                if let appLogo = UIImage(named: "AppLogo") {
+                    let logoSize: CGFloat = emojiFontSize * 1.2
+                    let logoRect = CGRect(
+                        x: padding + 20 + (cardContentWidth - 40 - logoSize) / 2,
+                        y: currentY - 10,
+                        width: logoSize,
+                        height: logoSize
+                    )
+                    appLogo.draw(in: logoRect)
+                }
             } else {
                 // 絵文字の場合
-            let emojiAttributes: [NSAttributedString.Key: Any] = [
-                .font: UIFont.systemFont(ofSize: emojiFontSize)
-            ]
-            let emojiRect = CGRect(x: padding + 20, y: currentY, width: cardContentWidth - 40, height: emojiFontSize)
-            planEmoji.draw(in: emojiRect, withAttributes: emojiAttributes)
+                let emojiAttributes: [NSAttributedString.Key: Any] = [
+                    .font: UIFont.systemFont(ofSize: emojiFontSize)
+                ]
+                let emojiRect = CGRect(x: padding + 20, y: currentY, width: cardContentWidth - 40, height: emojiFontSize)
+                planEmoji.draw(in: emojiRect, withAttributes: emojiAttributes)
             }
             currentY += emojiFontSize + 20
             

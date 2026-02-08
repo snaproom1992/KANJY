@@ -189,9 +189,27 @@ struct QuickCreatePlanView: View {
         VStack(spacing: DesignSystem.Spacing.xl) {
             // ヘッダー
             VStack(spacing: DesignSystem.Spacing.sm) {
-                Image(systemName: CreateStep.name.icon)
-                    .font(.system(size: 48))
-                    .foregroundColor(DesignSystem.Colors.primary)
+                // 選択されたアイコン/絵文字をプレースホルダーに反映
+                Group {
+                    if let iconName = selectedIcon {
+                        Image(systemName: iconName)
+                            .foregroundColor(colorFromString(selectedIconColor) ?? DesignSystem.Colors.primary)
+                    } else if !selectedEmoji.isEmpty {
+                        Text(selectedEmoji)
+                    } else {
+                        // 未選択の場合はカバアイコン
+                        if let appLogo = UIImage(named: "AppLogo") {
+                            Image(uiImage: appLogo)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 48, height: 48)
+                        } else {
+                            Image(systemName: CreateStep.name.icon)
+                                .foregroundColor(DesignSystem.Colors.primary)
+                        }
+                    }
+                }
+                .font(.system(size: 48))
                 
                 Text("Step 1/3")
                     .font(DesignSystem.Typography.caption)
@@ -958,8 +976,8 @@ struct QuickCreatePlanView: View {
                     createdEvent = event
                     isCreating = false
                     
-                    // ViewModelに保存
-                    viewModel.selectedEmoji = selectedEmoji
+                    // ViewModelに保存（空の場合は自動でカバを割り当て）
+                    viewModel.selectedEmoji = selectedEmoji.isEmpty ? "KANJY_HIPPO" : selectedEmoji
                     viewModel.selectedIcon = selectedIcon
                     viewModel.selectedIconColor = selectedIconColor
                     viewModel.editingPlanDescription = description
@@ -1047,7 +1065,7 @@ struct QuickCreatePlanView: View {
                                 .font(DesignSystem.Typography.subheadline)
                                 .foregroundColor(DesignSystem.Colors.secondary)
                             
-                            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 6), spacing: 12) {
+                            LazyVGrid(columns: Array(repeating: GridItem(.fixed(50), spacing: 12, alignment: .leading), count: 6), alignment: .leading, spacing: 12) {
                                 ForEach(["🍻", "🍺", "🥂", "🍷", "🍸", "🍹", "🍾", "🥃", "🍴", "🍖", "🍗", "🍣", "🍕", "🍔", "🥩", "🍙", "🤮", "🤢", "🥴", "😵", "😵‍💫", "💸", "🎊"], id: \.self) { emoji in
                                     Button(action: {
                                         selectedEmoji = emoji
@@ -1066,6 +1084,7 @@ struct QuickCreatePlanView: View {
                                 }
                             }
                         }
+                        .padding(.horizontal, DesignSystem.Spacing.lg)
                         
                         Divider()
                         
@@ -1095,6 +1114,7 @@ struct QuickCreatePlanView: View {
                                 }
                                 .buttonStyle(PlainButtonStyle())
                             }
+                            .padding(.horizontal, DesignSystem.Spacing.lg)
                         }
                         
                         // アイコンセクション
@@ -1103,7 +1123,7 @@ struct QuickCreatePlanView: View {
                                 .font(DesignSystem.Typography.subheadline)
                                 .foregroundColor(DesignSystem.Colors.secondary)
                             
-                            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 6), spacing: 12) {
+                            LazyVGrid(columns: Array(repeating: GridItem(.fixed(50), spacing: 12, alignment: .leading), count: 6), alignment: .leading, spacing: 12) {
                                 ForEach(availableIcons, id: \.name) { icon in
                                     Button(action: {
                                         selectedIcon = icon.name
@@ -1130,8 +1150,51 @@ struct QuickCreatePlanView: View {
                                 }
                             }
                         }
+                        .padding(.horizontal, DesignSystem.Spacing.lg)
+                        
+                        Divider()
+                        
+                        // その他部（アプリアイコン）
+                        VStack(alignment: .leading, spacing: DesignSystem.Spacing.sm) {
+                            Text("その他")
+                                .font(DesignSystem.Typography.subheadline)
+                                .foregroundColor(DesignSystem.Colors.secondary)
+                            
+                            HStack(spacing: 12) {
+                                Button(action: {
+                                    selectedEmoji = "KANJY_HIPPO"
+                                    selectedIcon = nil
+                                    showIconPicker = false
+                                }) {
+                                    Group {
+                                        if let appLogo = UIImage(named: "AppLogo") {
+                                            Image(uiImage: appLogo)
+                                                .resizable()
+                                                .scaledToFit()
+                                                .frame(width: 32, height: 32)
+                                                .cornerRadius(4)
+                                        } else {
+                                            Image(systemName: "face.smiling")
+                                                .font(.system(size: 24))
+                                        }
+                                    }
+                                    .frame(width: 50, height: 50)
+                                    .background(
+                                        Circle()
+                                            .fill(selectedEmoji == "KANJY_HIPPO" && selectedIcon == nil ? DesignSystem.Colors.primary.opacity(0.2) : Color.gray.opacity(0.1))
+                                    )
+                                    .overlay(
+                                        Circle()
+                                            .stroke(selectedEmoji == "KANJY_HIPPO" && selectedIcon == nil ? DesignSystem.Colors.primary : Color.clear, lineWidth: 2)
+                                    )
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                                
+                                Spacer()
+                            }
+                        }
+                        .padding(.horizontal, DesignSystem.Spacing.lg)
                     }
-                    .padding(.horizontal, DesignSystem.Spacing.lg)
                     .padding(.top, DesignSystem.Spacing.md)
                     .padding(.bottom, DesignSystem.Spacing.xl)
                 }
@@ -1343,14 +1406,24 @@ struct QuickCreatePlanView: View {
                                         .font(.system(size: 32))
                                 } else {
                                     // Fallback Icon
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .fill(DesignSystem.Colors.primary)
-                                        .frame(width: 40, height: 40)
-                                        .overlay(
-                                            Text("K")
-                                                .font(.system(size: 24, weight: .heavy, design: .serif))
-                                                .foregroundColor(.white)
-                                        )
+                                    // Fallback Icon (AppLogo)
+                                    if let appLogo = UIImage(named: "AppLogo") {
+                                        Image(uiImage: appLogo)
+                                            .resizable()
+                                            .scaledToFit()
+                                            .frame(width: 44, height: 44)
+                                            .cornerRadius(8)
+                                    } else {
+                                        // Image fails to load fallback
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .fill(DesignSystem.Colors.primary)
+                                            .frame(width: 44, height: 44)
+                                            .overlay(
+                                                Image(systemName: "wineglass.fill")
+                                                    .font(.system(size: 24))
+                                                    .foregroundColor(.white)
+                                            )
+                                    }
                                 }
                             }
                             .frame(width: 44, height: 44)
@@ -1477,7 +1550,7 @@ struct QuickCreatePlanView: View {
                                      .interpolation(.none)
                                      .resizable()
                                      .scaledToFit()
-                                     .frame(width: 80, height: 80) // サイズ縮小
+                                     .frame(width: 100, height: 100) // サイズ拡大
                                      .background(Color.white)
                                      .cornerRadius(8)
                                  
@@ -1613,18 +1686,125 @@ struct QuickCreatePlanView: View {
         let context = CIContext()
         let filter = CIFilter.qrCodeGenerator()
         filter.message = Data(string.utf8)
+        filter.correctionLevel = "H" // アイコンを載せるため誤り訂正レベルを高く設定
         
-        if let outputImage = filter.outputImage {
-            // 解像度を上げて鮮明にする
-            let transform = CGAffineTransform(scaleX: 10, y: 10)
-            let scaledImage = outputImage.transformed(by: transform)
-            
-            if let cgImage = context.createCGImage(scaledImage, from: scaledImage.extent) {
-                return UIImage(cgImage: cgImage)
+        guard let qrImage = filter.outputImage else {
+            return UIImage(systemName: "xmark.circle") ?? UIImage()
+        }
+        
+        // 1. まずは正確なサイズ（1セル=1ピクセル）の正規化された画像を取得
+        let scale = CGAffineTransform(scaleX: 1, y: 1)
+        guard let cgImage = context.createCGImage(qrImage.transformed(by: scale), from: qrImage.extent) else {
+            return UIImage(systemName: "xmark.circle") ?? UIImage()
+        }
+        
+        // 2. ピクセルデータの読み取り準備
+        let width = cgImage.width
+        let height = cgImage.height
+        let dataSize = width * height * 4
+        var rawData = [UInt8](repeating: 0, count: dataSize)
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        
+        guard let bitmapContext = CGContext(
+            data: &rawData,
+            width: width,
+            height: height,
+            bitsPerComponent: 8,
+            bytesPerRow: width * 4,
+            space: colorSpace,
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ) else {
+            return UIImage(systemName: "xmark.circle") ?? UIImage()
+        }
+        
+        bitmapContext.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
+        
+        // 3. ドットによる描画（高解像度化）
+        let moduleSize: CGFloat = 20.0
+        let finalSize = CGSize(width: CGFloat(width) * moduleSize, height: CGFloat(height) * moduleSize)
+        
+        UIGraphicsBeginImageContextWithOptions(finalSize, false, 0.0)
+        guard let drawContext = UIGraphicsGetCurrentContext() else { return UIImage() }
+        
+        // 背景を白で塗りつぶし
+        UIColor.white.setFill()
+        drawContext.fill(CGRect(origin: .zero, size: finalSize))
+        
+        // ドットの色（プライマリーカラー）を設定
+        DesignSystem.Colors.uiPrimary.setFill()
+        
+        for y in 0..<height {
+            for x in 0..<width {
+                let pixelIndex = (y * width + x) * 4
+                let red = rawData[pixelIndex]
+                
+                if red < 128 {
+                    let dotRect = CGRect(
+                        x: CGFloat(x) * moduleSize + 1.0,
+                        y: CGFloat(y) * moduleSize + 1.0,
+                        width: moduleSize - 2.0,
+                        height: moduleSize - 2.0
+                    )
+                    drawContext.fillEllipse(in: dotRect)
+                }
             }
         }
         
-        return UIImage(systemName: "xmark.circle") ?? UIImage()
+        let dotQRImage = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+        
+        // 4. アイコンの合成
+        guard let baseImage = dotQRImage else { return UIImage() }
+        
+        UIGraphicsBeginImageContextWithOptions(baseImage.size, false, 0.0)
+        baseImage.draw(in: CGRect(origin: .zero, size: baseImage.size))
+        
+        // アプリアイコンまたはシンボルを使用
+        let icon: UIImage?
+        if let appIcon = UIImage(named: "AppLogo") {
+            icon = appIcon
+        } else {
+            icon = UIImage(systemName: "wineglass.fill")?.withTintColor(DesignSystem.Colors.uiPrimary, renderingMode: .alwaysOriginal)
+        }
+        
+        if let iconImage = icon {
+            let iconSize = baseImage.size.width * 0.22
+            
+            // アスペクト比を維持してサイズ計算
+            let aspectRatio = iconImage.size.width / iconImage.size.height
+            var drawSize = CGSize(width: iconSize, height: iconSize)
+            
+            if aspectRatio > 1 {
+                drawSize.height = iconSize / aspectRatio
+            } else {
+                drawSize.width = iconSize * aspectRatio
+            }
+            
+            let iconOrigin = CGPoint(
+                x: (baseImage.size.width - drawSize.width) / 2, 
+                y: (baseImage.size.height - drawSize.height) / 2
+            )
+            let iconRect = CGRect(origin: iconOrigin, size: drawSize)
+            
+            // アイコンの背景（白）- 丸角四角形
+            let bgPadding: CGFloat = 8.0
+            let bgSize = CGSize(width: drawSize.width + bgPadding * 2, height: drawSize.height + bgPadding * 2)
+            let bgOrigin = CGPoint(
+                x: (baseImage.size.width - bgSize.width) / 2,
+                y: (baseImage.size.height - bgSize.height) / 2
+            )
+            let bgRect = CGRect(origin: bgOrigin, size: bgSize)
+            let bgPath = UIBezierPath(roundedRect: bgRect, cornerRadius: 12)
+            UIColor.white.setFill()
+            bgPath.fill()
+            
+            iconImage.draw(in: iconRect)
+        }
+        
+        let finalImage = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+        
+        return finalImage ?? baseImage
     }
 }
 

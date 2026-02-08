@@ -704,6 +704,9 @@ struct PrePlanView: View {
                 let responses = try await AttendanceManager.shared.fetchResponsesFromSupabase(eventId: eventId)
                 await MainActor.run {
                     scheduleResponses = responses
+                    // scheduleEventのresponsesも更新して、候補日時の人数計算に反映させる
+                    scheduleEvent?.responses = responses
+                    
                     isLoadingResponses = false
                     
                     // 初回ロード時に参加者リストが空の場合は同期する
@@ -1278,7 +1281,7 @@ struct PrePlanView: View {
                     confirmedLocation: confirmedLocation.isEmpty ? nil : confirmedLocation,
                     confirmedParticipants: confirmedParticipants,
                     planName: localPlanName.isEmpty ? planName : localPlanName,
-                    planEmoji: viewModel.selectedIcon ?? (viewModel.selectedEmoji.isEmpty ? "🍻" : viewModel.selectedEmoji)
+                    planEmoji: viewModel.selectedIcon ?? viewModel.selectedEmoji
                 )
             }
         }
@@ -1405,6 +1408,16 @@ struct PrePlanView: View {
     private func ScheduleAndParticipantsCardView() -> some View {
         VStack(spacing: DesignSystem.Spacing.xxl) {
             
+            // 案内テキスト（タブとカードの間）
+            if hasScheduleEvent {
+                Text("QRコードをスキャンまたはタップすると調整用Webページが開きます")
+                    .font(DesignSystem.Typography.caption)
+                    .foregroundColor(DesignSystem.Colors.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.top, DesignSystem.Spacing.sm)
+                    .padding(.bottom, -DesignSystem.Spacing.lg) // 下のカードとの隙間を詰める
+            }
+
             // 🔗 URL・プレビュー・編集カード（一番上、独立）
             if hasScheduleEvent, let event = scheduleEvent {
                 ScheduleUrlAndActionsCardView(
@@ -1425,7 +1438,34 @@ struct PrePlanView: View {
             }
             
             // 📊 統合情報カード（候補日時・回答者・基本情報を1つに）
-            VStack(spacing: 0) {
+            VStack(spacing: 8) {
+                // 案内テキスト & 更新ボタン（カードの上、同じ行）
+                if hasScheduleEvent {
+                    HStack(alignment: .bottom) {
+                        Text("回答状況は下のセクションで確認できます")
+                            .font(DesignSystem.Typography.caption)
+                            .foregroundColor(DesignSystem.Colors.secondary)
+                        
+                        Spacer()
+                        
+                        Button(action: {
+                            Task {
+                                await syncWebResponses()
+                            }
+                        }) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "arrow.triangle.2.circlepath")
+                                Text("回答を更新")
+                            }
+                            .font(DesignSystem.Typography.caption.weight(.semibold))
+                            .foregroundColor(DesignSystem.Colors.primary)
+                        }
+                    }
+                    .padding(.top, DesignSystem.Spacing.sm)
+                    .padding(.horizontal, DesignSystem.Spacing.sm) // 少し余白追加
+                }
+                
+                VStack(spacing: 0) {
                 // 📅 候補日時セクション
                 VStack(alignment: .leading, spacing: DesignSystem.Spacing.lg) {
                     // セクションヘッダー
@@ -1606,6 +1646,7 @@ struct PrePlanView: View {
             .onChange(of: scheduleResponses.count) { _, _ in
                 // 回答者が追加されたら、参加者を再反映
             }
+            }
         }
     }
     
@@ -1668,6 +1709,8 @@ struct PrePlanView: View {
             
             // Web回答数を更新
             webResponsesCount = responses.count
+            scheduleResponses = responses
+            scheduleEvent?.responses = responses
             
             // 参加者が0人の場合のみ自動取り込み
             if viewModel.participants.isEmpty && !responses.isEmpty {
@@ -1694,6 +1737,8 @@ struct PrePlanView: View {
             
             // Web回答数を更新
             webResponsesCount = responses.count
+            scheduleResponses = responses
+            scheduleEvent?.responses = responses
             
             if addedCount > 0 {
                 let generator = UINotificationFeedbackGenerator()
@@ -1884,17 +1929,71 @@ struct PrePlanView: View {
                 ScrollView {
                     VStack(spacing: 24) {
                         // 絵文字セクション
-                        SimpleEmojiGridRow(emojis: availableEmojis)
-                            .padding(.top, DesignSystem.Spacing.md)
+                        VStack(alignment: .leading, spacing: DesignSystem.Spacing.sm) {
+                            Text("絵文字")
+                                .font(DesignSystem.Typography.subheadline)
+                                .foregroundColor(DesignSystem.Colors.secondary)
+                            
+                            SimpleEmojiGridRow(emojis: availableEmojis)
+                        }
+                        .padding(.horizontal, DesignSystem.Spacing.lg)
+                        
+                        Divider()
                         
                         // 現在選択されている色を1つだけ表示（補助的な機能）
                         CurrentColorButton()
+                            .padding(.horizontal, DesignSystem.Spacing.lg)
                         
                         // アイコンセクション
                         SimpleIconGridRow(icons: availableIcons.map { $0.name })
+                            .padding(.horizontal, DesignSystem.Spacing.lg)
+                        
+                        Divider()
+                        
+                        // その他部（アプリアイコン）
+                        VStack(alignment: .leading, spacing: DesignSystem.Spacing.sm) {
+                            Text("その他")
+                                .font(DesignSystem.Typography.subheadline)
+                                .foregroundColor(DesignSystem.Colors.secondary)
+                            
+                            HStack(spacing: 12) {
+                                Button(action: {
+                                    viewModel.selectedEmoji = "KANJY_HIPPO"
+                                    viewModel.selectedIcon = nil
+                                    showIconPicker = false
+                                    autoSavePlan()
+                                }) {
+                                    Group {
+                                        if let appLogo = UIImage(named: "AppLogo") {
+                                            Image(uiImage: appLogo)
+                                                .resizable()
+                                                .scaledToFit()
+                                                .frame(width: 32, height: 32)
+                                                .cornerRadius(4)
+                                        } else {
+                                            Image(systemName: "face.smiling")
+                                                .font(.system(size: 24))
+                                        }
+                                    }
+                                    .frame(width: 50, height: 50)
+                                    .background(
+                                        Circle()
+                                            .fill(viewModel.selectedEmoji == "KANJY_HIPPO" && viewModel.selectedIcon == nil ? DesignSystem.Colors.primary.opacity(0.2) : Color.gray.opacity(0.1))
+                                    )
+                                    .overlay(
+                                        Circle()
+                                            .stroke(viewModel.selectedEmoji == "KANJY_HIPPO" && viewModel.selectedIcon == nil ? DesignSystem.Colors.primary : Color.clear, lineWidth: 2)
+                                    )
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                                
+                                Spacer()
+                            }
                         }
-                    .padding(.horizontal, DesignSystem.Spacing.lg)
+                        .padding(.horizontal, DesignSystem.Spacing.lg)
+                    }
                     .padding(.bottom, DesignSystem.Spacing.xl)
+                    .padding(.top, DesignSystem.Spacing.md)
                 }
                 
                 // ポップオーバー外をタップしたら閉じる背景
@@ -1974,31 +2073,37 @@ struct PrePlanView: View {
     // シンプルなアイコングリッド行
     @ViewBuilder
     private func SimpleIconGridRow(icons: [String]) -> some View {
-        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 6), spacing: 12) {
-            ForEach(icons, id: \.self) { iconName in
-                Button(action: {
-                    viewModel.selectedIcon = iconName
-                    viewModel.selectedEmoji = ""
-                    // 色が設定されていない場合はデフォルト色を設定
-                    if viewModel.selectedIconColor == nil {
-                        viewModel.selectedIconColor = "0.067,0.094,0.157" // プライマリカラー
+        VStack(alignment: .leading, spacing: DesignSystem.Spacing.sm) {
+            Text("アイコン")
+                .font(DesignSystem.Typography.subheadline)
+                .foregroundColor(DesignSystem.Colors.secondary)
+            
+            LazyVGrid(columns: Array(repeating: GridItem(.fixed(50), spacing: 12, alignment: .leading), count: 6), alignment: .leading, spacing: 12) {
+                ForEach(icons, id: \.self) { iconName in
+                    Button(action: {
+                        viewModel.selectedIcon = iconName
+                        viewModel.selectedEmoji = ""
+                        // 色が設定されていない場合はデフォルト色を設定
+                        if viewModel.selectedIconColor == nil {
+                            viewModel.selectedIconColor = "0.067,0.094,0.157" // プライマリカラー
+                        }
+                        showIconPicker = false
+                        // アイコン選択後に自動保存
+                        autoSavePlan()
+                    }) {
+                        Image(systemName: iconName)
+                            .font(.system(size: 28))
+                            .foregroundColor(
+                                colorFromString(viewModel.selectedIconColor) ?? DesignSystem.Colors.primary
+                            )
+                            .frame(width: 50, height: 50)
+                            .background(
+                                Circle()
+                                    .fill(Color.gray.opacity(0.1))
+                            )
                     }
-                    showIconPicker = false
-                    // アイコン選択後に自動保存
-                    autoSavePlan()
-                }) {
-                    Image(systemName: iconName)
-                        .font(.system(size: 28))
-                        .foregroundColor(
-                            colorFromString(viewModel.selectedIconColor) ?? DesignSystem.Colors.primary
-                        )
-                        .frame(width: 50, height: 50)
-                        .background(
-                            Circle()
-                                .fill(Color.gray.opacity(0.1))
-                        )
+                    .buttonStyle(PlainButtonStyle())
                 }
-                .buttonStyle(PlainButtonStyle())
             }
         }
         .padding(.horizontal, DesignSystem.Spacing.lg)
@@ -2007,7 +2112,7 @@ struct PrePlanView: View {
     // シンプルな絵文字グリッド行
     @ViewBuilder
     private func SimpleEmojiGridRow(emojis: [String]) -> some View {
-        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 6), spacing: 12) {
+        LazyVGrid(columns: Array(repeating: GridItem(.fixed(50), spacing: 12, alignment: .leading), count: 6), alignment: .leading, spacing: 12) {
             ForEach(emojis, id: \.self) { emoji in
                 Button(action: {
                     viewModel.selectedEmoji = emoji
@@ -2027,7 +2132,6 @@ struct PrePlanView: View {
                 .buttonStyle(PlainButtonStyle())
             }
         }
-        .padding(.horizontal, DesignSystem.Spacing.lg)
     }
     
     // 色選択ポップオーバー
@@ -2819,27 +2923,6 @@ struct PrePlanView: View {
         onSyncResponses: @escaping () -> Void
     ) -> some View {
         VStack(alignment: .leading, spacing: DesignSystem.Spacing.md) {
-            // 更新ボタン（チケットの外、右上）
-            HStack {
-                Spacer()
-                Button(action: onSyncResponses) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "arrow.clockwise")
-                            .font(.system(size: 14, weight: .medium))
-                        Text("回答を更新")
-                            .font(DesignSystem.Typography.caption)
-                    }
-                    .foregroundColor(DesignSystem.Colors.gray6)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(
-                        Capsule()
-                            .fill(DesignSystem.Colors.gray2)
-                    )
-                }
-            }
-            .padding(.horizontal, DesignSystem.Spacing.lg)
-            
             // シンプル版チケット
             VStack(spacing: 0) {
                 // 上部：ヘッダーエリア（プライマリーカラー）
@@ -2867,19 +2950,27 @@ struct PrePlanView: View {
                 VStack(spacing: DesignSystem.Spacing.md) {
                     // QRコード（中央配置）
                     VStack(spacing: 8) {
+                        Text("調整用QRコード")
+                            .font(DesignSystem.Typography.subheadline) // タイトルとして少し大きめに
+                            .foregroundColor(DesignSystem.Colors.gray5)
+                            .fontWeight(.bold)
+                        
                         Image(uiImage: generateQRCodeForPrePlanView(from: scheduleViewModel.getWebUrl(for: event)))
                             .interpolation(.none)
                             .resizable()
                             .scaledToFit()
-                            .frame(width: 120, height: 120)
+                            .frame(width: 180, height: 180)
                             .background(Color.white)
                             .cornerRadius(8)
                         
+                        
+                        /*
                         Text("QRコードをスキャンまたはタップすると\n調整用Webページが開きます")
                             .font(DesignSystem.Typography.caption)
                             .foregroundColor(DesignSystem.Colors.gray6)
                             .multilineTextAlignment(.center)
                             .fixedSize(horizontal: false, vertical: true)
+                        */
                     }
                     .frame(maxWidth: .infinity)
                 }
@@ -2963,32 +3054,141 @@ struct PrePlanView: View {
                     }
                 }
             }
-            .padding(.horizontal, DesignSystem.Spacing.lg)
-            
-            // 説明テキスト
-            Text("イベント情報は下のセクションで確認できます。")
-                .font(DesignSystem.Typography.caption)
-                .foregroundColor(DesignSystem.Colors.secondary)
-                .padding(.horizontal, DesignSystem.Spacing.lg)
         }
     }
     
-    // QRコード生成（PrePlanView用）
+    // QRコード生成（PrePlanView用） - 丸いドット＆アイコン付き
     private func generateQRCodeForPrePlanView(from string: String) -> UIImage {
         let context = CIContext()
         let filter = CIFilter.qrCodeGenerator()
         filter.message = Data(string.utf8)
+        filter.correctionLevel = "H" // アイコンを載せるため誤り訂正レベルを高く設定
         
-        if let outputImage = filter.outputImage {
-            let transform = CGAffineTransform(scaleX: 10, y: 10)
-            let scaledImage = outputImage.transformed(by: transform)
-            
-            if let cgImage = context.createCGImage(scaledImage, from: scaledImage.extent) {
-                return UIImage(cgImage: cgImage)
+        guard let qrImage = filter.outputImage else {
+            return UIImage(systemName: "xmark.circle") ?? UIImage()
+        }
+        
+        // 1. まずは正確なサイズ（1セル=1ピクセル）の正規化された画像を取得
+        // QRコードのCIImageは座標系が特殊なため、一度CGImageにして確実にピクセルデータを取り出せるようにする
+        let scale = CGAffineTransform(scaleX: 1, y: 1) // そのままの解像度
+        guard let cgImage = context.createCGImage(qrImage.transformed(by: scale), from: qrImage.extent) else {
+            return UIImage(systemName: "xmark.circle") ?? UIImage()
+        }
+        
+        // 2. ピクセルデータの読み取り準備
+        let width = cgImage.width
+        let height = cgImage.height
+        let dataSize = width * height * 4
+        var rawData = [UInt8](repeating: 0, count: dataSize)
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        
+        guard let bitmapContext = CGContext(
+            data: &rawData,
+            width: width,
+            height: height,
+            bitsPerComponent: 8,
+            bytesPerRow: width * 4,
+            space: colorSpace,
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ) else {
+            return UIImage(systemName: "xmark.circle") ?? UIImage()
+        }
+        
+        bitmapContext.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
+        
+        // 3. ドットによる描画（高解像度化）
+        let moduleSize: CGFloat = 20.0 // 1ドットの描画サイズ
+        let finalSize = CGSize(width: CGFloat(width) * moduleSize, height: CGFloat(height) * moduleSize)
+        
+        UIGraphicsBeginImageContextWithOptions(finalSize, false, 0.0)
+        guard let drawContext = UIGraphicsGetCurrentContext() else { return UIImage() }
+        
+        // 背景を白で塗りつぶし
+        UIColor.white.setFill()
+        drawContext.fill(CGRect(origin: .zero, size: finalSize))
+        
+        // ドットの色（プライマリーカラー）を設定
+        DesignSystem.Colors.uiPrimary.setFill()
+        
+        // 全ピクセルを走査して黒い部分（QRコードのデータ部分）だけ丸を描画
+        // ピクセルデータの黒判定: R,G,Bが全て0に近い場合（CIImageからの変換では完全な白黒になるはず）
+        for y in 0..<height {
+            for x in 0..<width {
+                let pixelIndex = (y * width + x) * 4
+                let red = rawData[pixelIndex]
+                
+                // 黒いピクセル（データあり）の場合のみ描画
+                if red < 128 {
+                    // 丸を描画（隣とくっつかないよう少し小さめにするとドット感が出る）
+                    // 20.0のサイズに対して、直径18.0くらいで描画
+                    let dotRect = CGRect(
+                        x: CGFloat(x) * moduleSize + 1.0,
+                        y: CGFloat(y) * moduleSize + 1.0,
+                        width: moduleSize - 2.0,
+                        height: moduleSize - 2.0
+                    )
+                    drawContext.fillEllipse(in: dotRect)
+                }
             }
         }
         
-        return UIImage(systemName: "xmark.circle") ?? UIImage()
+        let dotQRImage = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+        
+        // 4. アイコンの合成（前のロジックと同じ、ただしサイズ感は合わせる）
+        guard let baseImage = dotQRImage else { return UIImage() }
+        
+        UIGraphicsBeginImageContextWithOptions(baseImage.size, false, 0.0)
+        baseImage.draw(in: CGRect(origin: .zero, size: baseImage.size))
+        
+        // 中央にアイコンを描画
+        // アプリアイコンまたはシンボルを使用
+        let icon: UIImage?
+        if let appIcon = UIImage(named: "AppLogo") {
+            icon = appIcon
+        } else {
+            icon = UIImage(systemName: "wineglass.fill")?.withTintColor(DesignSystem.Colors.uiPrimary, renderingMode: .alwaysOriginal)
+        }
+        
+        if let iconImage = icon {
+            let iconSize = baseImage.size.width * 0.22 // 少し大きめに調整
+            
+            // アスペクト比を維持してサイズ計算
+            let aspectRatio = iconImage.size.width / iconImage.size.height
+            var drawSize = CGSize(width: iconSize, height: iconSize)
+            
+            if aspectRatio > 1 {
+                drawSize.height = iconSize / aspectRatio
+            } else {
+                drawSize.width = iconSize * aspectRatio
+            }
+            
+            // 中央配置のための原点計算
+            let iconOrigin = CGPoint(
+                x: (baseImage.size.width - drawSize.width) / 2, 
+                y: (baseImage.size.height - drawSize.height) / 2
+            )
+            let iconRect = CGRect(origin: iconOrigin, size: drawSize)
+            
+            // アイコンの背景（白）- 丸角四角形
+            let bgPadding: CGFloat = 8.0
+            let bgSize = CGSize(width: drawSize.width + bgPadding * 2, height: drawSize.height + bgPadding * 2)
+            let bgOrigin = CGPoint(
+                x: (baseImage.size.width - bgSize.width) / 2,
+                y: (baseImage.size.height - bgSize.height) / 2
+            )
+            let bgRect = CGRect(origin: bgOrigin, size: bgSize)
+            let bgPath = UIBezierPath(roundedRect: bgRect, cornerRadius: 12) // 背景も丸みを持たせる
+            UIColor.white.setFill()
+            bgPath.fill()
+            
+            iconImage.draw(in: iconRect)
+        }
+        
+        let finalImage = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+        
+        return finalImage ?? baseImage
     }
     
     // チケット用日付フォーマッター（コンパクト版）
@@ -3119,7 +3319,7 @@ struct PrePlanView: View {
     // スケジュールプレビューシート
     // SchedulePreviewSheet definition removed. Use struct from PrePlanScheduleView.swift
     
-}
+
 
 // カスタムトグルスタイル
     // ToggleStyles removed. Use structs from PrePlanScheduleView.swift if needed, or DesignSystem.
@@ -3175,3 +3375,4 @@ struct SimpleInfoRow: View {
 }
 
 
+}

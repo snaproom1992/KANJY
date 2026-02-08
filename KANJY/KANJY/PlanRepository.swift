@@ -59,7 +59,7 @@ class PlanRepository {
     }
     
     func loadSelectedEmoji() -> String {
-        return defaults.string(forKey: Keys.selectedEmoji) ?? "🍻"
+        return defaults.string(forKey: Keys.selectedEmoji) ?? ""
     }
     
     func loadSelectedIcon() -> String {

@@ -13,7 +13,7 @@ public class PrePlanViewModel: ObservableObject {
     @Published public var selectedRoleType: RoleType = .standard(.staff)
     @Published public var savedPlans: [Plan] = []
     @Published public var amountItems: [AmountItem] = []
-    @Published public var selectedEmoji: String = "🍻" {
+    @Published public var selectedEmoji: String = "" {
         didSet {
             PlanRepository.shared.saveSelectedEmoji(selectedEmoji)
             print("絵文字を保存: \(selectedEmoji)")
@@ -429,10 +429,9 @@ public class PrePlanViewModel: ObservableObject {
     }
     
     // ランダムな絵文字を取得
+    // ランダムな絵文字を取得 (廃止: デフォルトはアプリアイコン)
     public func getRandomEmoji() -> String {
-        let emojis = ["🍻", "🍺", "🥂", "🍷", "🍸", "🍹", "🍾", "🥃", 
-                      "🍴", "🍖", "🍗", "🍣", "🍕", "🍔", "🥩", "🍙"]
-        return emojis.randomElement() ?? "🍻"
+        return "" 
     }
     
     // プランの保存
@@ -535,10 +534,10 @@ public class PrePlanViewModel: ObservableObject {
             selectedIconColor = nil
             print("プランから絵文字を読み込み: \(emoji)")
         } else {
-            selectedEmoji = "🍻"
+            selectedEmoji = ""
             selectedIcon = nil
             selectedIconColor = nil
-            print("プランに絵文字がないため、デフォルト絵文字を設定: 🍻")
+            print("プランに絵文字がないため、デフォルト（アプリアイコン）を使用")
         }
         editingPlanEmoji = selectedEmoji
         

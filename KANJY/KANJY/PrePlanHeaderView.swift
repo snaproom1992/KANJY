@@ -29,8 +29,22 @@ struct PrePlanHeaderView: View {
                     Image(systemName: iconName)
                         .font(.system(size: 40))
                         .foregroundColor(colorFromString(viewModel.selectedIconColor) ?? DesignSystem.Colors.primary)
+                } else if viewModel.selectedEmoji == "KANJY_HIPPO" || viewModel.selectedEmoji.isEmpty {
+                    // カバアイコン（明示的選択または空）
+                    if let appLogo = UIImage(named: "AppLogo") {
+                        Image(uiImage: appLogo)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 50, height: 50)
+                            .cornerRadius(8)
+                    } else {
+                        // フォールバック
+                        Image(systemName: "wineglass.fill")
+                            .font(.system(size: 32))
+                            .foregroundColor(DesignSystem.Colors.primary)
+                    }
                 } else {
-                    Text(viewModel.selectedEmoji.isEmpty ? "🍻" : viewModel.selectedEmoji)
+                    Text(viewModel.selectedEmoji)
                         .font(.system(size: 40))
                 }
             }
