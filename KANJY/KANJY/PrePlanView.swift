@@ -229,7 +229,7 @@ struct PrePlanView: View {
                         .font(DesignSystem.Typography.headline)
                 }
                 
-                Section(header: Text("支払金額").font(DesignSystem.Typography.headline)) {
+                Section(header: Text("合計金額").font(DesignSystem.Typography.headline)) {
                     // 金額固定トグル
                     Toggle("金額を固定する", isOn: $editingHasFixedAmount)
                         .toggleStyle(SwitchToggleStyle(tint: DesignSystem.Colors.primary))
@@ -741,7 +741,7 @@ struct PrePlanView: View {
         let numbers = additionalAmount.filter { $0.isNumber }
         if let amount = Int(numbers) {
             // 項目名（空の場合はデフォルト名を設定）
-            let itemName = additionalItemName.isEmpty ? "追加金額" : additionalItemName
+            let itemName = additionalItemName.isEmpty ? "追加のお会計" : additionalItemName
             
             // 内訳アイテムを追加
             viewModel.addAmountItem(name: itemName, amount: amount)
@@ -767,7 +767,7 @@ struct PrePlanView: View {
         let numbers = editingAmount.filter { $0.isNumber }
         if let amount = Int(numbers) {
             // 項目名（空の場合はデフォルト名を設定）
-            let itemName = editingItemName.isEmpty ? "追加金額" : editingItemName
+            let itemName = editingItemName.isEmpty ? "追加のお会計" : editingItemName
             
             // 内訳アイテムを更新
             viewModel.updateAmountItem(id: item.id, name: itemName, amount: amount)
@@ -1293,7 +1293,7 @@ struct PrePlanView: View {
         VStack(spacing: DesignSystem.Spacing.lg) {
             // 金額設定セクション
             InfoCard(
-                title: "支払金額",
+                title: "合計金額",
                 icon: "yensign.circle"
             ) {
                 VStack(spacing: DesignSystem.Spacing.md) {
@@ -1841,11 +1841,11 @@ struct PrePlanView: View {
                             }
                     }
                 } header: {
-                    Text("内訳項目の追加")
-                        .font(DesignSystem.Typography.headline)
+                    Text("二次会やカラオケなど、追加の費用を入力できます")
+                        .font(DesignSystem.Typography.caption)
                 }
             }
-            .navigationTitle("金額の追加")
+            .navigationTitle("追加のお会計")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -1900,7 +1900,7 @@ struct PrePlanView: View {
                         .font(DesignSystem.Typography.headline)
                 }
             }
-            .navigationTitle("金額の編集")
+            .navigationTitle("お会計の編集")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -2252,67 +2252,98 @@ struct PrePlanView: View {
     // サブビュー：金額セクションの内容
     @ViewBuilder
     private func AmountSectionContent() -> some View {
-        VStack(alignment: .leading, spacing: DesignSystem.Spacing.sm) {
-            // ヘッダーと説明文
-            VStack(alignment: .leading, spacing: DesignSystem.Spacing.xs) {
-
-                
-                Text("お店に支払う合計金額を入力してください。\nこの金額を元に割り勘を計算します。")
-                    .font(DesignSystem.Typography.caption)
-                    .foregroundColor(DesignSystem.Colors.secondary)
-            }
-            .padding(.bottom, DesignSystem.Spacing.xs)
-
-            HStack(spacing: DesignSystem.Spacing.sm) {
-            Text("¥")
-                .font(DesignSystem.Typography.title2)
+        VStack(spacing: DesignSystem.Spacing.md) {
+            // 説明文
+            Text("ここで入力された金額を元に割り勘を計算します。")
+                .font(DesignSystem.Typography.caption)
                 .foregroundColor(DesignSystem.Colors.secondary)
             
-            TextField("0", text: $viewModel.totalAmount)
-                .font(DesignSystem.Typography.title2)
-                .foregroundColor(DesignSystem.Colors.black)
-                .keyboardType(.numberPad)
-                .multilineTextAlignment(.trailing)
-                .focused($focusedField, equals: .totalAmount)
-                .onChange(of: viewModel.totalAmount) { _, newValue in
-                    let formatted = viewModel.formatAmount(newValue)
-                    if formatted != newValue {
-                        viewModel.totalAmount = formatted
+            // メイン金額入力エリア
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                Text("¥")
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundColor(DesignSystem.Colors.primary)
+                
+                TextField("0", text: $viewModel.totalAmount)
+                    .font(.system(size: 36, weight: .bold, design: .rounded))
+                    .foregroundColor(DesignSystem.Colors.black)
+                    .keyboardType(.numberPad)
+                    .multilineTextAlignment(.trailing)
+                    .focused($focusedField, equals: .totalAmount)
+                    .onChange(of: viewModel.totalAmount) { _, newValue in
+                        let formatted = viewModel.formatAmount(newValue)
+                        if formatted != newValue {
+                            viewModel.totalAmount = formatted
+                        }
+                    }
+                
+                // クリアボタン（金額が入力されている場合のみ表示）
+                if !viewModel.totalAmount.isEmpty && viewModel.totalAmount != "0" {
+                    Button(action: {
+                        viewModel.totalAmount = ""
+                    }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 18))
+                            .foregroundColor(DesignSystem.Colors.secondary.opacity(0.4))
                     }
                 }
-                .padding(DesignSystem.TextField.Padding.horizontal)
-                .frame(height: DesignSystem.TextField.Height.medium)
-                .background(
-                    RoundedRectangle(cornerRadius: DesignSystem.TextField.cornerRadius, style: .continuous)
-                        .fill(focusedField == .totalAmount ? DesignSystem.TextField.focusedBackgroundColor : DesignSystem.TextField.backgroundColor)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: DesignSystem.TextField.cornerRadius, style: .continuous)
-                        .stroke(focusedField == .totalAmount ? DesignSystem.TextField.focusedBorderColor : DesignSystem.TextField.borderColor, lineWidth: DesignSystem.TextField.borderWidth)
-                )
+            }
+            .padding(.vertical, DesignSystem.Spacing.sm)
+            .padding(.horizontal, DesignSystem.Spacing.lg)
+            .background(
+                RoundedRectangle(cornerRadius: DesignSystem.TextField.cornerRadius, style: .continuous)
+                    .fill(focusedField == .totalAmount ? DesignSystem.TextField.focusedBackgroundColor : DesignSystem.TextField.backgroundColor)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: DesignSystem.TextField.cornerRadius, style: .continuous)
+                    .stroke(focusedField == .totalAmount ? DesignSystem.TextField.focusedBorderColor : DesignSystem.TextField.borderColor, lineWidth: DesignSystem.TextField.borderWidth)
+            )
             
+            // 一人あたりの金額プレビュー
+            if viewModel.baseAmount > 0 {
+                HStack(spacing: 4) {
+                    Image(systemName: "person.fill")
+                        .font(.system(size: 12))
+                    Text("一人あたり約")
+                        .font(DesignSystem.Typography.caption)
+                    Text("¥\(viewModel.formatAmount(String(Int(viewModel.baseAmount))))")
+                        .font(.system(size: 14, weight: .semibold))
+                }
+                .foregroundColor(DesignSystem.Colors.primary)
+                .padding(.vertical, DesignSystem.Spacing.xs)
+                .padding(.horizontal, DesignSystem.Spacing.md)
+                .background(
+                    Capsule()
+                        .fill(DesignSystem.Colors.primary.opacity(0.08))
+                )
+            }
+            
+            // 追加のお会計ボタン（二次会など）
             Button(action: {
                 showAddAmountDialog = true
             }) {
-                Image(systemName: "plus.circle.fill")
-                    .font(.system(size: DesignSystem.Icon.Size.large))
-                    .foregroundColor(DesignSystem.Colors.primary)
+                HStack(spacing: 6) {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.system(size: 16))
+                    Text("追加のお会計")
+                        .font(DesignSystem.Typography.subheadline)
+                }
+                .foregroundColor(DesignSystem.Colors.primary)
             }
         }
     }
-    }
     
-    // サブビュー：内訳セクションの内容
+    // サブビュー：追加のお会計セクションの内容
     @ViewBuilder
     private func BreakdownSectionContent() -> some View {
-        // 内訳ボタン
+        // 追加のお会計一覧ボタン
         Button(action: {
             withAnimation {
                 isBreakdownExpanded.toggle()
             }
         }) {
             HStack {
-                Text("内訳")
+                Text("追加のお会計")
                     .font(.subheadline)
                     .foregroundColor(.primary)
                 
