@@ -51,19 +51,18 @@ struct PrePlanView: View {
     // 編集用バインディング
     @State private var localPlanName: String = "" {
         didSet {
-            // 自動保存
-            autoSavePlan()
+            scheduleAutoSave()
         }
     }
     @State private var localPlanDate: Date? = nil {
         didSet {
-            // 自動保存
-            autoSavePlan()
+            scheduleAutoSave()
         }
     }
     @State private var localPlanLocation: String = ""
     @State private var localPlanDescription: String = ""
     @State private var isInitialized = false
+    @State private var autoSaveWorkItem: DispatchWorkItem?
     // タイトル編集用の状態は PrePlanHeaderView に移動しました
 
     
@@ -563,15 +562,14 @@ struct PrePlanView: View {
             .onChange(of: viewModel.participants.count) { _, newCount in
                 handleParticipantsCountChange(newCount: newCount)
             }
-            .onChange(of: localPlanLocation) { _, newValue in
-                viewModel.editingPlanLocation = newValue
-                autoSavePlan()
+            .onChange(of: localPlanLocation) { _, _ in
+                scheduleAutoSave()
             }
-            .onChange(of: localPlanDescription) { _, newValue in
-                viewModel.editingPlanDescription = newValue
-                autoSavePlan()
+            .onChange(of: localPlanDescription) { _, _ in
+                scheduleAutoSave()
             }
             .onDisappear {
+                autoSaveWorkItem?.cancel()
                 autoSavePlan()
             }
             .alert("参加者を削除", isPresented: $showingDeleteAlert) {
@@ -1826,7 +1824,8 @@ struct PrePlanView: View {
     @ViewBuilder
     private func SaveButton() -> some View {
         Button {
-            // 最終保存を確実に実行
+            // 保留中のデバウンスをキャンセルして即時保存
+            autoSaveWorkItem?.cancel()
             autoSavePlan()
             // トップに戻る
             onFinish?()
@@ -2611,7 +2610,18 @@ struct PrePlanView: View {
         .padding(.vertical, 12)
     }
     
-    // 自動保存処理
+    // デバウンス付き自動保存（入力が止まって0.5秒後に保存）
+    private func scheduleAutoSave() {
+        guard isInitialized else { return }
+        autoSaveWorkItem?.cancel()
+        let workItem = DispatchWorkItem { [self] in
+            autoSavePlan()
+        }
+        autoSaveWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: workItem)
+    }
+    
+    // 即時保存処理（画面を閉じる時・保存ボタン押下時に使用）
     private func autoSavePlan() {
         guard isInitialized else { return }
         
