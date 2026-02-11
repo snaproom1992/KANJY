@@ -412,12 +412,6 @@ public class ScheduleManagementViewModel: ObservableObject {
     }
     
     public func getWebUrl(for event: ScheduleEvent) -> String {
-        // 古いNetlifyのURLが保存されている場合は無視して、常に最新のVercel URLを生成
-        if let webUrl = event.webUrl, webUrl.contains("kanjy-web.netlify.app") {
-            // 古いNetlify URLの場合は、新しいVercel URLを生成
-            return generateWebUrl(eventId: event.id)
-        }
-        
         // 誤って回答フォーム(response-form.html)のURLが保存されている場合は、正規のURLを生成して返す
         if let webUrl = event.webUrl, webUrl.contains("response-form.html") {
             return generateWebUrl(eventId: event.id)

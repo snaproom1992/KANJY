@@ -284,7 +284,6 @@ struct WebView: UIViewRepresentable {
                 
                 // 許可するドメインのリスト
                 let allowedHosts = [
-                    "kanjy-web.netlify.app",
                     "kanjy.vercel.app",
                     "kanjy-dzxo9jpk7-snaprooms-projects.vercel.app",
                     "localhost",
