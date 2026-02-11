@@ -154,7 +154,12 @@ struct PrePlanParticipantListView: View {
                     }
                     .padding(.vertical, DesignSystem.Spacing.md)
                 } else {
-                    ForEach(Array(viewModel.participants.enumerated()), id: \.offset) { index, participant in
+                    // 参加者をソース別に分ける
+                    let webResponseParticipants = viewModel.participants.filter { $0.source == .webResponse }
+                    let manualParticipants = viewModel.participants.filter { $0.source == .manual }
+                    
+                    // Web回答の参加者（セクションヘッダーなし）
+                    ForEach(Array(webResponseParticipants.enumerated()), id: \.offset) { index, participant in
                         Button(action: {
                             viewModel.toggleCollectionStatus(for: participant)
                             let generator = UIImpactFeedbackGenerator(style: .medium)
@@ -177,25 +182,64 @@ struct PrePlanParticipantListView: View {
                             }
                         }
                     }
+                    
+                    // 区切り線（両方のグループが存在する場合のみ）
+                    if !webResponseParticipants.isEmpty && !manualParticipants.isEmpty {
+                        Divider()
+                            .padding(.vertical, DesignSystem.Spacing.md)
+                    }
+                    
+                    // 手動追加の参加者（セクションヘッダー付き）
+                    if !manualParticipants.isEmpty {
+                        Text("手動で追加")
+                            .font(DesignSystem.Typography.caption)
+                            .foregroundColor(DesignSystem.Colors.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.bottom, DesignSystem.Spacing.xs)
+                        
+                        ForEach(Array(manualParticipants.enumerated()), id: \.offset) { index, participant in
+                            Button(action: {
+                                viewModel.toggleCollectionStatus(for: participant)
+                                let generator = UIImpactFeedbackGenerator(style: .medium)
+                                generator.impactOccurred()
+                            }) {
+                                ParticipantRowView(participant: participant, viewModel: viewModel)
+                            }
+                            .buttonStyle(.plain)
+                            .contextMenu {
+                                Button(action: {
+                                    editingParticipant = participant
+                                }) {
+                                    Label("詳細を編集", systemImage: "pencil")
+                                }
+                                
+                                Button(role: .destructive, action: {
+                                    viewModel.deleteParticipant(participant)
+                                }) {
+                                    Label("削除", systemImage: "trash")
+                                }
+                            }
+                        }
+                    }
                 }
                 
                 // ➕ 手動で参加者を追加ボタン（リストの直下に配置）
                 Button(action: {
                     showingAddParticipant = true
                 }) {
-                    HStack {
-                        Image(systemName: "person.badge.plus")
-                            .font(.system(size: DesignSystem.Icon.Size.medium))
+                    HStack(spacing: 8) {
+                        Image(systemName: "plus.circle.fill")
+                            .font(.system(size: 20))
                         Text("参加者を追加")
                             .font(DesignSystem.Typography.body)
+                            .fontWeight(.medium)
                     }
                     .foregroundColor(DesignSystem.Colors.primary)
-                    .padding(DesignSystem.Button.Padding.vertical)
+                    .padding(.vertical, 14)
                     .frame(maxWidth: .infinity)
                     .background(
-                        RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadiusSmall, style: .continuous)
-                            .stroke(DesignSystem.Colors.primary, lineWidth: 1)
-                            .background(DesignSystem.Colors.primary.opacity(0.05))
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .stroke(DesignSystem.Colors.primary.opacity(0.3), style: StrokeStyle(lineWidth: 1.5, dash: [8, 4]))
                     )
                 }
                 
@@ -324,9 +368,23 @@ struct ParticipantRowView: View {
                     .font(DesignSystem.Typography.body)
                     .foregroundColor(DesignSystem.Colors.black)
                 
-                Text(participant.roleType.name)
-                    .font(DesignSystem.Typography.caption)
-                    .foregroundColor(DesignSystem.Colors.secondary)
+                // 役職名と倍率バッジ
+                HStack(spacing: 6) {
+                    Text(participant.roleType.name)
+                        .font(DesignSystem.Typography.caption)
+                        .foregroundColor(DesignSystem.Colors.secondary)
+                    
+                    // 倍率バッジ（カプセル型）
+                    Text("\(String(format: "%.1f", participant.effectiveMultiplier))x")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(DesignSystem.Colors.primary)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(
+                            Capsule()
+                                .fill(DesignSystem.Colors.primary.opacity(0.1))
+                        )
+                }
             }
             
             Spacer()
