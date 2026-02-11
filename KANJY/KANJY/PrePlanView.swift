@@ -61,7 +61,11 @@ struct PrePlanView: View {
             autoSavePlan()
         }
     }
+    @State private var localPlanLocation: String = ""
+    @State private var localPlanDescription: String = ""
+    @State private var isInitialized = false
     // タイトル編集用の状態は PrePlanHeaderView に移動しました
+
     
     // 金額追加ダイアログ用
     @State private var showAddAmountDialog = false
@@ -593,19 +597,38 @@ struct PrePlanView: View {
                     Text("この参加者を削除しますか？")
                 }
             }
+            .onChange(of: localPlanLocation) { _, newValue in
+                viewModel.editingPlanLocation = newValue
+            }
+            .onChange(of: localPlanDescription) { _, newValue in
+                viewModel.editingPlanDescription = newValue
+            }
         }
     }
     
     // 初期状態の設定
     private func setupInitialState() {
+        guard !isInitialized else {
+            print("setupInitialState: Already initialized, skipping")
+            return
+        }
+        
+        print("setupInitialState: Initializing local state")
+        
         // 編集時はeditingPlanName、新規時はplanNameで初期化
         if viewModel.editingPlanId == nil {
             localPlanName = planName
             localPlanDate = nil
+            localPlanLocation = ""
+            localPlanDescription = ""
         } else {
             localPlanName = viewModel.editingPlanName
             localPlanDate = viewModel.editingPlanDate
+            localPlanLocation = viewModel.editingPlanLocation
+            localPlanDescription = viewModel.editingPlanDescription
         }
+        
+        isInitialized = true
         
         if !hasShownEditHint && !viewModel.participants.isEmpty {
             showSwipeHintAnimation()
@@ -1387,9 +1410,6 @@ struct PrePlanView: View {
                     value: $viewModel.editingPlanLocation,
                     placeholder: "場所を追加"
                 )
-                .onChange(of: viewModel.editingPlanLocation) {
-                    autoSavePlan()
-                }
                 
                 // 説明
                 SimpleInfoRow(
@@ -1398,9 +1418,6 @@ struct PrePlanView: View {
                     placeholder: "メモを追加",
                     isMultiline: true
                 )
-                .onChange(of: viewModel.editingPlanDescription) {
-                    autoSavePlan()
-                }
             }
         }
     }
@@ -1602,23 +1619,17 @@ struct PrePlanView: View {
                     // 場所
                     SimpleInfoRow(
                         icon: "location.fill",
-                        value: $viewModel.editingPlanLocation,
+                        value: $localPlanLocation,
                         placeholder: "場所を追加"
                     )
-                    .onChange(of: viewModel.editingPlanLocation) {
-                        autoSavePlan()
-                    }
                     
                     // 説明
                     SimpleInfoRow(
                         icon: "text.alignleft",
-                        value: $viewModel.editingPlanDescription,
+                        value: $localPlanDescription,
                         placeholder: "メモを追加",
                         isMultiline: true
                     )
-                    .onChange(of: viewModel.editingPlanDescription) {
-                        autoSavePlan()
-                    }
                 }
                 .padding(DesignSystem.Spacing.lg)
             }
@@ -2586,14 +2597,19 @@ struct PrePlanView: View {
     
     // 自動保存処理
     private func autoSavePlan() {
+        print("autoSavePlan: Saving plan. Name=\(localPlanName), Location=\(localPlanLocation), Description=\(localPlanDescription)")
+        // ローカル変数をViewModelに反映
         viewModel.editingPlanName = localPlanName
+        viewModel.editingPlanLocation = localPlanLocation
+        viewModel.editingPlanDescription = localPlanDescription
+        
         // 確定情報も一緒に保存
         // dateパラメータは確定日時があればそれを使い、なければ現在日時
         viewModel.savePlan(
             name: localPlanName,
             date: confirmedDate ?? Date(),
-            description: viewModel.editingPlanDescription.isEmpty ? nil : viewModel.editingPlanDescription,
-            location: viewModel.editingPlanLocation.isEmpty ? nil : viewModel.editingPlanLocation,
+            description: localPlanDescription.isEmpty ? nil : localPlanDescription,
+            location: localPlanLocation.isEmpty ? nil : localPlanLocation,
             confirmedDate: confirmedDate,
             confirmedLocation: confirmedLocation.isEmpty ? nil : confirmedLocation,
             confirmedParticipants: Array(selectedParticipantIds)
@@ -3540,10 +3556,21 @@ struct SimpleInfoRow: View {
             
             // 入力フィールド
             if isMultiline {
-                TextField(placeholder, text: $value, axis: .vertical)
-                    .font(DesignSystem.Typography.body)
-                    .foregroundColor(DesignSystem.Colors.black)
-                    .lineLimit(2...4)
+                ZStack(alignment: .topLeading) {
+                    if value.isEmpty {
+                        Text(placeholder)
+                            .font(DesignSystem.Typography.body)
+                            .foregroundColor(Color(uiColor: .placeholderText))
+                            .padding(.top, 8)
+                            .padding(.leading, 5)
+                            .allowsHitTesting(false)
+                    }
+                    TextEditor(text: $value)
+                        .font(DesignSystem.Typography.body)
+                        .foregroundColor(DesignSystem.Colors.black)
+                        .scrollContentBackground(.hidden)
+                        .frame(minHeight: 100)
+                }
             } else {
                 TextField(placeholder, text: $value)
                     .font(DesignSystem.Typography.body)

@@ -76,8 +76,8 @@ public class PrePlanViewModel: ObservableObject {
     @Published public var editingPlanName: String = ""
     @Published public var editingPlanDate: Date? = nil
     @Published public var editingPlanEmoji: String = ""
-    @Published public var editingPlanDescription: String = ""
-    @Published public var editingPlanLocation: String = ""
+    public var editingPlanDescription: String = ""
+    public var editingPlanLocation: String = ""
     
     // 飲み会関連の絵文字リスト
     public let partyEmojis = ["🍻", "🍺", "🥂", "🍷", "🍸", "🍹", "🍾", "🥃", 
@@ -506,6 +506,7 @@ public class PrePlanViewModel: ObservableObject {
     
     // プランの保存
     public func savePlan(name: String, date: Date, description: String? = nil, location: String? = nil, confirmedDate: Date? = nil, confirmedLocation: String? = nil, confirmedParticipants: [UUID]? = nil) {
+        print("PrePlanViewModel.savePlan: Saving plan. ID=\(editingPlanId?.uuidString ?? "nil"), Name=\(name), Location=\(location ?? "nil"), Description=\(description ?? "nil")")
         let emoji = selectedIcon == nil ? (selectedEmoji.isEmpty ? getRandomEmoji() : selectedEmoji) : nil
         let icon = selectedIcon
         let iconColor = selectedIconColor
