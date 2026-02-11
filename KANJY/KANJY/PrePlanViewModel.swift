@@ -76,8 +76,8 @@ public class PrePlanViewModel: ObservableObject {
     @Published public var editingPlanName: String = ""
     @Published public var editingPlanDate: Date? = nil
     @Published public var editingPlanEmoji: String = ""
-    public var editingPlanDescription: String = ""
-    public var editingPlanLocation: String = ""
+    @Published public var editingPlanDescription: String = ""
+    @Published public var editingPlanLocation: String = ""
     
     // 飲み会関連の絵文字リスト
     public let partyEmojis = ["🍻", "🍺", "🥂", "🍷", "🍸", "🍹", "🍾", "🥃", 

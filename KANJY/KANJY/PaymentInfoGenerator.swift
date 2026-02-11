@@ -420,20 +420,6 @@ struct PaymentInfoGenerator: View {
         }
     }
     
-    // ... skipping messageHeader and messageEditor (assuming they are largely OK or updated in prev steps, but let's just make sure padding/colors are consistent if I include them, but to save token I'll focus on textEditor padding fix primarily if I can jump there, but I need to include context. I'll include messageHeader etc.)
-    
-    // Actually, to surely fix the padding(designSystem...) error which is way down at line 534, I should target that area specifically.
-    // AND I should target paymentMethodRow which is way up at 239.
-    // I can't do both in one REPLACE_FILE with limited context unless I replace the whole file or large chunk.
-    // Since I'm in EXECUTION, I'll do two replaces or one large one.
-    // Let's do a large replace matching from `private var paymentMethodSection` down to the text editor error. It's about 300 lines. Maybe too big.
-    // I'll do two simple replacements.
-    
-    // Wait, the tool definition says "Do NOT make multiple parallel calls to this tool... for the same file". I must do it sequentially or use `multi_replace`.
-    // I will use `multi_replace_file_content`!
-    
-
-    
     private var messageHeader: some View {
         HStack {
             Text("案内メッセージ")
@@ -1041,6 +1027,3 @@ struct PaymentInfoGenerator: View {
     PaymentInfoGenerator(viewModel: PrePlanViewModel())
 }
 
-#Preview {
-    PaymentInfoGenerator(viewModel: PrePlanViewModel())
-} 

@@ -368,31 +368,24 @@ struct PrePlanView: View {
     
     var body: some View {
         NavigationStack {
-            ZStack {
-                Color(.systemGroupedBackground).ignoresSafeArea()
-                MainContentView()
-                
-                // コピー完了トースト
-                if showingCopyToast {
-                    VStack {
-                        Spacer()
-                        HStack {
-                            Image(systemName: "checkmark.circle.fill")
-                                .foregroundColor(DesignSystem.Colors.white)
-                            Text("クリップボードにコピーしました")
-                                .font(DesignSystem.Typography.body)
-                                .foregroundColor(DesignSystem.Colors.white)
-                        }
-                        .padding(DesignSystem.Spacing.md)
-                        .background(
-                            RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadiusSmall, style: .continuous)
-                                .fill(DesignSystem.Colors.black.opacity(0.8))
-                        )
-                        .padding(.bottom, 100)
-                    }
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-                }
-            }
+            contentWithStateLogic
+                .planSync(
+                    viewModel: viewModel,
+                    localPlanLocation: $localPlanLocation,
+                    localPlanDescription: $localPlanDescription,
+                    scheduleEvent: $scheduleEvent,
+                    scheduleTitle: $scheduleTitle,
+                    scheduleDescription: $scheduleDescription,
+                    scheduleCandidateDates: $scheduleCandidateDates,
+                    scheduleLocation: $scheduleLocation,
+                    scheduleBudget: $scheduleBudget
+                )
+        }
+    }
+
+    @ViewBuilder
+    private var contentWithBaseSheets: some View {
+        mainContent
             .navigationTitle("")
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
@@ -433,7 +426,6 @@ struct PrePlanView: View {
                 if let event = scheduleEvent {
                     EventUrlSheet(event: event, viewModel: scheduleViewModel) {
                         showingScheduleUrlSheet = false
-                        // URL表示完了後は飲み会作成画面に戻る（トップには戻らない）
                     }
                 }
             }
@@ -445,9 +437,7 @@ struct PrePlanView: View {
                         generator.notificationOccurred(.success)
                     }
                 }
-                Button("OK", role: .cancel) {
-                    // アラートを閉じる
-                }
+                Button("OK", role: .cancel) { }
             } message: {
                 if let webUrl = scheduleEvent?.webUrl {
                     Text(webUrl)
@@ -456,12 +446,14 @@ struct PrePlanView: View {
                     Text("URLをコピーして共有できます")
                 }
             }
-            // 参加者同期確認アラート
-            // アラートは個別のViewモディファイアとして定義済み
+    }
+
+    @ViewBuilder
+    private var contentWithScheduleSheets: some View {
+        contentWithBaseSheets
             .sheet(isPresented: $showingAddParticipant) {
                 NavigationStack {
                     Form {
-                        // 回答者から選択（候補がいる場合のみ表示）
                         let existingNames = Set(viewModel.participants.map { $0.name })
                         let availableRespondents = scheduleResponses.filter { !existingNames.contains($0.participantName) }
                         
@@ -469,7 +461,7 @@ struct PrePlanView: View {
                             Section("回答者から追加") {
                                 ForEach(availableRespondents) { response in
                                     Button(action: {
-                                        viewModel.addParticipant(name: response.participantName, roleType: .standard(.staff)) // デフォルトは社員
+                                        viewModel.addParticipant(name: response.participantName, roleType: .standard(.staff))
                                         showingAddParticipant = false
                                     }) {
                                         HStack {
@@ -501,14 +493,12 @@ struct PrePlanView: View {
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar {
                         ToolbarItem(placement: .cancellationAction) {
-                            Button("キャンセル") {
-                                showingAddParticipant = false
-                            }
+                            Button("キャンセル") { showingAddParticipant = false }
                         }
                         ToolbarItem(placement: .confirmationAction) {
                             Button("追加") {
                                 viewModel.addParticipant(name: viewModel.newParticipantName, roleType: viewModel.selectedRoleType)
-                                viewModel.newParticipantName = "" // リセット
+                                viewModel.newParticipantName = ""
                                 showingAddParticipant = false
                             }
                             .disabled(viewModel.newParticipantName.isEmpty)
@@ -518,19 +508,14 @@ struct PrePlanView: View {
                 .presentationDetents([.medium])
             }
             .alert("公開中の内容を更新しました", isPresented: $showingScheduleUpdatedAlert) {
-                Button("OK") {
-                    // アラートを閉じる
-                }
+                Button("OK") { }
             } message: {
                 Text("既に共有したURLはそのまま使用できます")
             }
             .sheet(isPresented: $showScheduleEditSheet) {
                 NavigationStack {
                     ZStack {
-                        // リキッドグラス効果の背景
-                        Color.clear
-                            .background(.ultraThinMaterial)
-                        
+                        Color.clear.background(.ultraThinMaterial)
                         ScrollView {
                             VStack(spacing: DesignSystem.Spacing.lg) {
                                 ScheduleCreationFormView()
@@ -542,14 +527,11 @@ struct PrePlanView: View {
                     }
                     .navigationTitle("スケジュール編集")
                     .navigationBarTitleDisplayMode(.inline)
-                        .toolbar {
-                            ToolbarItem(placement: .cancellationAction) {
-                                Button("キャンセル") {
-                                    // シートを閉じるだけ（変更は保持される）
-                                    showScheduleEditSheet = false
-                                }
-                            }
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("キャンセル") { showScheduleEditSheet = false }
                         }
+                    }
                 }
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
@@ -569,6 +551,11 @@ struct PrePlanView: View {
             .sheet(isPresented: $showIconPicker) {
                 IconPickerView()
             }
+    }
+    
+    @ViewBuilder
+    private var contentWithStateLogic: some View {
+        contentWithScheduleSheets
             .onAppear {
                 setupInitialState()
                 loadScheduleEvent()
@@ -576,18 +563,24 @@ struct PrePlanView: View {
             .onChange(of: viewModel.participants.count) { _, newCount in
                 handleParticipantsCountChange(newCount: newCount)
             }
-            .onDisappear {
-                // 自動保存：戻るボタンが押されたときも変更を保存
+            .onChange(of: localPlanLocation) { _, newValue in
+                viewModel.editingPlanLocation = newValue
                 autoSavePlan()
             }
-            // 削除確認アラートを追加
+            .onChange(of: localPlanDescription) { _, newValue in
+                viewModel.editingPlanDescription = newValue
+                autoSavePlan()
+            }
+            .onDisappear {
+                autoSavePlan()
+            }
             .alert("参加者を削除", isPresented: $showingDeleteAlert) {
                 Button("キャンセル", role: .cancel) {}
                 Button("削除", role: .destructive) {
                     if let participant = participantToDelete {
                         viewModel.deleteParticipant(participant)
                         participantToDelete = nil
-                        editingParticipant = nil // シートも閉じる
+                        editingParticipant = nil
                     }
                 }
             } message: {
@@ -597,13 +590,40 @@ struct PrePlanView: View {
                     Text("この参加者を削除しますか？")
                 }
             }
-            .onChange(of: localPlanLocation) { _, newValue in
-                viewModel.editingPlanLocation = newValue
-            }
-            .onChange(of: localPlanDescription) { _, newValue in
-                viewModel.editingPlanDescription = newValue
+    }
+
+
+    
+
+    
+    @ViewBuilder
+    private var mainContent: some View {
+        ZStack {
+            Color(.systemGroupedBackground).ignoresSafeArea()
+            MainContentView()
+            
+            // コピー完了トースト
+            if showingCopyToast {
+                VStack {
+                    Spacer()
+                    HStack {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundColor(DesignSystem.Colors.white)
+                        Text("クリップボードにコピーしました")
+                            .font(DesignSystem.Typography.body)
+                            .foregroundColor(DesignSystem.Colors.white)
+                    }
+                    .padding(DesignSystem.Spacing.md)
+                    .background(
+                        RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadiusSmall, style: .continuous)
+                            .fill(DesignSystem.Colors.black.opacity(0.8))
+                    )
+                    .padding(.bottom, 100)
+                }
+                .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
+        .navigationTitle("")
     }
     
     // 初期状態の設定
@@ -613,19 +633,15 @@ struct PrePlanView: View {
             return
         }
         
-        print("setupInitialState: Initializing local state")
+        localPlanName = viewModel.editingPlanName
+        localPlanDate = viewModel.editingPlanDate
+        localPlanLocation = viewModel.editingPlanLocation
+        localPlanDescription = viewModel.editingPlanDescription
         
-        // 編集時はeditingPlanName、新規時はplanNameで初期化
-        if viewModel.editingPlanId == nil {
-            localPlanName = planName
-            localPlanDate = nil
-            localPlanLocation = ""
-            localPlanDescription = ""
-        } else {
-            localPlanName = viewModel.editingPlanName
-            localPlanDate = viewModel.editingPlanDate
-            localPlanLocation = viewModel.editingPlanLocation
-            localPlanDescription = viewModel.editingPlanDescription
+        // 確定日時などの読み込み
+        if let id = viewModel.editingPlanId, let _ = viewModel.savedPlans.first(where: { $0.id == id }) {
+             // 確定情報の読み込み（ViewModelにはないがPlanにはある場合）
+             // 注: ViewModelのsavePlanでconfirmedDateなどは引数で渡す設計
         }
         
         isInitialized = true
@@ -2039,7 +2055,7 @@ struct PrePlanView: View {
                                         .fill(DesignSystem.Colors.primary.opacity(0.1))
                                 )
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(PlainButtonStyle())
                     }
                 }
             }
@@ -2597,7 +2613,8 @@ struct PrePlanView: View {
     
     // 自動保存処理
     private func autoSavePlan() {
-        print("autoSavePlan: Saving plan. Name=\(localPlanName), Location=\(localPlanLocation), Description=\(localPlanDescription)")
+        guard isInitialized else { return }
+        
         // ローカル変数をViewModelに反映
         viewModel.editingPlanName = localPlanName
         viewModel.editingPlanLocation = localPlanLocation
@@ -2614,6 +2631,27 @@ struct PrePlanView: View {
             confirmedLocation: confirmedLocation.isEmpty ? nil : confirmedLocation,
             confirmedParticipants: Array(selectedParticipantIds)
         )
+        
+        // Supabase連携（スケジュール調整イベントがある場合）
+        if let event = scheduleEvent {
+            Task {
+                do {
+                    print("🍙 Supabase同期開始: \(event.id)")
+                    try await scheduleViewModel.updateEventInSupabase(
+                        eventId: event.id,
+                        title: scheduleTitle,  // スケジュールタイトルは別途管理されている場合が多いが、ここでは同期対象外または既存値を維持
+                        description: localPlanDescription.isEmpty ? nil : localPlanDescription,
+                        candidateDates: scheduleCandidateDates,
+                        location: localPlanLocation.isEmpty ? nil : localPlanLocation,
+                        budget: scheduleBudget.isEmpty ? nil : Int(scheduleBudget),
+                        deadline: hasScheduleDeadline ? scheduleDeadline : nil
+                    )
+                    print("✅ Supabase同期完了")
+                } catch {
+                    print("❌ Supabase同期エラー: \(error)")
+                }
+            }
+        }
     }
     
     // スケジュール調整セクションの内容
@@ -2696,16 +2734,27 @@ struct PrePlanView: View {
     // シート表示用の編集準備（インライン編集モードにはしない）
     private func startEditingScheduleForSheet(event: ScheduleEvent) {
         // 基本情報から自動的に引き継ぐ（タイトル、説明、場所、予算）
-        scheduleTitle = localPlanName.isEmpty ? (planName.isEmpty ? "無題の飲み会" : planName) : localPlanName
-        scheduleDescription = viewModel.editingPlanDescription
-        scheduleLocation = viewModel.editingPlanLocation
-        let amountString = viewModel.totalAmount.filter { $0.isNumber }
-        if !amountString.isEmpty, let amount = Int(amountString) {
-            scheduleBudget = String(amount)
+        scheduleTitle = event.title
+        scheduleDescription = event.description ?? ""
+        scheduleCandidateDates = event.candidateDates
+        scheduleLocation = event.location ?? ""
+        if let budget = event.budget {
+            scheduleBudget = String(budget)
         } else {
             scheduleBudget = ""
         }
-        scheduleCandidateDates = event.candidateDates
+        
+        // スケジュール調整イベントの内容を基本情報にも反映（同期）
+        // localPlanLocationが空の場合、またはイベントのlocationがより具体的であれば更新
+        if !scheduleLocation.isEmpty && (localPlanLocation.isEmpty || (event.location != nil && event.location != localPlanLocation)) {
+            localPlanLocation = scheduleLocation
+            viewModel.editingPlanLocation = scheduleLocation
+        }
+        // localPlanDescriptionが空の場合、またはイベントのdescriptionがより具体的であれば更新
+        if !scheduleDescription.isEmpty && (localPlanDescription.isEmpty || (event.description != nil && event.description != localPlanDescription)) {
+            localPlanDescription = scheduleDescription
+            viewModel.editingPlanDescription = scheduleDescription
+        }
         
         // scheduleCandidateDatesWithTime を初期化
         scheduleCandidateDatesWithTime.removeAll()
@@ -3592,11 +3641,10 @@ struct SimpleInfoRow: View {
     }
 }
 
+}
+
 #Preview {
     NavigationStack {
         PrePlanView(viewModel: PrePlanViewModel(), planName: "Sample Plan", planDate: Date())
     }
-}
-
-
 }
