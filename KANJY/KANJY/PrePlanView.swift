@@ -2922,6 +2922,11 @@ struct PrePlanView: View {
                 Toggle("回答期限を設定", isOn: $hasScheduleDeadline)
                     .font(DesignSystem.Typography.body)
                     .foregroundColor(DesignSystem.Colors.black)
+                    .onChange(of: hasScheduleDeadline) { _, newValue in
+                        if newValue && scheduleDeadline == nil {
+                            scheduleDeadline = Date()
+                        }
+                    }
                 
                 if hasScheduleDeadline {
                     DatePicker("期限", selection: Binding(
