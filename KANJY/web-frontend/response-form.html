@@ -679,6 +679,18 @@
                 <div class="mb-8">
                     <h1 id="event-title" class="notion-heading-2 mb-3">参加回答フォーム</h1>
                     <p id="event-description" class="notion-body text-stone-500">みんなで楽しい時間を過ごしましょう。あなたの都合をお聞かせください。</p>
+
+                    <!-- 締切表示 -->
+                    <div id="deadline-section" class="mt-4 hidden">
+                        <div class="flex items-center space-x-2 text-stone-600">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span class="notion-body-medium">回答締切：<span id="deadline-text"
+                                    class="font-semibold"></span></span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
@@ -990,6 +1002,8 @@
                 if (!events || events.length === 0) throw new Error('イベントが見つかりません');
 
                 currentEvent = events[0];
+                console.log('📅 取得したイベントデータ:', currentEvent);
+                console.log('📅 締切フィールド:', currentEvent.deadline);
                 displayEvent(currentEvent);
 
             } catch (error) {
@@ -1037,6 +1051,7 @@
             const titleElement = document.getElementById('event-title');
             if (titleElement) {
                 titleElement.textContent = event.title || '新年会への参加をお聞かせください';
+
             }
 
             // 説明
@@ -1046,6 +1061,41 @@
                     descElement.innerHTML = event.description.replace(/\n/g, '<br>');
                 } else {
                     descElement.innerHTML = 'みんなで楽しい時間を過ごしましょう！<br>あなたの都合をお聞かせください。';
+                }
+            }
+
+            // 締切の表示
+            if (event.deadline) {
+                const deadlineSection = document.getElementById('deadline-section');
+                const deadlineText = document.getElementById('deadline-text');
+                if (deadlineSection && deadlineText) {
+                    try {
+                        // 日付のパース（Safari等の互換性対応）
+                        console.log("⏰ 締切情報確認:", event.deadline, typeof event.deadline);
+                        let deadlineDate = new Date(event.deadline);
+                        if (isNaN(deadlineDate.getTime())) {
+                            console.log("⚠️ 標準パース失敗、フォールバック試行:", event.deadline);
+                            const cleanedDate = event.deadline.replace("T", " ").replace("Z", "").replace(/-/g, "/");
+                            deadlineDate = new Date(cleanedDate);
+                        }
+                        if (!isNaN(deadlineDate.getTime())) {
+                            const year = deadlineDate.getFullYear();
+                            const month = deadlineDate.getMonth() + 1;
+                            const day = deadlineDate.getDate();
+                            const hours = deadlineDate.getHours().toString().padStart(2, "0");
+                            const minutes = deadlineDate.getMinutes().toString().padStart(2, "0");
+                            const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
+                            const weekday = weekdays[deadlineDate.getDay()];
+                            deadlineText.textContent = `${year}年${month}月${day}日(${weekday}) ${hours}:${minutes}`;
+                            deadlineSection.classList.remove("hidden");
+                            console.log("✅ 締切を表示しました:", deadlineText.textContent);
+                        } else {
+                            console.error("❌ 無効な締切日時形式です:", event.deadline);
+                        }
+
+                    } catch (error) {
+                        console.error('締切日時のフォーマットエラー:', error);
+                    }
                 }
             }
 

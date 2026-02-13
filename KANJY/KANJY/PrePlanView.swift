@@ -1540,6 +1540,19 @@ struct PrePlanView: View {
                     
                     // 候補日時リスト
                     if hasScheduleEvent, let event = scheduleEvent {
+                        // 締切がある場合は表示
+                        if let deadline = event.deadline {
+                            HStack(spacing: 4) {
+                                Image(systemName: "clock")
+                                    .font(.caption)
+                                    .foregroundColor(DesignSystem.Colors.secondary)
+                                Text("回答締切: \(scheduleViewModel.formatDateTime(deadline))")
+                                    .font(DesignSystem.Typography.caption)
+                                    .foregroundColor(DesignSystem.Colors.secondary)
+                            }
+                            .padding(.bottom, DesignSystem.Spacing.sm)
+                        }
+
                         CandidateDatesListView(
                             event: event,
                             scheduleViewModel: scheduleViewModel,
