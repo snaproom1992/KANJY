@@ -1353,6 +1353,25 @@
         let currentResponses = [];
         let isNavigating = false; // ナビゲーション中フラグ（重複防止）
 
+        // bfcache（バックフォワードキャッシュ）からの復帰時にナビゲーションフラグをリセット
+        // iOS WKWebView で「戻る」操作をした際、JS状態が保持されるため
+        // isNavigating が true のままになりボタンが動作しなくなる問題を防止
+        window.addEventListener('pageshow', function (event) {
+            if (event.persisted) {
+                console.log('📱 bfcacheからページ復帰を検知。isNavigatingフラグをリセットします。');
+                isNavigating = false;
+            }
+        });
+
+        // WKWebView では event.persisted が false の場合もあるため、
+        // ページが再表示されたタイミングでも安全にリセット
+        document.addEventListener('visibilitychange', function () {
+            if (document.visibilityState === 'visible' && isNavigating) {
+                console.log('📱 ページが再表示されました。isNavigatingフラグをリセットします。');
+                isNavigating = false;
+            }
+        });
+
         // 表示制限機能のための変数
         let displayLimit = 5; // 最初に表示する件数
         let showingAll = false; // 全件表示中かどうか
@@ -3616,6 +3635,14 @@
             }
             isNavigating = true;
             console.log('✅ ナビゲーションフラグをONにしました');
+
+            // 安全策: ナビゲーションが何らかの理由で失敗しても3秒後にフラグをリセット
+            setTimeout(function () {
+                if (isNavigating) {
+                    console.log('⏰ タイムアウト: isNavigatingフラグを安全にリセットします。');
+                    isNavigating = false;
+                }
+            }, 3000);
 
             console.log('- currentEventId:', currentEventId);
             console.log('- currentEvent:', currentEvent);
