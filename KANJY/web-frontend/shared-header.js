@@ -79,14 +79,20 @@
     document.head.appendChild(styleElement);
 
     // ========================================
-    // ヘッダー挿入
+    // ヘッダー挿入（即時実行 - DOMContentLoaded前でも動作）
     // ========================================
-    // <div id="kanjy-header"></div> を探して中にヘッダーを挿入
-    document.addEventListener('DOMContentLoaded', function () {
+    function injectHeader() {
         const placeholder = document.getElementById('kanjy-header');
         if (placeholder) {
             placeholder.classList.add('kanjy-header');
             placeholder.innerHTML = headerHTML;
         }
-    });
+    }
+
+    // スクリプトがbody内で読み込まれる場合、即時実行を試みる
+    if (document.getElementById('kanjy-header')) {
+        injectHeader();
+    } else {
+        document.addEventListener('DOMContentLoaded', injectHeader);
+    }
 })();

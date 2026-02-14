@@ -1,6 +1,6 @@
 /**
  * KANJY 共有イベント情報コンポーネント
- * タイトル・説明文・回答期限・エラー表示を全ページで統一管理
+ * タイトル・説明文・回答期限・場所・予算・エラー表示を全ページで統一管理
  */
 (function () {
     'use strict';
@@ -78,8 +78,20 @@
                     </div>
                 </div>
 
-                <!-- Event Details (Deadline etc.) -->
+                <!-- Event Details (Location, Budget, Deadline) -->
                 <div id="event-info-cards">
+                    <!-- Location Card -->
+                    <div id="location-section" style="display: none;">
+                        <h3 class="notion-small mb-3">場所</h3>
+                        <p id="location-text" class="notion-body-medium"></p>
+                    </div>
+
+                    <!-- Budget Card -->
+                    <div id="budget-card" style="display: none;">
+                        <h3 class="notion-small mb-3">Budget</h3>
+                        <p id="budget-text" class="notion-body-medium"></p>
+                    </div>
+
                     <!-- Deadline Card -->
                     <div id="deadline-section" style="display: none;">
                         <h3 class="notion-small mb-3">回答期限</h3>
@@ -91,12 +103,20 @@
     `;
 
     // ========================================
-    // コンポーネント挿入
+    // コンポーネント挿入（即時実行 - DOMContentLoaded前でも動作）
     // ========================================
-    document.addEventListener('DOMContentLoaded', function () {
+    function injectEventInfo() {
         const placeholder = document.getElementById('kanjy-event-info');
         if (placeholder) {
             placeholder.innerHTML = eventInfoHTML;
         }
-    });
+    }
+
+    // スクリプトがbody内で読み込まれる場合、即時実行を試みる
+    if (document.getElementById('kanjy-event-info')) {
+        injectEventInfo();
+    } else {
+        // DOM未構築の場合はDOMContentLoadedで実行
+        document.addEventListener('DOMContentLoaded', injectEventInfo);
+    }
 })();
