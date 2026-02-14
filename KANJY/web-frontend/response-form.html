@@ -683,16 +683,51 @@
                         みんなで楽しい時間を過ごしましょう。あなたの都合をお聞かせください。
                     </p>
 
-                    <!-- 締切表示 -->
-                    <div id="deadline-section" class="mt-4 hidden">
-                        <div class="flex items-center space-x-2 text-stone-600">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            <span class="notion-body-medium">回答締切：<span id="deadline-text"
-                                    class="font-semibold"></span></span>
+                    <!-- 読み込みステータス -->
+                    <div id="loading-status" style="color: #666; font-size: 14px; margin-top: 8px;">
+                        ステータス: 初期化中...
+                    </div>
+
+                    <!-- エラー表示 -->
+                    <div id="error-display" style="display: none;" class="animate-slide-up mt-4">
+                        <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                            <div class="flex items-start">
+                                <div class="flex-shrink-0">
+                                    <svg class="h-5 w-5 text-red-400" fill="none" viewBox="0 0 24 24"
+                                        stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16c-.77.833.192 2.5 1.732 2.5z" />
+                                    </svg>
+                                </div>
+                                <div class="ml-3 w-full">
+                                    <h3 class="text-sm font-medium text-red-800">エラーが発生しました</h3>
+                                    <div class="mt-2 text-sm text-red-700" id="error-message"></div>
+                                    <div class="mt-2 text-xs text-red-600 font-mono bg-red-100 p-2 rounded overflow-x-auto"
+                                        id="error-details" style="display: none;"></div>
+                                    <div class="mt-4 flex space-x-3">
+                                        <button type="button" onclick="location.reload()"
+                                            class="bg-red-100 text-red-800 px-3 py-1 rounded-md text-sm font-medium hover:bg-red-200 transition-colors">
+                                            再読み込み
+                                        </button>
+                                        <a href="mailto:support@kanjy.app"
+                                            class="text-red-700 hover:text-red-900 text-sm font-medium flex items-center">
+                                            サポートへ連絡
+                                            <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                            </svg>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
+                    </div>
+
+                    <!-- 締切表示 (Label + Value style) -->
+                    <div id="deadline-section" class="mt-8 hidden">
+                        <h3 class="notion-small mb-3">回答期限</h3>
+                        <p id="deadline-text" class="notion-body-medium"></p>
                     </div>
                 </div>
             </div>
