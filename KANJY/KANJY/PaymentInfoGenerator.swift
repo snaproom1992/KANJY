@@ -337,6 +337,7 @@ struct PaymentInfoGenerator: View {
                             .font(DesignSystem.Typography.subheadline)
                             .foregroundColor(DesignSystem.Colors.secondary)
                         TextField("IDを入力 (例: kanji_taro_1234)", text: $payPayID)
+                            .submitLabel(.done)
                             .padding(10)
                             .background(DesignSystem.Colors.background)
                             .overlay(
@@ -487,6 +488,7 @@ struct PaymentInfoGenerator: View {
                 .padding(.bottom, DesignSystem.Spacing.xs)
         
             TextField("お支払い期限: 7日以内", text: $dueText)
+                .submitLabel(.done)
                 .padding(10)
                 .background(DesignSystem.Colors.background)
                 .overlay(

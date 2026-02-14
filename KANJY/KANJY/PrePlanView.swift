@@ -198,6 +198,7 @@ struct PrePlanView: View {
                     TextField("参加者名", text: $editingText)
                         .font(DesignSystem.Typography.body)
                         .foregroundColor(DesignSystem.Colors.black)
+                        .submitLabel(.done)
                     // 役職選択用のビュー
                     rolePickerView
                     
@@ -479,6 +480,7 @@ struct PrePlanView: View {
                         
                         Section("回答者以外から追加") {
                             TextField("参加者名", text: $viewModel.newParticipantName)
+                                .submitLabel(.done)
                         }
                         Section("役職") {
                             Picker("役職", selection: $viewModel.selectedRoleType) {
@@ -1865,6 +1867,7 @@ struct PrePlanView: View {
                     TextField("項目名（例：二次会、カラオケ代）", text: $additionalItemName)
                         .font(DesignSystem.Typography.body)
                         .foregroundColor(DesignSystem.Colors.black)
+                        .submitLabel(.done)
                     
                     HStack {
                         Text("金額")
@@ -1986,6 +1989,7 @@ struct PrePlanView: View {
                     TextField("項目名（例：二次会、カラオケ代）", text: $editingItemName)
                         .font(DesignSystem.Typography.body)
                         .foregroundColor(DesignSystem.Colors.black)
+                        .submitLabel(.done)
                     
                     HStack {
                         Text("金額")
@@ -3655,6 +3659,7 @@ struct SimpleInfoRow: View {
                 TextField(placeholder, text: $value)
                     .font(DesignSystem.Typography.body)
                     .foregroundColor(DesignSystem.Colors.black)
+                    .submitLabel(.done)
             }
         }
         .padding(DesignSystem.Spacing.md)

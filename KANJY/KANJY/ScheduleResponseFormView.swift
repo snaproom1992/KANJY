@@ -223,6 +223,7 @@ struct BasicInfoCard: View {
                     TextField("山田太郎", text: $participantName)
                         .standardTextFieldStyle()
                         .focused(focusedField, equals: .name)
+                        .submitLabel(.done)
                 }
                 
                 VStack(alignment: .leading, spacing: DesignSystem.Spacing.sm) {
@@ -233,6 +234,7 @@ struct BasicInfoCard: View {
                     TextField("営業部", text: $department)
                         .standardTextFieldStyle()
                         .focused(focusedField, equals: .department)
+                        .submitLabel(.done)
                 }
             }
         }

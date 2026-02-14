@@ -106,6 +106,7 @@ struct RoleSettingsView: View {
                 Form {
                     Section {
                         TextField("役職名", text: $newRoleName)
+                            .submitLabel(.done)
                         
                         HStack {
                             Text("支払い倍率")
@@ -146,6 +147,7 @@ struct RoleSettingsView: View {
                 Form {
                     Section {
                         TextField("役職名", text: $editingName)
+                            .submitLabel(.done)
                         
                         HStack {
                             Text("支払い倍率")

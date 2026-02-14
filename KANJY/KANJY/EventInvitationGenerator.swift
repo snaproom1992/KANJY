@@ -164,11 +164,13 @@ struct EventInvitationGenerator: View {
     private var additionalInfoSection: some View {
         Section(header: Text("追加情報（任意）")) {
             TextField("集合場所", text: $meetingPlace)
+                .submitLabel(.done)
                 .onChange(of: meetingPlace) { _, _ in
                     updatePreviewImage()
                 }
             
             TextField("集合時間", text: $meetingTime)
+                .submitLabel(.done)
                 .onChange(of: meetingTime) { _, _ in
                     updatePreviewImage()
                 }

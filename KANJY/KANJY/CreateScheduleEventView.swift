@@ -52,6 +52,7 @@ struct CreateScheduleEventView: View {
                     TextField("スケジュール調整タイトル", text: $title)
                         .standardTextFieldStyle()
                         .focused($focusedField, equals: .title)
+                        .submitLabel(.done)
                     
                     TextField("説明（任意）", text: $description, axis: .vertical)
                         .font(DesignSystem.Typography.body)
@@ -115,6 +116,7 @@ struct CreateScheduleEventView: View {
                     TextField("場所（任意）", text: $location)
                         .standardTextFieldStyle()
                         .focused($focusedField, equals: .location)
+                        .submitLabel(.done)
                     
                     TextField("予算（任意）", text: $budget)
                         .standardTextFieldStyle()
@@ -167,6 +169,7 @@ struct CreateScheduleEventView: View {
                     Button("作成") {
                         createEvent()
                     }
+
                     .disabled(title.isEmpty || candidateDates.isEmpty)
                 }
             }

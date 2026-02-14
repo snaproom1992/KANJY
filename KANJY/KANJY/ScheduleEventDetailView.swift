@@ -754,6 +754,7 @@ struct EditScheduleEventView: View {
                 Section(header: Text("基本情報")) {
                     TextField("スケジュール調整タイトル", text: $title)
                         .focused($focusedField, equals: .title)
+                        .submitLabel(.done)
                     TextField("説明（任意）", text: $description, axis: .vertical)
                         .focused($focusedField, equals: .description)
                         .lineLimit(3...6)
@@ -797,6 +798,7 @@ struct EditScheduleEventView: View {
                 Section(header: Text("詳細情報")) {
                     TextField("場所（任意）", text: $location)
                         .focused($focusedField, equals: .location)
+                        .submitLabel(.done)
                     TextField("予算（任意）", text: $budget)
                         .focused($focusedField, equals: .budget)
                         .keyboardType(.numberPad)

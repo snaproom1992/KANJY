@@ -13,6 +13,7 @@ struct PaymentSettings: View {
         Form {
             Section(header: Text("PayPay情報")) {
                 TextField("PayPay ID", text: $payPayID)
+                    .submitLabel(.done)
                 Text("PayPayアプリのプロフィールからIDを確認できます")
                     .font(.caption)
                     .foregroundColor(DesignSystem.Colors.gray6)
@@ -21,9 +22,11 @@ struct PaymentSettings: View {
             Section(header: Text("銀行振込情報")) {
                 TextField("銀行名", text: $bankName)
                     .textContentType(.organizationName)
+                    .submitLabel(.done)
                 
                 TextField("支店名", text: $bankBranch)
                     .textContentType(.organizationName)
+                    .submitLabel(.done)
                 
                 Picker("口座種別", selection: $accountType) {
                     Text("普通").tag("普通")
@@ -36,6 +39,7 @@ struct PaymentSettings: View {
                 
                 TextField("口座名義", text: $accountHolder)
                     .textContentType(.name)
+                    .submitLabel(.done)
                 
                 // プレビュー表示
                 if !bankName.isEmpty || !bankBranch.isEmpty || !accountType.isEmpty || !accountNumber.isEmpty || !accountHolder.isEmpty {

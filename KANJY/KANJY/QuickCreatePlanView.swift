@@ -279,6 +279,7 @@ struct QuickCreatePlanView: View {
                     TextField("例：忘年会、新年会、歓迎会...", text: $planName)
                         .font(DesignSystem.Typography.title3)
                         .fontWeight(.semibold)
+                        .submitLabel(.done)
                         .padding(DesignSystem.Spacing.md)
                         .background(
                             RoundedRectangle(cornerRadius: DesignSystem.TextField.cornerRadius, style: .continuous)
@@ -615,6 +616,7 @@ struct QuickCreatePlanView: View {
                     
                     TextField("例：新橋の居酒屋", text: $location)
                         .font(DesignSystem.Typography.body)
+                        .submitLabel(.done)
                         .padding(DesignSystem.Spacing.md)
                         .background(
                             RoundedRectangle(cornerRadius: DesignSystem.TextField.cornerRadius, style: .continuous)
