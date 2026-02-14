@@ -674,14 +674,10 @@
     </nav>
 
     <main class="pb-24">
-        <section class="notion-section py-8">
+        <section class="notion-section py-8" style="border-top: none;">
             <div class="max-w-4xl mx-auto px-6 sm:px-8 lg:px-12">
                 <div class="mb-8">
                     <h1 id="event-title" class="notion-heading-2 mb-3">参加回答フォーム</h1>
-                    <!-- 説明文 (復元) -->
-                    <p id="event-description" class="notion-body text-stone-500 mt-2">
-                        みんなで楽しい時間を過ごしましょう。あなたの都合をお聞かせください。
-                    </p>
 
                     <!-- 読み込みステータス -->
                     <div id="loading-status" style="color: #666; font-size: 14px; margin-top: 8px;">
@@ -723,6 +719,11 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- 説明文 (復元) -->
+                    <p id="event-description" class="notion-body text-stone-500 mt-2">
+                        みんなで楽しい時間を過ごしましょう。あなたの都合をお聞かせください。
+                    </p>
 
                     <!-- 締切表示 (Label + Value style) -->
                     <div id="deadline-section" class="mt-8 hidden">
@@ -1085,6 +1086,12 @@
 
         // イベント情報を表示
         function displayEvent(event) {
+            // 読み込みステータスを非表示
+            const loadingStatus = document.getElementById('loading-status');
+            if (loadingStatus) {
+                loadingStatus.style.display = 'none';
+            }
+
             // タイトル
             const titleElement = document.getElementById('event-title');
             if (titleElement) {
