@@ -176,7 +176,12 @@
                     </div>
                     <div id="deadline-section" style="display: none; margin-bottom: 1rem;">
                         <h3 style="font-size: 0.75rem; line-height: 1.4; font-weight: 500; color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 0.75rem 0; padding: 0;">回答期限</h3>
-                        <p id="deadline-text" style="font-size: 1rem; line-height: 1.6; font-weight: 500; color: #374151; margin: 0; padding: 0;"></p>
+                        <div id="deadline-capsule" style="display: inline-flex; align-items: center; gap: 6px; background: rgba(239, 68, 68, 0.12); padding: 6px 14px; border-radius: 9999px;">
+                            <svg style="width: 14px; height: 14px; color: #ef4444; flex-shrink: 0;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <span id="deadline-text" style="font-size: 0.875rem; line-height: 1.4; font-weight: 600; color: #ef4444; margin: 0; padding: 0;"></span>
+                        </div>
                     </div>
                 </div>
             </div>
