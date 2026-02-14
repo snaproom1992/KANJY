@@ -999,68 +999,13 @@
             }
         }
 
-        // イベント情報を表示
+        // イベント情報を表示（共有コンポーネントの displayEventInfo を使用）
         function displayEvent(event) {
-            // 読み込みステータスを非表示
-            const loadingStatus = document.getElementById('loading-status');
-            if (loadingStatus) {
-                loadingStatus.style.display = 'none';
-            }
+            // 共有ロジックでタイトル・説明・場所・予算・期限を表示
+            window.displayEventInfo(event);
 
-            // タイトル
-            const titleElement = document.getElementById('event-title');
-            if (titleElement) {
-                titleElement.textContent = event.title || '新年会への参加をお聞かせください';
-
-            }
-
-            // 説明（設定されている場合のみ表示）
-            const descElement = document.getElementById('event-description');
-            if (descElement) {
-                if (event.description && event.description.trim() !== '') {
-                    descElement.innerHTML = event.description.replace(/\n/g, '<br>');
-                    descElement.style.display = 'block';
-                } else {
-                    descElement.style.display = 'none';
-                }
-            }
-
-            // 締切の表示
-            if (event.deadline) {
-                const deadlineSection = document.getElementById('deadline-section');
-                const deadlineText = document.getElementById('deadline-text');
-                if (deadlineSection && deadlineText) {
-                    try {
-                        // 日付のパース（Safari等の互換性対応）
-                        console.log("⏰ 締切情報確認:", event.deadline, typeof event.deadline);
-                        let deadlineDate = new Date(event.deadline);
-                        if (isNaN(deadlineDate.getTime())) {
-                            console.log("⚠️ 標準パース失敗、フォールバック試行:", event.deadline);
-                            const cleanedDate = event.deadline.replace("T", " ").replace("Z", "").replace(/-/g, "/");
-                            deadlineDate = new Date(cleanedDate);
-                        }
-                        if (!isNaN(deadlineDate.getTime())) {
-                            deadlineText.textContent = deadlineDate.toLocaleDateString('ja-JP', {
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                            });
-                            deadlineSection.style.display = 'block';
-                            console.log("✅ 締切を表示しました:", deadlineText.textContent);
-                        } else {
-                            console.error("❌ 無効な締切日時形式です:", event.deadline);
-                        }
-
-                    } catch (error) {
-                        console.error('締切日時のフォーマットエラー:', error);
-                    }
-                }
-            }
-
-            // 日程選択肢を生成
-            if (event.candidate_dates && Array.isArray(event.candidate_dates)) {
+            // 日程選択肢を生成（回答フォーム固有の処理）
+            if (event && event.candidate_dates && Array.isArray(event.candidate_dates)) {
                 generateScheduleOptions(event.candidate_dates);
             }
         }

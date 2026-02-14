@@ -2436,108 +2436,13 @@
         // イベント情報を表示
         function displayEvent(event) {
             console.log('🍙 イベント情報表示開始:', event);
-            console.log('🍙 deadline確認:', event.deadline);
 
-            // ローディングステータスを即座に非表示
-            const loadingStatus = document.getElementById('loading-status');
-            if (loadingStatus) {
-                loadingStatus.style.display = 'none';
-            }
+            // 共有ロジックでタイトル・説明・場所・予算・期限を表示
+            window.displayEventInfo(event);
 
-            // イベントオブジェクトの検証
-            if (!event) {
-                console.error('❌ イベントオブジェクトがnullまたはundefinedです');
-                const titleElement = document.getElementById('event-title');
-                if (titleElement) {
-                    titleElement.textContent = 'データの読み込みに失敗しました';
-                    titleElement.style.color = '#ef4444';
-                }
-                return;
-            }
+            if (!event) return;
 
-            // タイトル
-            const titleElement = document.getElementById('event-title');
-            if (titleElement) {
-                const title = event.title || 'イベント名が設定されていません';
-                titleElement.textContent = title;
-                titleElement.style.color = ''; // エラー色をリセット
-                console.log('✅ タイトルを表示:', title);
-            } else {
-                console.error('❌ event-title要素が見つかりません');
-            }
-
-            // 説明（設定されている場合のみ表示）
-            const descElement = document.getElementById('event-description');
-            if (descElement) {
-                if (event.description && event.description.trim() !== '') {
-                    descElement.innerHTML = event.description.replace(/\n/g, '<br>');
-                    descElement.style.display = 'block';
-                } else {
-                    descElement.style.display = 'none';
-                }
-            }
-
-            // 開催場所セクション（設定されている場合のみ表示）
-            const locationSection = document.getElementById('location-section');
-            const locationText = document.getElementById('location-text');
-            if (locationSection && locationText) {
-                if (event.location && event.location.trim() !== '') {
-                    locationText.textContent = event.location;
-                    locationSection.style.display = 'block';
-                } else {
-                    locationSection.style.display = 'none';
-                }
-            }
-
-            // 予算カード（設定されている場合のみ表示）
-            const budgetCard = document.getElementById('budget-card');
-            const budgetText = document.getElementById('budget-text');
-            if (budgetCard && budgetText) {
-                if (event.budget && event.budget > 0) {
-                    budgetText.textContent = `${event.budget.toLocaleString()}円`;
-                    budgetCard.style.display = 'block';
-                } else {
-                    budgetCard.style.display = 'none';
-                }
-            }
-
-            // 回答締切セクション（設定されている場合のみ表示）
-            const deadlineSection = document.getElementById('deadline-section');
-            const deadlineText = document.getElementById('deadline-text');
-            if (deadlineSection && deadlineText) {
-                console.log('🍙 deadline処理開始:', {
-                    deadline: event.deadline,
-                    type: typeof event.deadline,
-                    hasDeadline: !!event.deadline
-                });
-
-                if (event.deadline) {
-                    const deadlineDate = new Date(event.deadline);
-                    console.log('🍙 deadline日付変換:', deadlineDate);
-
-                    const options = {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    };
-                    const formattedDate = deadlineDate.toLocaleDateString('ja-JP', options);
-                    console.log('🍙 フォーマット済み日付:', formattedDate);
-
-                    deadlineText.textContent = formattedDate;
-                    deadlineSection.style.display = 'block';
-                    console.log('🍙 deadline表示完了');
-                } else {
-                    deadlineSection.style.display = 'none';
-                    console.log('🍙 deadline未設定のため非表示');
-                }
-            } else {
-                console.warn('⚠️ deadlineSection または deadlineText が見つかりません');
-            }
-
-
-            // イベントURLを表示
+            // イベントURLを表示（index.html固有の処理）
             const eventUrlElement = document.getElementById('eventUrl');
             if (eventUrlElement && event.id) {
                 const fullUrl = `${window.location.origin}${window.location.pathname}?id=${event.id}`;

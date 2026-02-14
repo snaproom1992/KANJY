@@ -1,13 +1,12 @@
 /**
  * KANJY 共有イベント情報コンポーネント
- * タイトル・説明文・回答期限・場所・予算・エラー表示を全ページで統一管理
+ * HTML構造 + 表示ロジックを一元管理し、全ページで統一
  */
 (function () {
     'use strict';
 
     // ========================================
     // イベント情報セクション HTML
-    // index.html（イベント詳細ページ）を正として統一
     // ========================================
     const eventInfoHTML = `
         <section class="notion-section py-8" style="border-top: none;">
@@ -28,7 +27,6 @@
                     <div id="error-display" style="display: none;" class="animate-slide-up">
                         <div class="bg-red-50 border-l-4 border-red-500 rounded-lg p-5 shadow-md">
                             <div class="flex items-start">
-                                <!-- エラーアイコン -->
                                 <div class="flex-shrink-0">
                                     <svg class="h-6 w-6 text-red-500" fill="none" stroke="currentColor"
                                         viewBox="0 0 24 24">
@@ -36,12 +34,10 @@
                                             d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                     </svg>
                                 </div>
-                                <!-- エラー内容 -->
                                 <div class="ml-4 flex-1">
                                     <h3 id="error-title" class="text-lg font-semibold text-red-800 mb-2"></h3>
                                     <p id="error-message" class="text-sm text-red-700 mb-3"></p>
                                     <div id="error-actions" class="flex flex-wrap gap-3">
-                                        <!-- リトライボタン -->
                                         <button onclick="location.reload()"
                                             class="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors duration-200 shadow-sm">
                                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor"
@@ -52,7 +48,6 @@
                                             </svg>
                                             再試行
                                         </button>
-                                        <!-- サポート連絡ボタン -->
                                         <a href="mailto:snaproom.info@gmail.com?subject=KANJY エラー報告"
                                             class="inline-flex items-center px-4 py-2 bg-white hover:bg-gray-50 text-red-700 text-sm font-medium rounded-lg border border-red-300 transition-colors duration-200">
                                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor"
@@ -64,7 +59,6 @@
                                             サポートに連絡
                                         </a>
                                     </div>
-                                    <!-- 詳細情報（折りたたみ可能） -->
                                     <details class="mt-4">
                                         <summary
                                             class="text-sm text-red-600 cursor-pointer hover:text-red-700 font-medium">
@@ -80,19 +74,14 @@
 
                 <!-- Event Details (Location, Budget, Deadline) -->
                 <div id="event-info-cards">
-                    <!-- Location Card -->
                     <div id="location-section" style="display: none;">
                         <h3 class="notion-small mb-3">場所</h3>
                         <p id="location-text" class="notion-body-medium"></p>
                     </div>
-
-                    <!-- Budget Card -->
                     <div id="budget-card" style="display: none;">
                         <h3 class="notion-small mb-3">Budget</h3>
                         <p id="budget-text" class="notion-body-medium"></p>
                     </div>
-
-                    <!-- Deadline Card -->
                     <div id="deadline-section" style="display: none;">
                         <h3 class="notion-small mb-3">回答期限</h3>
                         <p id="deadline-text" class="notion-body-medium"></p>
@@ -103,7 +92,7 @@
     `;
 
     // ========================================
-    // コンポーネント挿入（即時実行 - DOMContentLoaded前でも動作）
+    // HTML挿入（即時実行）
     // ========================================
     function injectEventInfo() {
         const placeholder = document.getElementById('kanjy-event-info');
@@ -112,11 +101,112 @@
         }
     }
 
-    // スクリプトがbody内で読み込まれる場合、即時実行を試みる
     if (document.getElementById('kanjy-event-info')) {
         injectEventInfo();
     } else {
-        // DOM未構築の場合はDOMContentLoadedで実行
         document.addEventListener('DOMContentLoaded', injectEventInfo);
     }
+
+    // ========================================
+    // 共有表示ロジック（グローバル関数として公開）
+    // 各ページの displayEvent から呼び出す
+    // ========================================
+
+    /**
+     * イベント情報セクションを表示する（共通ロジック）
+     * @param {Object} event - イベントデータオブジェクト
+     */
+    window.displayEventInfo = function (event) {
+        // ローディングステータスを非表示
+        const loadingStatus = document.getElementById('loading-status');
+        if (loadingStatus) {
+            loadingStatus.style.display = 'none';
+        }
+
+        // イベントオブジェクトの検証
+        if (!event) {
+            console.error('❌ イベントオブジェクトがnullまたはundefinedです');
+            const titleElement = document.getElementById('event-title');
+            if (titleElement) {
+                titleElement.textContent = 'データの読み込みに失敗しました';
+                titleElement.style.color = '#ef4444';
+            }
+            return;
+        }
+
+        // タイトル
+        const titleElement = document.getElementById('event-title');
+        if (titleElement) {
+            titleElement.textContent = event.title || 'イベント名が設定されていません';
+            titleElement.style.color = '';
+        }
+
+        // 説明（設定されている場合のみ表示）
+        const descElement = document.getElementById('event-description');
+        if (descElement) {
+            if (event.description && event.description.trim() !== '') {
+                descElement.innerHTML = event.description.replace(/\n/g, '<br>');
+                descElement.style.display = 'block';
+            } else {
+                descElement.style.display = 'none';
+            }
+        }
+
+        // 開催場所（設定されている場合のみ表示）
+        const locationSection = document.getElementById('location-section');
+        const locationText = document.getElementById('location-text');
+        if (locationSection && locationText) {
+            if (event.location && event.location.trim() !== '') {
+                locationText.textContent = event.location;
+                locationSection.style.display = 'block';
+            } else {
+                locationSection.style.display = 'none';
+            }
+        }
+
+        // 予算（設定されている場合のみ表示）
+        const budgetCard = document.getElementById('budget-card');
+        const budgetText = document.getElementById('budget-text');
+        if (budgetCard && budgetText) {
+            if (event.budget && event.budget > 0) {
+                budgetText.textContent = event.budget.toLocaleString() + '円';
+                budgetCard.style.display = 'block';
+            } else {
+                budgetCard.style.display = 'none';
+            }
+        }
+
+        // 回答期限（設定されている場合のみ表示）
+        const deadlineSection = document.getElementById('deadline-section');
+        const deadlineText = document.getElementById('deadline-text');
+        if (deadlineSection && deadlineText) {
+            if (event.deadline) {
+                try {
+                    let deadlineDate = new Date(event.deadline);
+                    // Safari等の互換性対応
+                    if (isNaN(deadlineDate.getTime())) {
+                        const cleanedDate = event.deadline.replace('T', ' ').replace('Z', '').replace(/-/g, '/');
+                        deadlineDate = new Date(cleanedDate);
+                    }
+                    if (!isNaN(deadlineDate.getTime())) {
+                        deadlineText.textContent = deadlineDate.toLocaleDateString('ja-JP', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+                        deadlineSection.style.display = 'block';
+                    } else {
+                        deadlineSection.style.display = 'none';
+                    }
+                } catch (error) {
+                    console.error('締切日時のフォーマットエラー:', error);
+                    deadlineSection.style.display = 'none';
+                }
+            } else {
+                deadlineSection.style.display = 'none';
+            }
+        }
+    };
 })();
