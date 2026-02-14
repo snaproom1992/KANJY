@@ -2452,8 +2452,6 @@
                 console.warn('⚠️ eventUrl要素またはevent.idが見つかりません');
             }
 
-            // カードの数に応じてグリッドレイアウトを調整
-            updateGridLayout();
 
             // 候補日時を動的に生成
             if (event.candidate_dates && Array.isArray(event.candidate_dates)) {
@@ -2470,22 +2468,6 @@
             console.log('🍙 イベント情報表示完了');
         }
 
-        // カードの数に応じてグリッドレイアウトを調整
-        function updateGridLayout() {
-            const cardsContainer = document.getElementById('event-info-cards');
-            if (!cardsContainer) return;
-
-            const visibleCards = cardsContainer.querySelectorAll('[id$="-card"][style*="block"], [id$="-card"]:not([style*="none"])');
-            const cardCount = Array.from(visibleCards).filter(card =>
-                card.style.display !== 'none'
-            ).length;
-
-            // カードの数に応じてグリッドクラスを調整
-            cardsContainer.className = 'grid gap-6 ' +
-                (cardCount === 1 ? 'grid-cols-1 max-w-md mx-auto' :
-                    cardCount === 2 ? 'grid-cols-1 md:grid-cols-2 max-w-2xl mx-auto' :
-                        'grid-cols-1 md:grid-cols-3');
-        }
 
         // 参加人数を計算する関数
         function calculateParticipantCount(dateStr) {
