@@ -120,15 +120,15 @@
             <div class="kanjy-container">
                 <!-- Event Title & Description -->
                 <div style="margin-bottom: 2rem;">
-                    <h1 id="event-title" class="kanjy-event-title">
+                    <h1 id="event-title" style="font-size: 2rem; line-height: 1.3; font-weight: 600; letter-spacing: -0.01em; color: #111827; margin: 0 0 0.75rem 0; padding: 0;">
                         読み込み中...
                     </h1>
-                    <div id="loading-status" class="kanjy-loading-status">
+                    <div id="loading-status" style="color: #666; font-size: 14px; margin-top: 8px;">
                         ステータス: 初期化中...
                     </div>
 
                     <!-- 説明文（タイトル直下に表示） -->
-                    <p id="event-description" class="kanjy-event-description" style="display: none;"></p>
+                    <p id="event-description" style="display: none; font-size: 1rem; line-height: 1.6; font-weight: 400; color: #78716c; margin: 0.5rem 0 0 0; padding: 0;"></p>
 
                     <!-- エラー表示UI -->
                     <div id="error-display" class="kanjy-error-display" style="display: none;">
@@ -165,18 +165,18 @@
                 </div>
 
                 <!-- Event Details (Location, Budget, Deadline) -->
-                <div id="event-info-cards" class="kanjy-info-cards">
-                    <div id="location-section" style="display: none;">
-                        <h3 class="kanjy-info-label">場所</h3>
-                        <p id="location-text" class="kanjy-info-value"></p>
+                <div id="event-info-cards" style="margin-top: 2rem;">
+                    <div id="location-section" style="display: none; margin-bottom: 1rem;">
+                        <h3 style="font-size: 0.75rem; line-height: 1.4; font-weight: 500; color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 0.75rem 0; padding: 0;">場所</h3>
+                        <p id="location-text" style="font-size: 1rem; line-height: 1.6; font-weight: 500; color: #374151; margin: 0; padding: 0;"></p>
                     </div>
-                    <div id="budget-card" style="display: none;">
-                        <h3 class="kanjy-info-label">Budget</h3>
-                        <p id="budget-text" class="kanjy-info-value"></p>
+                    <div id="budget-card" style="display: none; margin-bottom: 1rem;">
+                        <h3 style="font-size: 0.75rem; line-height: 1.4; font-weight: 500; color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 0.75rem 0; padding: 0;">Budget</h3>
+                        <p id="budget-text" style="font-size: 1rem; line-height: 1.6; font-weight: 500; color: #374151; margin: 0; padding: 0;"></p>
                     </div>
-                    <div id="deadline-section" style="display: none;">
-                        <h3 class="kanjy-info-label">回答期限</h3>
-                        <p id="deadline-text" class="kanjy-info-value"></p>
+                    <div id="deadline-section" style="display: none; margin-bottom: 1rem;">
+                        <h3 style="font-size: 0.75rem; line-height: 1.4; font-weight: 500; color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 0.75rem 0; padding: 0;">回答期限</h3>
+                        <p id="deadline-text" style="font-size: 1rem; line-height: 1.6; font-weight: 500; color: #374151; margin: 0; padding: 0;"></p>
                     </div>
                 </div>
             </div>
