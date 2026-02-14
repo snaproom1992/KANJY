@@ -42,6 +42,7 @@ struct PrePlanBasicInfoView: View {
                     .foregroundColor(DesignSystem.Colors.black)
                 TextField("場所を入力", text: $viewModel.editingPlanLocation)
                     .standardTextFieldStyle()
+                    .submitLabel(.done)
                     .onChange(of: viewModel.editingPlanLocation) {
                         onAutoSave()
                     }

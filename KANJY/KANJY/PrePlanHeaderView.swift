@@ -80,6 +80,7 @@ struct PrePlanHeaderView: View {
                 .onChange(of: isTitleFocused) { _, focused in
                     if !focused { isEditingTitle = false }
                 }
+                .submitLabel(.done)
         } else {
             PlanNameDisplayView()
         }

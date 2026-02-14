@@ -1178,6 +1178,7 @@ struct PrePlanView: View {
                 VStack(alignment: .leading, spacing: DesignSystem.Spacing.xs) {
                     TextField("場所を入力", text: $confirmedLocation)
                         .standardTextFieldStyle()
+                        .submitLabel(.done)
                     
                     // スケジュール調整から場所を引き継ぐ
                     if hasScheduleEvent, let event = scheduleEvent, let location = event.location, confirmedLocation.isEmpty {
@@ -1542,15 +1543,17 @@ struct PrePlanView: View {
                     if hasScheduleEvent, let event = scheduleEvent {
                         // 締切がある場合は表示
                         if let deadline = event.deadline {
-                            HStack(spacing: 4) {
-                                Image(systemName: "clock")
-                                    .font(.caption)
-                                    .foregroundColor(DesignSystem.Colors.secondary)
-                                Text("回答締切: \(scheduleViewModel.formatDateTime(deadline))")
-                                    .font(DesignSystem.Typography.caption)
-                                    .foregroundColor(DesignSystem.Colors.secondary)
-                            }
-                            .padding(.bottom, DesignSystem.Spacing.sm)
+                            let isPassed = Date() > deadline
+                            Text(getDeadlineText(deadline: deadline))
+                                .font(.system(size: 11, weight: .bold, design: .monospaced))
+                                .foregroundColor(isPassed ? DesignSystem.Colors.gray6 : DesignSystem.Colors.Attendance.notAttending)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 4)
+                                .background(
+                                    Capsule()
+                                        .fill(isPassed ? DesignSystem.Colors.gray3.opacity(0.3) : DesignSystem.Colors.Attendance.notAttending.opacity(0.1))
+                                )
+                                .padding(.bottom, DesignSystem.Spacing.sm)
                         }
 
                         CandidateDatesListView(
@@ -3667,8 +3670,36 @@ struct SimpleInfoRow: View {
                 )
         )
     }
+    // Helper functions removed from here
 }
 
+}
+
+extension PrePlanView {
+    private func getDeadlineText(deadline: Date) -> String {
+        let now = Date()
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "ja_JP")
+        formatter.dateFormat = "M/d HH:mm"
+        let dateString = formatter.string(from: deadline)
+        
+        if now > deadline {
+            return "\(dateString) (終了)"
+        } else {
+            let calendar = Calendar.current
+            let components = calendar.dateComponents([.day], from: calendar.startOfDay(for: now), to: calendar.startOfDay(for: deadline))
+            
+            if let days = components.day {
+                if days == 0 {
+                    return "\(dateString) (本日中)"
+                } else {
+                    return "\(dateString) (あと\(days)日)"
+                }
+            } else {
+                return dateString
+            }
+        }
+    }
 }
 
 #Preview {
