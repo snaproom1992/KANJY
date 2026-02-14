@@ -2526,6 +2526,12 @@
             console.log('🍙 イベント情報表示開始:', event);
             console.log('🍙 deadline確認:', event.deadline);
 
+            // ローディングステータスを即座に非表示
+            const loadingStatus = document.getElementById('loading-status');
+            if (loadingStatus) {
+                loadingStatus.style.display = 'none';
+            }
+
             // イベントオブジェクトの検証
             if (!event) {
                 console.error('❌ イベントオブジェクトがnullまたはundefinedです');
