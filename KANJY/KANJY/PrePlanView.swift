@@ -155,6 +155,7 @@ struct PrePlanView: View {
     }
     
     @State private var selectedStep: MainStep = .before
+    @Namespace private var stepTabNamespace
     
     // タスク選択（セグメントコントロール用）- 企画タブ内で使用
     enum TaskSection: String, CaseIterable, Hashable {
@@ -1043,63 +1044,94 @@ struct PrePlanView: View {
         )
     }
     
-    // メインステップタブコントロール（目立つ位置に配置）
+    // 触覚フィードバック生成
+    private func stepTabHaptic() {
+        let generator = UIImpactFeedbackGenerator(style: .medium)
+        generator.impactOccurred()
+    }
+    
+    // メインステップタブコントロール（リキッドレイアウト・タブ）
     @ViewBuilder
     private func MainStepTabControl(selectedStep: Binding<MainStep>) -> some View {
-        HStack(spacing: DesignSystem.Spacing.sm) {
+        HStack(spacing: 0) {
             ForEach(MainStep.allCases, id: \.self) { step in
+                let isSelected = selectedStep.wrappedValue == step
+                
                 Button {
-                    withAnimation(.spring(response: 0.3)) {
+                    guard selectedStep.wrappedValue != step else { return }
+                    stepTabHaptic()
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.75, blendDuration: 0.2)) {
                         selectedStep.wrappedValue = step
                     }
                 } label: {
                     VStack(spacing: DesignSystem.Spacing.xs) {
                         Image(systemName: step.icon)
                             .font(.system(size: DesignSystem.Icon.Size.medium, weight: DesignSystem.Typography.FontWeight.semibold))
-                            .foregroundColor(selectedStep.wrappedValue == step ? DesignSystem.Colors.white : DesignSystem.Colors.primary)
+                            .foregroundColor(isSelected ? DesignSystem.Colors.white : DesignSystem.Colors.primary)
+                            .scaleEffect(isSelected ? 1.15 : 1.0)
+                            .animation(.spring(response: 0.3, dampingFraction: 0.5), value: isSelected)
                         
                         Text(step.rawValue)
                             .font(DesignSystem.Typography.headline)
-                            .foregroundColor(selectedStep.wrappedValue == step ? DesignSystem.Colors.white : DesignSystem.Colors.black)
+                            .foregroundColor(isSelected ? DesignSystem.Colors.white : DesignSystem.Colors.black)
                         
                         Text(step.description)
                             .font(DesignSystem.Typography.caption2)
-                            .foregroundColor(selectedStep.wrappedValue == step ? DesignSystem.Colors.white.opacity(0.9) : DesignSystem.Colors.secondary)
+                            .foregroundColor(isSelected ? DesignSystem.Colors.white.opacity(0.9) : DesignSystem.Colors.secondary)
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, DesignSystem.Spacing.md)
                     .padding(.horizontal, DesignSystem.Spacing.sm)
                     .background(
-                        RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadius, style: .continuous)
-                            .fill(selectedStep.wrappedValue == step ? DesignSystem.Colors.primary : DesignSystem.Colors.secondaryBackground)
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadius, style: .continuous)
-                            .stroke(selectedStep.wrappedValue == step ? Color.clear : DesignSystem.Colors.gray3, lineWidth: 1)
-                    )
-                    .shadow(
-                        color: selectedStep.wrappedValue == step ? DesignSystem.Colors.primary.opacity(0.3) : Color.black.opacity(0.05),
-                        radius: selectedStep.wrappedValue == step ? 8 : 2,
-                        x: 0,
-                        y: selectedStep.wrappedValue == step ? 4 : 1
+                        Group {
+                            if isSelected {
+                                RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadius, style: .continuous)
+                                    .fill(DesignSystem.Colors.primary)
+                                    .matchedGeometryEffect(id: "stepTabBackground", in: stepTabNamespace)
+                                    .shadow(
+                                        color: DesignSystem.Colors.primary.opacity(0.3),
+                                        radius: 8, x: 0, y: 4
+                                    )
+                            }
+                        }
                     )
                 }
                 .buttonStyle(.plain)
             }
         }
+        .padding(4)
+        .background(
+            RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadius + 2, style: .continuous)
+                .fill(DesignSystem.Colors.secondaryBackground)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: DesignSystem.Card.cornerRadius + 2, style: .continuous)
+                .stroke(DesignSystem.Colors.gray3.opacity(0.5), lineWidth: 1)
+        )
     }
     
     // メインステップコンテンツビュー（2ステップ：飲み会前・飲み会後）
     @ViewBuilder
     private func MainStepContentView(selectedStep: MainStep) -> some View {
-        switch selectedStep {
-        case .before:
-            // 飲み会前（企画）：日程調整・参加者・基本情報（統合済み）
-            ScheduleAndParticipantsCardView()
-        case .after:
-            // 飲み会後（集金）：金額設定・集金管理
-            CollectionStepContent()
+        Group {
+            switch selectedStep {
+            case .before:
+                // 飲み会前（企画）：日程調整・参加者・基本情報（統合済み）
+                ScheduleAndParticipantsCardView()
+                    .transition(.asymmetric(
+                        insertion: .move(edge: .leading).combined(with: .opacity),
+                        removal: .move(edge: .leading).combined(with: .opacity)
+                    ))
+            case .after:
+                // 飲み会後（集金）：金額設定・集金管理
+                CollectionStepContent()
+                    .transition(.asymmetric(
+                        insertion: .move(edge: .trailing).combined(with: .opacity),
+                        removal: .move(edge: .trailing).combined(with: .opacity)
+                    ))
+            }
         }
+        .animation(.spring(response: 0.35, dampingFraction: 0.8), value: selectedStep)
     }
     
     // 企画ステップのコンテンツ
