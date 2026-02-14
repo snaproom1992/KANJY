@@ -169,9 +169,8 @@
                     <div id="location-section" style="display: none; margin-bottom: 1rem;">
                         <h3 style="font-size: 0.75rem; line-height: 1.4; font-weight: 500; color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 0.75rem 0; padding: 0;">場所</h3>
                         <div style="display: inline-flex; align-items: center; gap: 6px;">
-                            <svg style="width: 16px; height: 16px; color: #374151; flex-shrink: 0;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            <svg style="width: 16px; height: 16px; flex-shrink: 0;" viewBox="0 0 24 24" fill="#374151">
+                                <path d="M21 3L3 10.5l7.5 3L13.5 21L21 3z"/>
                             </svg>
                             <p id="location-text" style="font-size: 1rem; line-height: 1.6; font-weight: 500; color: #374151; margin: 0; padding: 0;"></p>
                         </div>
