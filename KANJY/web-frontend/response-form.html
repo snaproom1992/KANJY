@@ -678,7 +678,10 @@
             <div class="max-w-4xl mx-auto px-6 sm:px-8 lg:px-12">
                 <div class="mb-8">
                     <h1 id="event-title" class="notion-heading-2 mb-3">参加回答フォーム</h1>
-                    <p id="event-description" class="notion-body text-stone-500">みんなで楽しい時間を過ごしましょう。あなたの都合をお聞かせください。</p>
+                    <!-- 説明文 (復元) -->
+                    <p id="event-description" class="notion-body text-stone-500 mt-2">
+                        みんなで楽しい時間を過ごしましょう。あなたの都合をお聞かせください。
+                    </p>
 
                     <!-- 締切表示 -->
                     <div id="deadline-section" class="mt-4 hidden">
@@ -1079,14 +1082,13 @@
                             deadlineDate = new Date(cleanedDate);
                         }
                         if (!isNaN(deadlineDate.getTime())) {
-                            const year = deadlineDate.getFullYear();
-                            const month = deadlineDate.getMonth() + 1;
-                            const day = deadlineDate.getDate();
-                            const hours = deadlineDate.getHours().toString().padStart(2, "0");
-                            const minutes = deadlineDate.getMinutes().toString().padStart(2, "0");
-                            const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
-                            const weekday = weekdays[deadlineDate.getDay()];
-                            deadlineText.textContent = `${year}年${month}月${day}日(${weekday}) ${hours}:${minutes}`;
+                            deadlineText.textContent = deadlineDate.toLocaleDateString('ja-JP', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            });
                             deadlineSection.classList.remove("hidden");
                             console.log("✅ 締切を表示しました:", deadlineText.textContent);
                         } else {
